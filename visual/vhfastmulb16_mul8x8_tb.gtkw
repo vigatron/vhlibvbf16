@@ -3,7 +3,7 @@
 [*]
 [*]
 [dumpfile] "../build/vhfastmulb16_mul8x8.vcd"
-[savefile] "/home/robotron/RBProjects/vhlibv/vhfastmul_bf16_f16_l3/visual/vhfastmulb16_mul8x8_tb.gtkw"
+[savefile] "vhfastmulb16_mul8x8_tb.gtkw"
 [timestart] 0
 [size] 1280 800
 [pos] -1 -1

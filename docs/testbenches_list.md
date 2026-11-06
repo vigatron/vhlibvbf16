@@ -22,7 +22,7 @@
 |---|------|--------|----------|
 | 10 | `vhfastmulb16_mul4x4_tb.chk.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
 | 11 | `vhfastmulb16_mul8x8_chk_tb.v` | `mul8x8` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 12 | `vhfastmulb16_add8x8_tb.chk.v` | `add8x8_lat2` | 16 пар экспонент из test_values_rnz.md |
+| 12 | `vhfastmulb16_add8x8_chk_tb.v` | `add8x8_lat2` | 16 пар экспонент из test_values_rnz.md |
 | 13 | `vhfastmulb16_flags_lat2_tb.chk.v` | `flags_lat2` | 12 векторов, LAT=2 |
 | 14 | `vhfastmulb16_rne_lat3_tb.v` | `rne_lat3` | Уже в основном списке |
 
@@ -34,7 +34,7 @@
 # Все тесты через скрипты в scripts/
 ./scripts/run_test_mul4x4.sh sim
 ./scripts/run_test_mul8x8.sh sim
-./scripts/run_test_add8x8.sh sim
+./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
 ./scripts/run_test_flags_lat1.sh sim
 ./scripts/run_test_flags_lat2.sh sim

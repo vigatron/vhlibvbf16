@@ -1,13 +1,20 @@
-// =============================================================
-// vhfastmulb16_mul4x4 - умножение двух 4-битных чисел
-// Латентность результата: 1 такт.
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_mul4x4.v
+// Module: vhfastmulb16_mul4x4
+// Multiplication of two 4-bit numbers
+// Result latency: 1 clk
 //
-// Архитектура:
-//   - 4 выровненных частичных произведения (a[i] ? b : 0);
-//   - дерево переноса (CSA, два уровня 3:2) сворачивает 4 строки в 2;
-//   - один финальный сумматор (CPA) формирует результат 8 бит.
-// Оператор '*' не используется.
-// =============================================================
+// Architecture:
+//   - 4 aligned partial products (a[i] ? b : 0);
+//   - carry-save tree (CSA, two 3:2 levels) reduces 4 rows to 2;
+//   - final sum adder (CPA) produces 8-bit result.
+// Operator '*' is not used.
+// ----------------------------------------------
 
 module vhfastmulb16_mul4x4 (
     input wire clk,

@@ -5,7 +5,7 @@
 //   латентность результата 1 такт
 // =============================================================
 
-module vhfastmulb16_mul4x4_tb_chk;
+module vhfastmulb16_mul4x4_chk_tb;
 
     localparam MAX_PRINT = 10;      // сколько ошибок печатать подробно
 
@@ -58,7 +58,7 @@ module vhfastmulb16_mul4x4_tb_chk;
     // ---------------- Основной сценарий ----------------
     initial begin
         $dumpfile("build/vhfastmulb16_mul4x4_chk.vcd");
-        $dumpvars(0, vhfastmulb16_mul4x4_tb_chk);
+        $dumpvars(0, vhfastmulb16_mul4x4_chk_tb);
 
         errors = 0;
 

@@ -1,7 +1,15 @@
-// vhfastmulb16_flags_lat1.v
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_flags_lat1.v
+// Module: vhfastmulb16_flags_lat1
 // Result latency 1 clk
-// en=0: HOLD (удерживает последнее значение)
-// reset: синхронный, приоритет над en
+// en=0: HOLD (keep last value)
+// reset: synchronous, priority over en
+// ----------------------------------------------
 
 module vhfastmulb16_flags_lat1 (
     input  wire        clk,

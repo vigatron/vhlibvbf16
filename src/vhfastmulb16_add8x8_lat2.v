@@ -1,7 +1,14 @@
-// =============================================================
-// vhfastmulb16_add8x8_lat2 - сложение двух 8-бит чисел и вычитание 127
-// Полностью конвейерный, латентность 2 такта
-// =============================================================
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_add8x8_lat2.v
+// Module: vhfastmulb16_add8x8_lat2
+// Addition of two 8-bit numbers and subtraction of 127
+// Fully pipelined, latency 2 clk
+// ----------------------------------------------
 
 module vhfastmulb16_add8x8_lat2 (
     input  wire        clk,

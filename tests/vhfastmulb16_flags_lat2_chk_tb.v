@@ -5,7 +5,7 @@
 //   latency = LAT тактов, проверка результата в потоке
 // =============================================================
 
-module vhfastmulb16_flags_lat2_tb_chk;
+module vhfastmulb16_flags_lat2_chk_tb;
 
     localparam integer N         = 12;  // число тестовых пар
     localparam integer LAT       = 2;   // latency DUT, тактов
@@ -109,7 +109,7 @@ module vhfastmulb16_flags_lat2_tb_chk;
     // ---------------- Основной сценарий ----------------
     initial begin
         $dumpfile("build/vhfastmulb16_flags_lat2_chk.vcd");
-        $dumpvars(0, vhfastmulb16_flags_lat2_tb_chk);
+        $dumpvars(0, vhfastmulb16_flags_lat2_chk_tb);
 
         errors = 0;
 

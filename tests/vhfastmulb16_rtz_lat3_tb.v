@@ -10,7 +10,7 @@
 
 `timescale 1ns/1ps
 
-module vhfastmulb16_lat3_tb;
+module vhfastmulb16_rtz_lat3_tb;
 
     // Частота тактового сигнала (для визуализации)
     localparam CLK_PERIOD = 10;
@@ -75,8 +75,8 @@ module vhfastmulb16_lat3_tb;
     // Тесты
     initial begin
 
-        $dumpfile("build/vhfastmulb16_lat3.vcd");
-        $dumpvars(0, vhfastmulb16_lat3_tb);
+        $dumpfile("build/vhfastmulb16_rtz_lat3.vcd");
+        $dumpvars(0, vhfastmulb16_rtz_lat3_tb);
         
         $display("=== vhfastmulb16 Visual Testbench ===");
         $display("Тестирование умножения BF16 чисел");

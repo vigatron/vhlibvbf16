@@ -1,10 +1,17 @@
-// =============================================================
-// vhfastmulb16_rne_lat3 - Умножение двух BF16 чисел (RNE rounding)
-// Результат на выходе число BF16
-// Операция умножения происходит за 3 такта (latency 3)
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_rne_lat3.v
+// Module: vhfastmulb16_rne_lat3
+// BF16 multiplication (RNE rounding)
+// Result is BF16 number
+// Operation takes 3 clk (latency 3)
 // Round to Nearest Even (IEEE 754 default)
-// Subnormal inputs: Flush To Zero (FTZ) — трактуются как 0
-// =============================================================
+// Subnormal inputs: Flush To Zero (FTZ), treated as 0
+// ----------------------------------------------
 
 module vhfastmulb16_rne_lat3 (
     input  wire        clk,

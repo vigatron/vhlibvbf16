@@ -1,10 +1,17 @@
-// =============================================================
-// vhfastmulb16_rtz_lat3 - Умножение двух BF16 чисел (RTZ rounding)
-// Результат на выходе число BF16
-// Операция умножения происходит за 3 такта (latency 3)
-// Round Toward Zero (truncation) — простое отбрасывание младших бит
-// Subnormal inputs: Flush To Zero (FTZ) — трактуются как 0
-// =============================================================
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_rtz_lat3.v
+// Module: vhfastmulb16_rtz_lat3
+// BF16 multiplication (RTZ rounding)
+// Result is BF16 number
+// Operation takes 3 clk (latency 3)
+// Round Toward Zero (truncation), simple discard of lower bits
+// Subnormal inputs: Flush To Zero (FTZ), treated as 0
+// ----------------------------------------------
 
 module vhfastmulb16_rtz_lat3 (
     input wire clk,

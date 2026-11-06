@@ -1,8 +1,15 @@
-// =============================================================
-// vhfastmulb16_mul8x8 - умножение двух 8-бит чисел
-// Использует 4 экземпляра vhfastmulb16_mul4x4
-// Латентность: 2 такта (fully pipelined)
-// =============================================================
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_mul8x8.v
+// Module: vhfastmulb16_mul8x8
+// Multiplication of two 8-bit numbers
+// Uses 4 instances of vhfastmulb16_mul4x4
+// Latency: 2 clk (fully pipelined)
+// ----------------------------------------------
 
 module vhfastmulb16_mul8x8 (
     input  wire        clk,

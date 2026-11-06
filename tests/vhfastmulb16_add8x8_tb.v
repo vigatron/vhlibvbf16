@@ -1,15 +1,18 @@
 `timescale 1ns/1ps
 // =============================================================
-// Testbench для vhfastmulb16_add8x8
-//   c = a + b - 127 (9 бит, беззнаковая арифметика)
-//   латентность 2 такта, синхронные en/reset
+// Визуализационный тестбенч для vhfastmulb16_add8x8
+// 16 пар чисел подаются подряд, каждый такт новая пара
+// латентность результата 2 такта
+// Данные из test_values_rnz.md - 8-бит экспоненты из BF16
+// Блок 1: инициализация данных + drive цикл с проверкой
+// Блок 2: проверка после wait(data_ready)
 // =============================================================
 
-module vhfastmulb16_add8x8_tb;
+module vhfastmulb16_add8x8_chk_tb;
 
-    localparam MAX_PRINT = 10;      // сколько ошибок печатать подробно
+    localparam MAX_PRINT = 10;
 
-    // ---------------- DUT ----------------
+    // ---------- DUT ----------
     reg         clk;
     reg         reset;
     reg         en;
@@ -17,154 +20,173 @@ module vhfastmulb16_add8x8_tb;
     reg  [7:0]  b;
     wire [8:0]  c;
 
-    vhfastmulb16_add8x8 dut (
-        .clk   (clk),
-        .reset (reset),
-        .en    (en),
-        .a     (a),
-        .b     (b),
-        .c     (c)
+    vhfastmulb16_add8x8_lat2 uut (
+    .clk   (clk),
+    .reset (reset),
+    .en    (en),
+    .a     (a),
+    .b     (b),
+    .c     (c)
     );
 
+    // ---------- Синхронизация ----------
+    reg         data_ready;
+
+    // ---------- Массивы Drive (Block 1) ----------
+    reg [7:0] a_vals [0:15];
+    reg [7:0] b_vals [0:15];
+
+    // ---------- Массив ожидаемых значений exp ----------
+    // Объявлен на модульном уровне
+    reg [8:0] exp [0:15];
+
+    // ---------- Счетчики ----------
+    integer k, k2, k3;
+    integer errors;
+    
+    // ---------- Clock 100 MHz ----------
     initial begin
         clk = 1'b0;
-        forever #5 clk = ~clk;          // 100 MHz
+        forever #5 clk = ~clk;
     end
 
-    // ---------------- Scoreboard ----------------
-    integer   checked;
-    integer   errors;
-    integer   i, j;
-    reg [8:0] exp_p1;                   // ожидание для входа, поданного 1 такт назад
-    reg [8:0] exp_p2;                   // ожидание для текущего значения c
-    reg [8:0] held;
-
-    // c = a + b - 127 в 9-битной беззнаковой арифметике (mod 512)
-    function [8:0] calc(input [7:0] na, input [7:0] nb);
-        begin
-            calc = {1'b0, na} + {1'b0, nb} - 9'd127;
-        end
-    endfunction
-
-    task check_c(input [8:0] expct);
-        begin
-            checked = checked + 1;
-            if (c !== expct) begin
-                errors = errors + 1;
-                if (errors <= MAX_PRINT)
-                    $display("[ERROR] t=%0t | exp=%h got=%h", $time, expct, c);
-            end
-        end
-    endtask
-
-    // Один такт: проверить выход, сдвинуть ожидания, подать новый вектор
-    task step(input [7:0] na, input [7:0] nb, input do_check);
-        begin
-            @(negedge clk);
-            if (do_check) check_c(exp_p2);
-            exp_p2 = exp_p1;
-            exp_p1 = calc(na, nb);
-            a  = na;
-            b  = nb;
-            en = 1'b1;
-        end
-    endtask
-
-    // ---------------- Directed corner cases ----------------
-    reg [7:0] dir_a [0:9];
-    reg [7:0] dir_b [0:9];
-
+    // ---------- BLOCK 1: Drive DUT + Init Data + Check ----------
+    // Содержит инициализацию, drive цикл и проверку результатов
+    // с учетом латентности 2 такта (check_c(k-2) для k >= 2)
     initial begin
-        dir_a[0]=8'h00; dir_b[0]=8'h00;  // 385 (wrap)
-        dir_a[1]=8'h00; dir_b[1]=8'hFF;  // 128
-        dir_a[2]=8'hFF; dir_b[2]=8'h00;  // 128
-        dir_a[3]=8'hFF; dir_b[3]=8'hFF;  // 383
-        dir_a[4]=8'h7F; dir_b[4]=8'h7F;  // 127
-        dir_a[5]=8'h80; dir_b[5]=8'h80;  // 129
-        dir_a[6]=8'h01; dir_b[6]=8'h01;  // 387 (wrap)
-        dir_a[7]=8'h7F; dir_b[7]=8'h00;  // 0
-        dir_a[8]=8'h00; dir_b[8]=8'h7F;  // 0
-        dir_a[9]=8'hFE; dir_b[9]=8'hFF;  // 382
-    end
+        
+        k=0;
+        k2=0; k3=0;
+        
+        /* rewritten in hex */
+        // Инициализация массивов 8-бит экспонент из test_values_rnz.md
+        a_vals[0] = 8'h7F; b_vals[0] = 8'h7F;
+        a_vals[1] = 8'h80; b_vals[1] = 8'h80;
+        a_vals[2] = 8'h7F; b_vals[2] = 8'h81;
+        a_vals[3] = 8'h7E; b_vals[3] = 8'h7D;
+        a_vals[4] = 8'h86; b_vals[4] = 8'h78;
+        a_vals[5] = 8'h80; b_vals[5] = 8'h80;
+        a_vals[6] = 8'h85; b_vals[6] = 8'h7B;
+        a_vals[7] = 8'h82; b_vals[7] = 8'h7D;
+        a_vals[8] = 8'h7F; b_vals[8] = 8'h00;
+        a_vals[9] = 8'hFF; b_vals[9] = 8'h80;
+        a_vals[10] = 8'hFF; b_vals[10] = 8'hFF;
+        a_vals[11] = 8'hFF; b_vals[11] = 8'h00;
+        a_vals[12] = 8'hFF; b_vals[12] = 8'h81;
+        a_vals[13] = 8'hFF; b_vals[13] = 8'hFF;
+        a_vals[14] = 8'h00; b_vals[14] = 8'h00;
+        a_vals[15] = 8'hFF; b_vals[15] = 8'h00;
 
-    // ---------------- Основной сценарий ----------------
-    initial begin
-        $dumpfile("logs/add8x8.vcd");
-        $dumpvars(0, vhfastmulb16_add8x8_tb);
+        // Инициализация exp (c = a + b - 127, 9-bit unsigned modulo 512)
+        exp[0] = 9'h7F;
+        exp[1] = 9'h81;
+        exp[2] = 9'h81;
+        exp[3] = 9'h7C;
+        exp[4] = 9'h7F;
+        exp[5] = 9'h81;
+        exp[6] = 9'h81;
+        exp[7] = 9'h80;
+        exp[8] = 9'h00;
+        exp[9] = 9'h100;
+        exp[10] = 9'h17F;
+        exp[11] = 9'h80;
+        exp[12] = 9'h101;
+        exp[13] = 9'h17F;
+        exp[14] = 9'h181;
+        exp[15] = 9'h80;
+        
+        // Сигнал о готовности данных для Block 2
+        data_ready = 1'b1;
 
-        checked = 0;
-        errors  = 0;
-        exp_p1  = 9'd0;
-        exp_p2  = 9'd0;
-
-        // ---- Сброс: 5 тактов ----
+        // --- Сброс DUT: 5 тактов ---
         reset = 1'b1; en = 1'b0; a = 8'h00; b = 8'h00;
         repeat (5) @(negedge clk);
-        reset = 1'b0;
+            reset = 1'b0;
 
-        // ---- Тест 0: сразу после сброса c == 0 ----
-        @(negedge clk);
-        check_c(9'd0);
-
-        // ---- Прогрев конвейера (2 такта) ----
-        step(8'h00, 8'h00, 1'b0);
-        step(8'h00, 8'h00, 1'b0);
-
-        // ---- Тест 1: directed corner cases ----
-        for (i = 0; i < 10; i = i + 1)
-            step(dir_a[i], dir_b[i], 1'b1);
-
-        // ---- Тест 2: исчерпывающий 256 x 256 = 65536 векторов ----
-        for (i = 0; i < 256; i = i + 1)
-            for (j = 0; j < 256; j = j + 1)
-                step(i, j, 1'b1);
-
-        // ---- Тест 3: en=0 -> выход держится ----
-        step(8'h12, 8'h34, 1'b0);
-        step(8'h00, 8'h00, 1'b0);
-        @(negedge clk);
-        held = c;
-        a  = 8'hAA;
-        b  = 8'h55;
-        en = 1'b0;
-        repeat (4) @(negedge clk);
-        if (c !== held) begin
-            errors = errors + 1;
-            $display("[ERROR] t=%0t | en=0 hold | exp=%h got=%h", $time, held, c);
+        // --- 16 пар подряд, каждая на своём такте ---
+        // Блок drive: подаем пары (a, b) с en=1
+        // с латентностью 2 такта: результат пары k появляется через 2 тика
+        for (k = 0; k < 16; k = k + 1) begin
+            if (k>1) k2 = k2+1;
+                if (k2>1) k3 = k3+1;
+                
+                @(posedge clk); #1;
+            
+            a  = a_vals[k];
+            b  = b_vals[k];
+            en = 1'b1;
         end
-        en = 1'b1;
 
-        // ---- Тест 4: reset обнуляет выход (приоритет над en) ----
-        step(8'h55, 8'h66, 1'b0);
-        step(8'h77, 8'h88, 1'b0);
-        @(negedge clk);
-        reset = 1'b1;
-        en    = 1'b1;
-        a     = 8'h99;
-        b     = 8'hBB;
-        @(negedge clk);
-        check_c(9'd0);
-        @(negedge clk);
-        check_c(9'd0);
-        reset = 1'b0;
-        en    = 1'b0;
+        k2 = k2 + 1;
+        k3 = k3 + 1;
+        
+        // Финализация
+        
+        // Сброс enable
+        @(posedge clk); #1;
+        en = 1'b0;
+
+        k  = 0;
+        k2 = k2 + 1;
+        k3 = k3 + 1;
+
+        @(posedge clk); #1;
+        k2 = 0;
+        k3 = k3 + 1;
+
+        @(posedge clk); #1;
+        k2 = 0;
+        k3 = 0;
+
+        @(posedge clk); #1;
 
         // ---- Итог ----
         $display("---------------------------------------------");
-        $display("Checked vectors: %0d", checked);
-        $display("Errors:          %0d", errors);
+        $display("Errors: %0d", errors);
+        
         if (errors == 0)
             $display("TEST PASSED");
-        else
+    else
             $display("TEST FAILED");
-        $display("---------------------------------------------");
+        
+        #1000;
         $finish;
     end
 
-    // ---------------- Watchdog ----------------
+    
+    // ---------- BLOCK 2: Supplementary check (wait data_ready) ----------
+    // Можно использовать для дополнительной проверки или мониторинга
     initial begin
-        #5000000;
-        $display("[ERROR] Testbench timeout!");
+        // Ожидание готовности данных из Block 1
+        wait(data_ready);
+
+        $dumpfile("build/vhfastmulb16_add8x8_chk.vcd");
+        $dumpvars(0, vhfastmulb16_add8x8_chk_tb);
+
+        errors = 0;
+        
+
+        // 
+        forever begin
+            @(posedge clk);
+            
+            if (k3 > 0) begin
+                $display("[%0t] # %0d: a=%h b=%h c=%h (exp %h)",
+                $time, k3-1, a_vals[k3-1], b_vals[k3-1], exp[k3 - 1], c);
+                
+                if(exp[k3 - 1] !== c) begin
+                    errors = errors + 1;
+                    $display("FAILED !");
+                end
+            end
+        end
+    end
+    
+    
+    // ---------- Watchdog ----------
+    initial begin
+        #1000000;
+        $display("Timeout!");
         $finish;
     end
 

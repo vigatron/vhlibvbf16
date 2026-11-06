@@ -1,0 +1,24 @@
+[*]
+[*] GTKWave Analyzer save file
+[*]
+[dumpfile] "../build/vhfastmulb16_add8x8.vcd"
+[timestart] 0
+[size] 1280 800
+[pos] -1 -1
+[treeopen] vhfastmulb16_add8x8_lat2_tb.
+[sst_width] 290
+[signals_width] 290
+[sst_expanded] 1
+[sst_vpaned_height] 300
+@28
+vhfastmulb16_add8x8_lat2_tb.clk
+vhfastmulb16_add8x8_lat2_tb.reset
+vhfastmulb16_add8x8_lat2_tb.en
+@23
+vhfastmulb16_add8x8_lat2_tb.a[7:0]
+vhfastmulb16_add8x8_lat2_tb.b[7:0]
+@22
+vhfastmulb16_add8x8_lat2_tb.uut.c_add[8:0]
+vhfastmulb16_add8x8_lat2_tb.c[8:0]
+[pattern_trace] 1
+[pattern_trace] 0

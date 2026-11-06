@@ -41,7 +41,7 @@ module vhfastmulb16_mul4x4_tb;
 
     // Дамп waveforms
     initial begin
-        $dumpfile("tests/mul4x4.vcd");
+        $dumpfile("build/vhfastmulb16_mul4x4.vcd");
         $dumpvars(0, vhfastmulb16_mul4x4_tb);
     end
 

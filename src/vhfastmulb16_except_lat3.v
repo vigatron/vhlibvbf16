@@ -1,8 +1,16 @@
-// vhfastmulb16_except_lat3.v
+// ----------------------------------------------
+// vhlibvbf16 - Compact pipelined BFloat16 multiplier.
+// RTZ/RNE, no DSP required.
+// Author: Viktor Glebov / V01G04A81
+// License: MIT
+// https://github.com/vigatron/vhlibvbf16
+// File: vhfastmulb16_except_lat3.v
+// Module: vhfastmulb16_except_lat3
 // iverilog -g2012 -o build/vhfastmulb16_except_lat3.vpp src/vhfastmulb16_except_lat3.v src/vhfastmulb16_flags_lat2.v
-// en=0: HOLD (удерживает последнее значение)
-// reset: синхронный, приоритет над en
+// en=0: HOLD (keep last value)
+// reset: synchronous, priority over en
 // NaN payload preservation per IEEE 754
+// ----------------------------------------------
 
 module vhfastmulb16_except_lat3 (
     input wire clk,

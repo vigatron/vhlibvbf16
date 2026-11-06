@@ -1,0 +1,37 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[*]
+[dumpfile] "../build/vhfastmulb16_flags_lat2_chk.vcd"
+[savefile] "vhfastmulb16_flags_lat2_chk_tb.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] 1893 -86
+*-15.600000 75000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_flags_lat2_chk_tb.
+[sst_width] 278
+[signals_width] 154
+[sst_expanded] 1
+[sst_vpaned_height] 219
+@28
+vhfastmulb16_flags_lat2_chk_tb.clk
+vhfastmulb16_flags_lat2_chk_tb.reset
+vhfastmulb16_flags_lat2_chk_tb.en
+@22
+vhfastmulb16_flags_lat2_chk_tb.inexp[7:0]
+vhfastmulb16_flags_lat2_chk_tb.infrc[7:0]
+@420
+vhfastmulb16_flags_lat2_chk_tb.k
+@28
+[color] 5
+vhfastmulb16_flags_lat2_chk_tb.flag_exp_z
+[color] 5
+vhfastmulb16_flags_lat2_chk_tb.flag_exp_s
+[color] 5
+vhfastmulb16_flags_lat2_chk_tb.flag_exp_f
+[color] 6
+vhfastmulb16_flags_lat2_chk_tb.flag_frc_nz
+[color] 6
+vhfastmulb16_flags_lat2_chk_tb.flag_frc_z
+[pattern_trace] 1
+[pattern_trace] 0

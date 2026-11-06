@@ -3,7 +3,7 @@
 [*]
 [*]
 [dumpfile] "../build/vhfastmulb16_flags_lat1.vcd"
-[savefile] "/home/robotron/RBProjects/vhlibv/vhfastmul_bf16_f16_l3/visual/vhfastmulb16_flags_lat1_tb.gtkw"
+[savefile] "vhfastmulb16_flags_lat1_tb.gtkw"
 [timestart] 0
 [size] 1360 721
 [pos] 1893 -86

@@ -75,7 +75,7 @@ module vhfastmulb16_rne_lat3_tb;
     // Тесты
     initial begin
 
-        $dumpfile("build/vhfastmulb16_lat3.vcd");
+        $dumpfile("build/vhfastmulb16_rne_lat3.vcd");
         $dumpvars(0, vhfastmulb16_rne_lat3_tb);
         
         $display("=== vhfastmulb16 Visual Testbench ===");
