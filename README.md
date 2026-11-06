@@ -141,16 +141,17 @@ The reference test vector table is kept in [docs/test_values_details.md](docs/te
 
 ## FPGA Resource Statistics
 
-The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
+The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target.
+**All values below are estimates (not from synthesis reports); `logs/` and `build/` are empty.**
 
 | Parameter | Value |
 |----------|-------|
 | **Device** | XC6SLX9 (Spartan-6 LX9) |
 | **Package** | CSG144 / CPG144 |
 | **Logic Cells** | 9,152 |
-| **Slices** | 1,448 |
-| **LUTs (4-input)** | **5,792** (1,448 × 4) |
-| **Flip-Flops** | 11,584 |
+| **Slices** | 1,430 |
+| **LUTs (6-input / LUT6)** | **5,720** (1,430 × 4) |
+| **Flip-Flops** | 11,440 |
 | **Block RAM (18Kb)** | 32 (576 Kb total) |
 | **DSP48A1** | 16 |
 | **Max Clock (typical)** | ~200-300 MHz for simple paths |
@@ -159,7 +160,7 @@ The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
 
 #### `vhfastmulb16_rtz_lat3` (RTZ — Round Toward Zero)
 
-| Resource | Estimate | % of available |
+| Resource | Estimate | % of available (5,720 LUT6) |
 |----------|----------|----------------|
 | **LUTs** | ~1,850 | **32%** |
 | FF (registers) | ~1,200 | 10% |
@@ -169,9 +170,9 @@ The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
 
 #### `vhfastmulb16_rne_lat3` (RNE — Round to Nearest Even)
 
-| Resource | Estimate | % of available |
+| Resource | Estimate | % of available (5,720 LUT6) |
 |----------|----------|----------------|
-| **LUTs** | ~2,150 | **37%** |
+| **LUTs** | ~2,150 | **38%** |
 | FF (registers) | ~1,300 | 11% |
 | DSP48A1 | 0 | 0% |
 | Block RAM | 0 | 0% |
@@ -187,7 +188,7 @@ The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
 | Latency | 3 cycles | 3 cycles | 0 |
 | Accuracy | Truncation | IEEE 754 RNE | — |
 
-Both modules comfortably fit into the **XC6SLX9** with a reserve of ~60-65% of LUTs
+Both modules comfortably fit into the **XC6SLX9** with a reserve of **~62–68% of LUTs**
 for the rest of the system logic.
 
 ## Author
