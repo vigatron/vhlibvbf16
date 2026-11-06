@@ -1,6 +1,7 @@
 # vhlibvbf16
 
-![Verilog](https://img.shields.io/badge/Verilog-2008-1364FF)
+![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
+![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Date](https://img.shields.io/badge/date-2026--11--06-informational)
 ![Status](https://img.shields.io/badge/status-initial_version-orange)
@@ -15,6 +16,10 @@ Rev: 0.0.1
 
 `vhfastmulb16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
+
+The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
+constructs in `src/`); the testbenches in `tests/` are **SystemVerilog**
+(compiled with `iverilog -g2012`, IEEE 1800-2012).
 The design supports two rounding modes:
 
 - **RTZ** (Round Toward Zero) — truncation, simple discard of the lower bits;
@@ -22,6 +27,21 @@ The design supports two rounding modes:
 
 The implementation does not require any DSP blocks: the multiplication is built
 from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA).
+
+## Arithmetic Specification
+
+| Feature | Behavior |
+|---------|----------|
+| **Format** | BF16: `s[15] \| exp[14:7] \| frac[6:0]` (8-bit exponent, bias 127; 7-bit mantissa) |
+| **Rounding** | RTZ (truncation) in `vhfastmulb16_rtz_lat3`; RNE (IEEE 754 round-to-nearest-even) in `vhfastmulb16_rne_lat3` |
+| **Subnormal inputs** | **Flush To Zero (FTZ)**: operands with `exp=0` are flushed to zero (both ±0 and subnormals) before the pipeline |
+| **Subnormal results** | Not generated: exp underflow (≤0 after normalization) flushes the result to ±0 |
+| **Zero** | Any operand with `exp=0` → result ±0 (canonical `s\|8'h00\|7'h00`) |
+| **Infinity** | Any operand with `exp=255, frac=0` → result ±Inf (`s\|8'hFF\|7'h00`); Inf × 0 = NaN |
+| **NaN** | Any operand with `exp=255, frac≠0` → quiet NaN, payload preservation per IEEE 754 (priority A > B): `0\|8'hFF\|1'b1\|payload[5:0]` |
+| **Exception priority** | NaN > Inf > Zero > normal multiply; overflow saturates to ±Inf, underflow flushes to ±0 |
+| **Sign** | `sign_a XOR sign_b` (except canonical NaN result, which carries the computed sign) |
+| **Pipeline** | 3 clock cycles latency, full-drain behavior: after `en=0` the pipeline finishes accepted data for 2 more cycles, then holds the last result (HOLD, no zero-fill) |
 
 ## Development Status
 
@@ -78,15 +98,23 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | Testbench | Module under test |
 |-----------|-------------------|
 | `tests/vhfastmulb16_mul4x4_tb.v` | `vhfastmulb16_mul4x4` |
+| `tests/vhfastmulb16_mul4x4_chk_tb.v` | `vhfastmulb16_mul4x4` (check/debug) |
 | `tests/vhfastmulb16_mul8x8_tb.v` | `vhfastmulb16_mul8x8` |
+| `tests/vhfastmulb16_mul8x8_chk_tb.v` | `vhfastmulb16_mul8x8` (check/debug) |
 | `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
+| `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8` (branch variant) |
 | `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
 | `tests/vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` |
 | `tests/vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` |
+| `tests/vhfastmulb16_flags_lat2_chk_tb.v` | `vhfastmulb16_flags_lat2` (check/debug) |
 | `tests/vhfastmulb16_except_lat2_tb.v` | `vhfastmulb16_except_lat2` |
 | `tests/vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` |
 | `tests/vhfastmulb16_rtz_lat3_tb.v` | `vhfastmulb16_rtz_lat3` |
 | `tests/vhfastmulb16_rne_lat3_tb.v` | `vhfastmulb16_rne_lat3` |
+
+> Run scripts exist only for the main testbenches (see `scripts/run_test_*.sh`);
+> the `*_chk_tb.v` and `*_reva_tb.v` files are auxiliary check/debug benches
+> without dedicated run scripts.
 
 Run the simulation with:
 
@@ -141,16 +169,18 @@ The reference test vector table is kept in [docs/test_values_details.md](docs/te
 
 ## FPGA Resource Statistics
 
-The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
+The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target.
+**All values below are estimates based on manual RTL counting (LUT6 rules: n-bit carry-chain adder = n LUTs, 2:1 mux = n LUTs/bit), not from synthesis reports.**
+Estimated accuracy is ±20–25%; `logs/` and `build/` are empty (no synthesis has been run yet).
 
 | Parameter | Value |
 |----------|-------|
 | **Device** | XC6SLX9 (Spartan-6 LX9) |
 | **Package** | CSG144 / CPG144 |
 | **Logic Cells** | 9,152 |
-| **Slices** | 1,448 |
-| **LUTs (4-input)** | **5,792** (1,448 × 4) |
-| **Flip-Flops** | 11,584 |
+| **Slices** | 1,430 |
+| **LUTs (6-input / LUT6)** | **5,720** (1,430 × 4) |
+| **Flip-Flops** | 11,440 |
 | **Block RAM (18Kb)** | 32 (576 Kb total) |
 | **DSP48A1** | 16 |
 | **Max Clock (typical)** | ~200-300 MHz for simple paths |
@@ -159,36 +189,43 @@ The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target:
 
 #### `vhfastmulb16_rtz_lat3` (RTZ — Round Toward Zero)
 
-| Resource | Estimate | % of available |
+| Resource | Estimate | % of available (5,720 LUT6) |
 |----------|----------|----------------|
-| **LUTs** | ~1,850 | **32%** |
-| FF (registers) | ~1,200 | 10% |
+| **LUTs** | **~400** (350–450) | **~7%** |
+| FF (registers) | **~150** | **~1.3%** |
 | DSP48A1 | 0 | 0% |
 | Block RAM | 0 | 0% |
 | **Max frequency** | ~180 MHz | — |
 
+Breakdown: `mul8x8` ~210 LUT / 48 FF · `add8x8_lat2` ~18 / 19 · `sign` ~1 / 3 ·
+`except_lat2` (incl. 2× `flags_lat1`) ~54 / 63 · top-level glue ~120 / 18.
+
 #### `vhfastmulb16_rne_lat3` (RNE — Round to Nearest Even)
 
-| Resource | Estimate | % of available |
+| Resource | Estimate | % of available (5,720 LUT6) |
 |----------|----------|----------------|
-| **LUTs** | ~2,150 | **37%** |
-| FF (registers) | ~1,300 | 11% |
+| **LUTs** | **~430** (380–480) | **~7.5%** |
+| FF (registers) | **~150** | **~1.3%** |
 | DSP48A1 | 0 | 0% |
 | Block RAM | 0 | 0% |
 | **Max frequency** | ~160 MHz | — |
+
+RNE adds ~+30 LUTs over RTZ: `man_shifted`/G/R/S extraction (+13), mantissa
+increment on `round_up` (+12), double exponent increment for the round carry (+9).
+Rounding is purely combinational (`always @(*)`) — no extra flip-flops.
 
 ### RTZ vs RNE Comparison
 
 | Metric | RTZ | RNE | Overhead |
 |---------|-----|-----|----------|
-| LUTs | 1,850 | 2,150 | **+16%** |
-| FF | 1,200 | 1,300 | **+8%** |
+| LUTs | ~400 | ~430 | **+8%** |
+| FF | ~150 | ~150 | 0 |
 | Max Freq | ~180 MHz | ~160 MHz | -11% |
 | Latency | 3 cycles | 3 cycles | 0 |
 | Accuracy | Truncation | IEEE 754 RNE | — |
 
-Both modules comfortably fit into the **XC6SLX9** with a reserve of ~60-65% of LUTs
-for the rest of the system logic.
+Both modules occupy only **~7–8% of LUT6** and **~1.3% of FF** of the **XC6SLX9**,
+leaving a reserve of **~92% of LUTs** for the rest of the system logic.
 
 ## Author
 
