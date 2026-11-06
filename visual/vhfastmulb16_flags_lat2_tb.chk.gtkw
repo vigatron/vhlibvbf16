@@ -1,0 +1,37 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[*]
+[dumpfile] "../build/vhfastmulb16_flags_lat2_chk.vcd"
+[savefile] "/home/robotron/RBProjects/vhlibv/vhfastmul_bf16_f16_l3/visual/vhfastmulb16_flags_lat2_tb.chk.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] 1893 -86
+*-15.600000 75000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_flags_lat2_tb_chk.
+[sst_width] 278
+[signals_width] 154
+[sst_expanded] 1
+[sst_vpaned_height] 219
+@28
+vhfastmulb16_flags_lat2_tb_chk.clk
+vhfastmulb16_flags_lat2_tb_chk.reset
+vhfastmulb16_flags_lat2_tb_chk.en
+@22
+vhfastmulb16_flags_lat2_tb_chk.inexp[7:0]
+vhfastmulb16_flags_lat2_tb_chk.infrc[7:0]
+@420
+vhfastmulb16_flags_lat2_tb_chk.k
+@28
+[color] 5
+vhfastmulb16_flags_lat2_tb_chk.flag_exp_z
+[color] 5
+vhfastmulb16_flags_lat2_tb_chk.flag_exp_s
+[color] 5
+vhfastmulb16_flags_lat2_tb_chk.flag_exp_f
+[color] 6
+vhfastmulb16_flags_lat2_tb_chk.flag_frc_nz
+[color] 6
+vhfastmulb16_flags_lat2_tb_chk.flag_frc_z
+[pattern_trace] 1
+[pattern_trace] 0

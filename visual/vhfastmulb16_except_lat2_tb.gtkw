@@ -1,0 +1,51 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[*]
+[dumpfile] "../build/vhfastmulb16_except_lat2.vcd"
+[savefile] "/home/robotron/RBProjects/vhlibv/vhfastmul_bf16_f16_l3/visual/vhfastmulb16_except_lat2_tb.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] -1 -1
+*-15.600000 75000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_except_lat2_tb.
+[sst_width] 278
+[signals_width] 154
+[sst_expanded] 1
+[sst_vpaned_height] 219
+@28
+vhfastmulb16_except_lat2_tb.clk
+vhfastmulb16_except_lat2_tb.reset
+vhfastmulb16_except_lat2_tb.en
+@22
+vhfastmulb16_except_lat2_tb.a[15:0]
+vhfastmulb16_except_lat2_tb.b[15:0]
+vhfastmulb16_except_lat2_tb.c[15:0]
+@420
+vhfastmulb16_except_lat2_tb.k
+@28
+[color] 5
+vhfastmulb16_except_lat2_tb.exval
+[color] 5
+vhfastmulb16_except_lat2_tb.ex_z
+[color] 5
+vhfastmulb16_except_lat2_tb.ex_inf
+[color] 6
+vhfastmulb16_except_lat2_tb.ex_nan
+[treeopen] vhfastmulb16_except_lat2_tb.uut.
+@28
+vhfastmulb16_except_lat2_tb.uut.a_is_nan
+vhfastmulb16_except_lat2_tb.uut.a_is_inf
+vhfastmulb16_except_lat2_tb.uut.a_is_zero
+vhfastmulb16_except_lat2_tb.uut.b_is_nan
+vhfastmulb16_except_lat2_tb.uut.b_is_inf
+vhfastmulb16_except_lat2_tb.uut.b_is_zero
+@28
+[color] 3
+vhfastmulb16_except_lat2_tb.uut.res_nan
+[color] 3
+vhfastmulb16_except_lat2_tb.uut.res_inf
+[color] 3
+vhfastmulb16_except_lat2_tb.uut.res_zero
+[pattern_trace] 1
+[pattern_trace] 0

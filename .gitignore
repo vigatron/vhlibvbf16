@@ -1,0 +1,17 @@
+logs
+build
+
+*.vcd
+*.vcf
+*.vvp
+*.fpgaproj
+
+examples
+
+tmp
+
+# AI rules & docs
+rules
+
+AGENTS.md
+

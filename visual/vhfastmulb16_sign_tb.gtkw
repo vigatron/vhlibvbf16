@@ -1,0 +1,31 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[*]
+[dumpfile] "../build/vhfastmulb16_sign.vcd"
+[savefile] "/home/robotron/RBProjects/vhlibv/vhfastmul_bf16_f16_l3/visual/vhfastmulb16_sign_tb.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] 1893 -86
+*-15.600000 75000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_sign_tb.
+[sst_width] 278
+[signals_width] 154
+[sst_expanded] 1
+[sst_vpaned_height] 219
+@28
+vhfastmulb16_sign_tb.clk
+vhfastmulb16_sign_tb.reset
+vhfastmulb16_sign_tb.en
+@28
+vhfastmulb16_sign_tb.signa
+vhfastmulb16_sign_tb.signb
+@28
+[color] 5
+vhfastmulb16_sign_tb.signc_lat1
+[color] 6
+vhfastmulb16_sign_tb.signc_lat2
+[color] 7
+vhfastmulb16_sign_tb.signc_lat3
+[pattern_trace] 1
+[pattern_trace] 0
