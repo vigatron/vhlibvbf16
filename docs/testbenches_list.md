@@ -10,11 +10,11 @@
 | 2 | `vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` | Exhaustive (все 16×16), LAT=2 | 256 |
 | 3 | `vhfastmulb16_mul8x8_tb.v` | `vhfastmulb16_mul8x8` | Exhaustive (все 256×256) | 65 536 |
 | 4 | `vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` | Exhaustive (все 256×256), LAT=3 | 65 536 |
-| 5 | `vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8` | Directed | — |
-| 6 | `vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8` | Directed (branch variant) | — |
+| 5 | `vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` | Directed / visual (16 пар) | 16 |
+| 6 | `vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` | Exhaustive (все 256×256) | 65 536 |
 | 7 | `vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` | Directed + pipeline | 16 |
-| 8 | `vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` | Directed (256 значений exp) | 256 |
-| 9 | `vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` | Directed + pipeline (LAT=2) | — |
+| 8 | `vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` | Directed + pipeline | 12 |
+| 9 | `vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` | Directed + pipeline (LAT=2) | 256 |
 | 10 | `vhfastmulb16_except_lat2_tb.v` | `vhfastmulb16_except_lat2` | Directed + pipeline (LAT=2) | 24 |
 | 11 | `vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` | Directed + pipeline (LAT=3) | 24 |
 | 12 | `vhfastmulb16_rtz_lat3_tb.v` | `vhfastmulb16_rtz_lat3` | Visual (16 векторов из таблицы) | 16 |

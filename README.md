@@ -57,11 +57,10 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 
 ## Development Status
 
-- This is an **Initial version** of the project.
-- The simplified implementation optimized for speed (without rounding and extra logic) — `vhfastmulb16_fst_lat3.v` — is currently **in development**. The design bypasses the rounding stage and omits auxiliary control/exception logic, shortening the critical path at the cost of numerical precision.
-- The pipelined BF16 multiplication modules with Latency 2 and 4 are also **in development** as intermediate stages of the design flow.
-- The Latency 3 implementation (`vhfastmulb16_rtz_lat3.v` / `vhfastmulb16_rne_lat3.v`) is available now! It is the current top-level synthesizable RTL with the full multiply datapath and the RTZ / RNE rounding stages.
-- The Latency 4 F32-output implementation (`vhfastmulb16_f32_lat4.v`) is available now: exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
+- The BF16-output top-level modules `vhfastmulb16_rtz_lat3` and `vhfastmulb16_rne_lat3` are available (latency 3).
+- The F32-output top-level module `vhfastmulb16_f32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
+- The latency-2/3 building blocks are available: `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul8x8`, `vhfastmulb16_mul8x8_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
+- `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
 - The modules are implemented in pure logic without the multiplication operator `*`; replacing the carry-propagate adder with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
 
 ## Source Files
@@ -130,7 +129,7 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` |
 | `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` | `vhfastmulb16_mul8x8_lat3` (check/debug) |
 | `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
-| `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8` (branch variant) |
+| `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
 | `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
 | `tests/vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` |
 | `tests/vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` |
@@ -142,9 +141,18 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_f32_lat4_tb.v` | `vhfastmulb16_f32_lat4` (directed, LAT=4) |
 | `tests/vhfastmulb16_f32_lat4_rand_tb.v` | `vhfastmulb16_f32_lat4` (random regression, LAT=4) |
 
-> Run scripts exist only for the main testbenches (see `scripts/run_test_*.sh`);
-> the `*_chk_tb.v` and `*_reva_tb.v` files are auxiliary check/debug benches
-> without dedicated run scripts.
+Most testbenches have a dedicated run script. In particular, several
+`*_chk_tb.v` benches are also runnable directly:
+
+| Script | Testbench |
+|--------|-----------|
+| `scripts/run_test_add8x8_lat2.sh` | `tests/vhfastmulb16_add8x8_tb.v` |
+| `scripts/run_test_flags_lat2.sh` | `tests/vhfastmulb16_flags_lat2_chk_tb.v` |
+| `scripts/run_test_mul4x4_lat2.sh` | `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` |
+| `scripts/run_test_mul8x8_lat3.sh` | `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` |
+| `scripts/run_test_mul8x8_chk.sh` | `tests/vhfastmulb16_mul8x8_chk_tb.v` |
+
+See `scripts/run_test_*.sh` for the complete mapping.
 
 Run the simulation with:
 
@@ -203,65 +211,15 @@ The reference test vector table is kept in [docs/test_values_details.md](docs/te
 | 15 | 0.0 * 0.0 = 0.0 | `16'h0000` | s:0, exp:0 (0x00), mant:0 (0x00) | `16'h0000` | s:0, exp:0 (0x00), mant:0 (0x00) | `16'h0000` | s:0, exp:0 (0x00), mant:0 (0x00) +0.0 | Zero multiplied by zero |
 | 16 | -∞ * -0.0 = NaN | `16'hFF80` | s:1, exp:255 (0xFF), mant:0 (0x00) | `16'h8000` | s:1, exp:0 (0x00), mant:0 (0x00) | `16'h7FC0` | s:0, exp:255 (0xFF), mant:64 (0x40) quiet NaN | -Inf * negative zero |
 
-## FPGA Resource Statistics
+## FPGA Resource Estimates
 
-The implementation was evaluated for the Xilinx XC6SLX9 (Spartan-6 LX9) target.
-**All values below are estimates based on manual RTL counting (LUT6 rules: n-bit carry-chain adder = n LUTs, 2:1 mux = n LUTs/bit), not from synthesis reports.**
-Estimated accuracy is ±20–25%; `logs/` and `build/` are empty (no synthesis has been run yet).
+The implementation targets the Xilinx XC6SLX9 (Spartan-6 LX9).
+Detailed manual RTL estimates are maintained in:
 
-| Parameter | Value |
-|----------|-------|
-| **Device** | XC6SLX9 (Spartan-6 LX9) |
-| **Package** | CSG144 / CPG144 |
-| **Logic Cells** | 9,152 |
-| **Slices** | 1,430 |
-| **LUTs (6-input / LUT6)** | **5,720** (1,430 × 4) |
-| **Flip-Flops** | 11,440 |
-| **Block RAM (18Kb)** | 32 (576 Kb total) |
-| **DSP48A1** | 16 |
-| **Max Clock (typical)** | ~200-300 MHz for simple paths |
+- [`docs/statistic_top.md`](docs/statistic_top.md) — top-level modules (RTZ, RNE, F32);
+- [`docs/statistic_others.md`](docs/statistic_others.md) — submodules and bottom-up breakdown.
 
-### Top-Level Modules
-
-#### `vhfastmulb16_rtz_lat3` (RTZ — Round Toward Zero)
-
-| Resource | Estimate | % of available (5,720 LUT6) |
-|----------|----------|----------------|
-| **LUTs** | **~400** (350–450) | **~7%** |
-| FF (registers) | **~150** | **~1.3%** |
-| DSP48A1 | 0 | 0% |
-| Block RAM | 0 | 0% |
-| **Max frequency** | ~180 MHz | — |
-
-Breakdown: `mul8x8` ~210 LUT / 48 FF · `add8x8_lat2` ~18 / 19 · `sign` ~1 / 3 ·
-`except_lat2` (incl. 2× `flags_lat1`) ~54 / 63 · top-level glue ~120 / 18.
-
-#### `vhfastmulb16_rne_lat3` (RNE — Round to Nearest Even)
-
-| Resource | Estimate | % of available (5,720 LUT6) |
-|----------|----------|----------------|
-| **LUTs** | **~430** (380–480) | **~7.5%** |
-| FF (registers) | **~150** | **~1.3%** |
-| DSP48A1 | 0 | 0% |
-| Block RAM | 0 | 0% |
-| **Max frequency** | ~160 MHz | — |
-
-RNE adds ~+30 LUTs over RTZ: `man_shifted`/G/R/S extraction (+13), mantissa
-increment on `round_up` (+12), double exponent increment for the round carry (+9).
-Rounding is purely combinational (`always @(*)`) — no extra flip-flops.
-
-### RTZ vs RNE Comparison
-
-| Metric | RTZ | RNE | Overhead |
-|---------|-----|-----|----------|
-| LUTs | ~400 | ~430 | **+8%** |
-| FF | ~150 | ~150 | 0 |
-| Max Freq | ~180 MHz | ~160 MHz | -11% |
-| Latency | 3 cycles | 3 cycles | 0 |
-| Accuracy | Truncation | IEEE 754 RNE | — |
-
-Both modules occupy only **~7–8% of LUT6** and **~1.3% of FF** of the **XC6SLX9**,
-leaving a reserve of **~92% of LUTs** for the rest of the system logic.
+All values are manual estimates (±20–25%), not synthesis reports.
 
 ## Author
 
