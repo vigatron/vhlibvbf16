@@ -23,6 +23,7 @@ TEST_SCRIPTS=(
     "run_test_flags_lat1.sh"
     "run_test_flags_lat2.sh"
     "run_test_mul4x4.sh"
+    "run_test_mul4x4_lat2.sh"
     "run_test_mul8x8.sh"
     "run_test_sign.sh"
     "run_test_mul_fb16_rne_lat3.sh"

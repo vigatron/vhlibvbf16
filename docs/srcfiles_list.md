@@ -1,6 +1,6 @@
 # DUT Source Files List (src/*.v)
 
-Total modules: **11**
+Total modules: **12**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -15,6 +15,7 @@ Total modules: **11**
 | 9 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
 | 10 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
 | 11 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 12 | `vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
 
 ---
 
@@ -38,6 +39,7 @@ vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
 
 | Component | Latency 1 | Latency 2 | Latency 3 |
 |-----------|-----------|-----------|-----------|
+| Mul4x4 | `mul4x4` | `mul4x4_lat2` | - |
 | Flags | `flags_lat1` | `flags_lat2` | - |
 | Exceptions | - | `except_lat2` | `except_lat3` |
 | Top-level | - | - | `rtz_lat3`, `rne_lat3` |
@@ -46,7 +48,7 @@ vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 11 Verilog source files:
+The `src/` directory contains the following 12 Verilog source files:
 
 - `vhfastmulb16_add8x8_branch.v`
 - `vhfastmulb16_add8x8_lat2.v`
@@ -55,6 +57,7 @@ The `src/` directory contains the following 11 Verilog source files:
 - `vhfastmulb16_flags_lat1.v`
 - `vhfastmulb16_flags_lat2.v`
 - `vhfastmulb16_mul4x4.v`
+- `vhfastmulb16_mul4x4_lat2.v`
 - `vhfastmulb16_mul8x8.v`
 - `vhfastmulb16_rne_lat3.v`
 - `vhfastmulb16_rtz_lat3.v`

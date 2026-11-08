@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/*.v)
 
-Всего файлов: **14**
+Всего файлов: **16**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -15,16 +15,18 @@
 | 7 | `vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` | Directed + pipeline (LAT=3) | 24 |
 | 8 | `vhfastmulb16_lat3_tb.v` | `vhfastmulb16_rtz_lat3` | Visual (16 векторов из таблицы) | 16 |
 | 9 | `vhfastmulb16_rne_lat3_tb.v` | `vhfastmulb16_rne_lat3` | Visual (16 векторов из таблицы) | 16 |
+| 10 | `vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` | Exhaustive (все 16×16), LAT=2 | 256 |
 
 ## Визуализационные тестбенчи (`.chk.v` — для gtkwave)
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
-| 10 | `vhfastmulb16_mul4x4_tb.chk.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
-| 11 | `vhfastmulb16_mul8x8_chk_tb.v` | `mul8x8` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 12 | `vhfastmulb16_add8x8_chk_tb.v` | `add8x8_lat2` | 16 пар экспонент из test_values_rnz.md |
-| 13 | `vhfastmulb16_flags_lat2_tb.chk.v` | `flags_lat2` | 12 векторов, LAT=2 |
-| 14 | `vhfastmulb16_rne_lat3_tb.v` | `rne_lat3` | Уже в основном списке |
+| 11 | `vhfastmulb16_mul4x4_tb.chk.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
+| 12 | `vhfastmulb16_mul8x8_chk_tb.v` | `mul8x8` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 13 | `vhfastmulb16_add8x8_chk_tb.v` | `add8x8_lat2` | 16 пар экспонент из test_values_rnz.md |
+| 14 | `vhfastmulb16_flags_lat2_tb.chk.v` | `flags_lat2` | 12 векторов, LAT=2 |
+| 15 | `vhfastmulb16_rne_lat3_tb.v` | `rne_lat3` | Уже в основном списке |
+| 16 | `vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
 
 ---
 
@@ -33,6 +35,7 @@
 ```bash
 # Все тесты через скрипты в scripts/
 ./scripts/run_test_mul4x4.sh sim
+./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul8x8.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
