@@ -15,23 +15,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Список скриптов тестбенчей (без tb_lib.sh)
-TEST_SCRIPTS=(
-    "run_test_add8x8_lat2.sh"
-    "run_test_except_lat2.sh"
-    "run_test_except_lat3.sh"
-    "run_test_flags_lat1.sh"
-    "run_test_flags_lat2.sh"
-    "run_test_mul4x4.sh"
-    "run_test_mul4x4_lat2.sh"
-    "run_test_mul8x8.sh"
-    "run_test_mul8x8_lat3.sh"
-    "run_test_sign.sh"
-    "run_test_mul_fb16_rne_lat3.sh"
-    "run_test_mul_fb16_rtz_lat3.sh"
-    "run_test_f32_lat4.sh"
-    "run_test_f32_lat4_rand.sh"
-)
+# Список скриптов тестбенчей (без tb_lib.sh) - через GLOB
+shopt -s nullglob
+TEST_SCRIPTS=( "$SCRIPT_DIR"/run_test_*.sh )
 
 CMD="${1:-sim}"
 
@@ -51,8 +37,11 @@ case "$CMD" in
         echo "Очистка всех артефактов..."
         echo "============================================================"
         for script in "${TEST_SCRIPTS[@]}"; do
-            "$SCRIPT_DIR/$script" clean || true
+            "$script" clean || true
         done
+        # Заметаем осиротевшие артефакты от прежних имён тестов.
+        # build/ и logs/ в .gitignore; visual/ (gtkw) не трогаем - см. AGENTS.md.
+        rm -f "$ROOT"/build/* "$ROOT"/logs/*
         echo "============================================================"
         exit 0
         ;;
@@ -69,7 +58,7 @@ case "$CMD" in
 Список тестбенчей:
 EOF
         for s in "${TEST_SCRIPTS[@]}"; do
-            echo "  $s"
+            echo "  $(basename "$s")"
         done
         exit 0
         ;;
@@ -86,26 +75,26 @@ FAILED=0
 FAILED_LIST=()
 
 for script in "${TEST_SCRIPTS[@]}"; do
-    script_path="$SCRIPT_DIR/$script"
-    
-    if [ ! -f "$script_path" ]; then
-        echo "WARNING: $script не найден, пропуск" >&2
+    script_name="$(basename "$script")"
+
+    if [ ! -f "$script" ]; then
+        echo "WARNING: $script_name не найден, пропуск" >&2
         continue
     fi
-    
+
     echo ""
-    echo ">>> Запуск: $script $CMD"
+    echo ">>> Запуск: $script_name $CMD"
     echo "------------------------------------------------------------"
-    
-    if "$script_path" "$CMD"; then
+
+    if "$script" "$CMD"; then
         echo "------------------------------------------------------------"
-        echo "<<< $script: PASSED"
+        echo "<<< $script_name: PASSED"
         PASSED=$((PASSED + 1))
     else
         echo "------------------------------------------------------------"
-        echo "<<< $script: FAILED"
+        echo "<<< $script_name: FAILED"
         FAILED=$((FAILED + 1))
-        FAILED_LIST+=("$script")
+        FAILED_LIST+=("$script_name")
     fi
 done
 
