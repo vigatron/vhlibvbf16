@@ -38,5 +38,17 @@ vhfastmulb16_f32_lat4_tb.outc[31:0]
 vhfastmulb16_f32_lat4_tb.k
 @28
 vhfastmulb16_f32_lat4_tb.reset
+@28
+[treeopen] vhfastmulb16_f32_lat4_tb.uut.
+vhfastmulb16_f32_lat4_tb.uut.man_prod[15:0]
+vhfastmulb16_f32_lat4_tb.uut.exp_s3[8:0]
+vhfastmulb16_f32_lat4_tb.uut.flags_s3[2:0]
+vhfastmulb16_f32_lat4_tb.uut.sign_lat3
+vhfastmulb16_f32_lat4_tb.uut.k[3:0]
+vhfastmulb16_f32_lat4_tb.uut.exp_unb[9:0]
+vhfastmulb16_f32_lat4_tb.uut.c_next[31:0]
+vhfastmulb16_f32_lat4_tb.uut.en_pipe
+@420
+vhfastmulb16_f32_lat4_tb.uut.shift[7:0]
 [pattern_trace] 1
 [pattern_trace] 0

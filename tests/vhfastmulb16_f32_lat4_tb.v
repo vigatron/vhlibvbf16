@@ -5,20 +5,21 @@
 //   latency = LAT = 4 такта, проверка результата в потоке
 //   Тестовые векторы: docs/test_values_bf16_bf16_f32.json
 //   (BF16 x BF16 -> F32 exact product, 16 основных + 4 extended)
-//   Ожидаемый результат = колонка F32 (exact product)
+//   + 12 directed-векторов для F32 subnormal/RTZ и граничных случаев.
+//   Ожидаемый результат = колонка F32 (exact product).
 //   Проверка NaN/Inf/Zero: NaN in -> qNaN 0x7FC00000;
 //   Inf*0 -> qNaN; Inf*finite -> Inf (XOR sign);
-//   zero*finite -> zero (XOR sign)
-//   TODO: локальный параметр EXP_CHECK=0, т.к. DUT пока заглушка
-//   (outc всегда 0). После реализации DUT поставить EXP_CHECK=1.
+//   zero*finite -> zero (XOR sign).
+//   F32 subnormal результаты усекаются (RTZ, без округления).
+//   BF16 subnormal входы НЕ flush-ятся в ноль.
 // =============================================================
 
 module vhfastmulb16_f32_lat4_tb;
 
-    localparam integer N         = 20;  // число тестовых пар (16 + 4 extended)
+    localparam integer N         = 32;  // число тестовых пар (16 + 4 extended + 12 directed)
     localparam integer LAT       = 4;   // latency DUT, тактов
     localparam integer MAX_PRINT = 10;  // сколько ошибок печатать подробно
-    localparam integer EXP_CHECK = 0;   // 1 = проверять функцию (после реализации DUT)
+    localparam integer EXP_CHECK = 1;   // 1 = проверять функцию
 
     // ---------------- DUT ----------------
     reg         clk;
@@ -68,6 +69,19 @@ module vhfastmulb16_f32_lat4_tb;
         va[17] = 16'h0001; vb[17] = 16'h0001; ve[17] = 32'h00000000; // 18: min_subnorm * min_subnorm = +0.0 (underflow)
         va[18] = 16'h0001; vb[18] = 16'h3F80; ve[18] = 32'h00010000; // 19: min_subnorm * 1.0 -> F32 subnormal
         va[19] = 16'h8000; vb[19] = 16'h3F80; ve[19] = 32'h80000000; // 20: -0.0 * 1.0 = -0.0
+        // ---- directed F32 subnormal / RTZ vectors 21..32 ----
+        va[20] = 16'h0003; vb[20] = 16'h3700; ve[20] = 32'h00000001; // 21: 3*2^-150 -> 1*2^-149 (RTZ)
+        va[21] = 16'h0001; vb[21] = 16'h3700; ve[21] = 32'h00000000; // 22: 2^-150 -> 0 (underflow)
+        va[22] = 16'h0001; vb[22] = 16'h3780; ve[22] = 32'h00000001; // 23: 2^-149 -> min F32 subnormal
+        va[23] = 16'h0003; vb[23] = 16'h3780; ve[23] = 32'h00000003; // 24: 3*2^-149 -> F32 subnormal
+        va[24] = 16'h0001; vb[24] = 16'h7F80; ve[24] = 32'h7F800000; // 25: subnormal * +Inf -> +Inf
+        va[25] = 16'h8001; vb[25] = 16'h0000; ve[25] = 32'h80000000; // 26: -subnormal * +0 -> -0
+        va[26] = 16'h0001; vb[26] = 16'h7FC0; ve[26] = 32'h7FC00000; // 27: subnormal * NaN -> qNaN
+        va[27] = 16'h7F7F; vb[27] = 16'h3F80; ve[27] = 32'h7F7F0000; // 28: max_BF16 * 1.0 -> max F32-range value
+        va[28] = 16'h7F7F; vb[28] = 16'h4000; ve[28] = 32'h7F800000; // 29: max_BF16 * 2.0 -> +Inf
+        va[29] = 16'h0080; vb[29] = 16'h0080; ve[29] = 32'h00000000; // 30: min_normal^2 = 2^-252 -> 0
+        va[30] = 16'h8003; vb[30] = 16'h3700; ve[30] = 32'h80000001; // 31: -3*2^-150 -> -1*2^-149 (RTZ)
+        va[31] = 16'h7FC1; vb[31] = 16'h3F80; ve[31] = 32'h7FC00000; // 32: NaN payload -> canonical qNaN
     end
 
     integer k;

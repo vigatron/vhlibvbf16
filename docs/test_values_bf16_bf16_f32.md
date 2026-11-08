@@ -5,6 +5,10 @@ No intermediate rounding to BF16 is applied: the product of two 8-bit mantissas 
 into the 24-bit F32 mantissa, so the only operations are normalization, sign XOR and
 special-case handling.
 
+BF16 subnormal inputs are **not** flushed to zero; they are normalized into the F32 result.
+If the exact product falls into the F32 subnormal range, the result is **truncated (RTZ)**,
+without rounding. NaN result is the canonical quiet NaN `0x7FC00000`.
+
 Column `Output C (BF16, RNE reference)` is the BF16 result rounded to nearest even.
 It is a reference for the BF16 output of `vhfastmulb16`; for #7 and #8 it differs from the F32 output.
 

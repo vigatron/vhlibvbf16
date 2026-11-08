@@ -43,31 +43,47 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 | **Sign** | `sign_a XOR sign_b` (except canonical NaN result, which carries the computed sign) |
 | **Pipeline** | 3 clock cycles latency, full-drain behavior: after `en=0` the pipeline finishes accepted data for 2 more cycles, then holds the last result (HOLD, no zero-fill) |
 
+### F32-output module (`vhfastmulb16_f32_lat4`)
+
+| Feature | Behavior |
+|---------|----------|
+| **Format** | Input BF16; output F32: `s[31] \| exp[30:23] \| frac[22:0]` |
+| **Rounding** | None: normal products are exact; F32 subnormal results are truncated (RTZ) |
+| **Subnormal inputs** | **Not flushed**: BF16 subnormals are normalized into the F32 result |
+| **Subnormal results** | F32 subnormal, truncated (RTZ); underflow below `2^-149` → signed zero |
+| **NaN** | Canonical quiet NaN `0x7FC00000` |
+| **Overflow** | Result outside F32 range → `±Inf` with sign = XOR of signs |
+| **Pipeline** | 4 clock cycles latency, fully pipelined; after `en=0` drains for 3 cycles, then holds |
+
 ## Development Status
 
 - This is an **Initial version** of the project.
 - The simplified implementation optimized for speed (without rounding and extra logic) — `vhfastmulb16_fst_lat3.v` — is currently **in development**. The design bypasses the rounding stage and omits auxiliary control/exception logic, shortening the critical path at the cost of numerical precision.
 - The pipelined BF16 multiplication modules with Latency 2 and 4 are also **in development** as intermediate stages of the design flow.
 - The Latency 3 implementation (`vhfastmulb16_rtz_lat3.v` / `vhfastmulb16_rne_lat3.v`) is available now! It is the current top-level synthesizable RTL with the full multiply datapath and the RTZ / RNE rounding stages.
+- The Latency 4 F32-output implementation (`vhfastmulb16_f32_lat4.v`) is available now: exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
 - The modules are implemented in pure logic without the multiplication operator `*`; replacing the carry-propagate adder with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
 
 ## Source Files
 
-The `src/` directory contains **11** Verilog source files:
+The `src/` directory contains **14** Verilog source files:
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
 | 1 | `vhfastmulb16_mul4x4.v` | `vhfastmulb16_mul4x4` | 4x4-bit multiplication without the `*` operator (CSA tree) | 1 clk |
-| 2 | `vhfastmulb16_mul8x8.v` | `vhfastmulb16_mul8x8` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
-| 3 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
-| 4 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
-| 5 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
-| 6 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
-| 7 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
-| 8 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
-| 9 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
-| 10 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
-| 11 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 2 | `vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
+| 3 | `vhfastmulb16_mul8x8.v` | `vhfastmulb16_mul8x8` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
+| 4 | `vhfastmulb16_mul8x8_lat3.v` | `vhfastmulb16_mul8x8_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
+| 5 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
+| 6 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
+| 7 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
+| 8 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
+| 9 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
+| 10 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
+| 11 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
+| 12 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
+| 13 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 14 | `vhfastmulb16_f32_lat4.v` | `vhfastmulb16_f32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
 
 ### Module Dependencies
 
@@ -81,15 +97,23 @@ vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
 ├── vhfastmulb16_flags_lat2 (in except_lat3)
 ├── vhfastmulb16_except_lat2 (in rtz/rne latency-3)
 └── vhfastmulb16_except_lat3 (alternative for latency-3)
+
+vhfastmulb16_f32_lat4
+├── vhfastmulb16_mul8x8_lat3
+│   └── vhfastmulb16_mul4x4_lat2 (x4)
+├── vhfastmulb16_add8x8_lat2
+└── vhfastmulb16_sign
 ```
 
 ### Versions with Different Latency
 
-| Component | Latency 1 | Latency 2 | Latency 3 |
-|-----------|-----------|-----------|-----------|
-| Flags | `vhfastmulb16_flags_lat1` | `vhfastmulb16_flags_lat2` | - |
-| Exceptions | - | `vhfastmulb16_except_lat2` | `vhfastmulb16_except_lat3` |
-| Top-level | - | - | `vhfastmulb16_rtz_lat3`, `vhfastmulb16_rne_lat3` |
+| Component | Latency 1 | Latency 2 | Latency 3 | Latency 4 |
+|-----------|-----------|-----------|-----------|-----------|
+| Mul4x4 | `vhfastmulb16_mul4x4` | `vhfastmulb16_mul4x4_lat2` | - | - |
+| Mul8x8 | - | `vhfastmulb16_mul8x8` | `vhfastmulb16_mul8x8_lat3` | - |
+| Flags | `vhfastmulb16_flags_lat1` | `vhfastmulb16_flags_lat2` | - | - |
+| Exceptions | - | `vhfastmulb16_except_lat2` | `vhfastmulb16_except_lat3` | - |
+| Top-level | - | - | `vhfastmulb16_rtz_lat3`, `vhfastmulb16_rne_lat3` | `vhfastmulb16_f32_lat4` |
 
 ## Testbenches
 
@@ -99,8 +123,12 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 |-----------|-------------------|
 | `tests/vhfastmulb16_mul4x4_tb.v` | `vhfastmulb16_mul4x4` |
 | `tests/vhfastmulb16_mul4x4_chk_tb.v` | `vhfastmulb16_mul4x4` (check/debug) |
+| `tests/vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` |
+| `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
 | `tests/vhfastmulb16_mul8x8_tb.v` | `vhfastmulb16_mul8x8` |
 | `tests/vhfastmulb16_mul8x8_chk_tb.v` | `vhfastmulb16_mul8x8` (check/debug) |
+| `tests/vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` |
+| `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` | `vhfastmulb16_mul8x8_lat3` (check/debug) |
 | `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
 | `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8` (branch variant) |
 | `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
@@ -111,6 +139,8 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` |
 | `tests/vhfastmulb16_rtz_lat3_tb.v` | `vhfastmulb16_rtz_lat3` |
 | `tests/vhfastmulb16_rne_lat3_tb.v` | `vhfastmulb16_rne_lat3` |
+| `tests/vhfastmulb16_f32_lat4_tb.v` | `vhfastmulb16_f32_lat4` (directed, LAT=4) |
+| `tests/vhfastmulb16_f32_lat4_rand_tb.v` | `vhfastmulb16_f32_lat4` (random regression, LAT=4) |
 
 > Run scripts exist only for the main testbenches (see `scripts/run_test_*.sh`);
 > the `*_chk_tb.v` and `*_reva_tb.v` files are auxiliary check/debug benches
@@ -124,7 +154,9 @@ Run the simulation with:
 
 # Individual tests
 ./scripts/run_test_mul4x4.sh sim
+./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul8x8.sh sim
+./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
 ./scripts/run_test_flags_lat1.sh sim
@@ -133,10 +165,14 @@ Run the simulation with:
 ./scripts/run_test_except_lat3.sh sim
 ./scripts/run_test_mul_fb16_rtz_lat3.sh sim
 ./scripts/run_test_mul_fb16_rne_lat3.sh sim
+./scripts/run_test_f32_lat4.sh sim
+./scripts/run_test_f32_lat4_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/run_test_mul4x4.sh wave
 ./scripts/run_test_mul8x8.sh wave
+./scripts/run_test_f32_lat4.sh wave
+./scripts/run_test_f32_lat4_rand.sh wave
 
 # Clean up build artifacts
 ./scripts/run_all.sh clean

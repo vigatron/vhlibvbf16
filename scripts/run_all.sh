@@ -25,9 +25,12 @@ TEST_SCRIPTS=(
     "run_test_mul4x4.sh"
     "run_test_mul4x4_lat2.sh"
     "run_test_mul8x8.sh"
+    "run_test_mul8x8_lat3.sh"
     "run_test_sign.sh"
     "run_test_mul_fb16_rne_lat3.sh"
     "run_test_mul_fb16_rtz_lat3.sh"
+    "run_test_f32_lat4.sh"
+    "run_test_f32_lat4_rand.sh"
 )
 
 CMD="${1:-sim}"

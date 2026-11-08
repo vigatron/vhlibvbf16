@@ -1,6 +1,9 @@
 logs
 build
 
+__pycache__/
+*.pyc
+
 *.vcd
 *.vcf
 *.vvp
