@@ -87,7 +87,9 @@ check_result() {
 sim() {
     check_config
     build
-    ( cd "$ROOT" && vvp "$SIM" ) | tee "$LOG"
+    # `|| true` нужен: set -euo pipefail разрушает скрипт до check_result,
+    # если vvp завершится с ненулевым кодом (падение симуляции).
+    ( cd "$ROOT" && vvp "$SIM" ) | tee "$LOG" || true
 
     if ! check_result; then
         echo "RESULT: FAILED (лог: $LOG)"
