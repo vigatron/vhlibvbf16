@@ -1,7 +1,6 @@
 # Источники DUT vhfastmulb16_f32_lat4 (LAT=4).
 # Используется тестбенчами run_test_f32_lat4.sh и run_test_f32_lat4_rand.sh.
 src/vhfastmulb16_f32_lat4.v
+src/vhfastmulb16_mul4x4_comb.v
 src/vhfastmulb16_add8x8_lat2.v
-src/vhfastmulb16_mul8x8_lat3.v
-src/vhfastmulb16_mul4x4_lat2.v
 src/vhfastmulb16_sign.v
