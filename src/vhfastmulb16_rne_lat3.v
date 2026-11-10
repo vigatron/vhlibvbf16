@@ -149,9 +149,10 @@ module vhfastmulb16_rne_lat3 (
     reg         exp_underflow, exp_overflow;
 
     // Временные переменные для always_comb
-    reg [8:0]   exp_norm_pre;
     reg [7:0]   man_final;
     reg         man_round_carry;
+    reg [8:0]   man_inc;       // 9-bit результат инкремента мантиссы (carry-chain)
+    reg [1:0]   exp_inc;       // комбинированный инкремент экспоненты (0, 1 или 2)
 
     always @(*) begin
         man_msb     = c_man_mul[15];
@@ -163,29 +164,17 @@ module vhfastmulb16_rne_lat3 (
         LSB = man_shifted[0];
         round_up = G & (R | S | LSB);
 
-        // Экспонента до округления
-        exp_norm_pre = exp_sum + { 8'b0, man_msb };
+        // Экспонента до округления и перенос от мантиссы
+        exp_inc = {7'b0, man_msb} + {7'b0, man_round_carry};
 
         // RNE округление мантиссы: инкремент на 1 если round_up=1
-        // Реализуем инкремент через битовые операции (без +)
-        if (round_up) begin
-            // Инкремент 8-битного man_shifted
-            man_final[0] = ~man_shifted[0];
-            man_final[1] = man_shifted[1] ^ man_shifted[0];
-            man_final[2] = man_shifted[2] ^ (man_shifted[1] & man_shifted[0]);
-            man_final[3] = man_shifted[3] ^ (man_shifted[2] & man_shifted[1] & man_shifted[0]);
-            man_final[4] = man_shifted[4] ^ (man_shifted[3] & man_shifted[2] & man_shifted[1] & man_shifted[0]);
-            man_final[5] = man_shifted[5] ^ (man_shifted[4] & man_shifted[3] & man_shifted[2] & man_shifted[1] & man_shifted[0]);
-            man_final[6] = man_shifted[6] ^ (man_shifted[5] & man_shifted[4] & man_shifted[3] & man_shifted[2] & man_shifted[1] & man_shifted[0]);
-            man_final[7] = man_shifted[7] ^ (man_shifted[6] & man_shifted[5] & man_shifted[4] & man_shifted[3] & man_shifted[2] & man_shifted[1] & man_shifted[0]);
-            man_round_carry = man_shifted[7] & man_shifted[6] & man_shifted[5] & man_shifted[4] & man_shifted[3] & man_shifted[2] & man_shifted[1] & man_shifted[0];
-        end else begin
-            man_final = man_shifted;
-            man_round_carry = 1'b0;
-        end
+        // Используем carry-chain сумматор вместо ripple-логики
+        man_inc = {1'b0, man_shifted} + {8'b0, round_up};
+        man_final = man_inc[7:0];
+        man_round_carry = man_inc[8];
 
-        // Финальная экспонента с переносом
-        exp_norm = exp_norm_pre + { 8'b0, man_round_carry };
+        // Финальная экспонента с переносом от мантиссы (одно сложение вместо двух)
+        exp_norm = exp_sum + exp_inc;
 
         exp_underflow = (exp_sum > 9'd381) || (exp_norm == 9'd0);
         exp_overflow  = (exp_sum <= 9'd381) && (exp_norm > 9'd254);
