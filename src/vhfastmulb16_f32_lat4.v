@@ -196,10 +196,9 @@ module vhfastmulb16_f32_lat4 (
     // captured by the output register on cycle N+4).
     // ---------------------------------------------------
     reg [3:0]  k;          // leading-one index of man_prod
-    reg [23:0] mant_norm;  // normalized 24-bit significand
+    reg [23:0] mant_norm;  // normalized 24-bit significand (normal path)
     reg [23:0] mant_sub;   // truncated significand for F32 subnormal
     reg [9:0]  exp_unb;    // S + k, 2..523
-    reg [7:0]  shift;      // right shift for F32 subnormal
     reg [31:0] c_next;
 
     always @(*) begin
@@ -231,6 +230,16 @@ module vhfastmulb16_f32_lat4 (
         // F32 biased exponent = U - 141.
         exp_unb = {1'b0, exp_s3} + {6'd0, k};
 
+        // Subnormal significand computed directly, WITHOUT k dependency.
+        // Mathematically equivalent to mant_norm >> (142 - exp_unb)
+        // but breaks the k -> mant_norm -> shift -> mant_sub cascade.
+        //   S <= 119: man_prod >> (119 - S)
+        //   S >  119: man_prod << (S - 119)
+        if (exp_s3 <= 8'd119)
+            mant_sub = {8'd0, man_prod} >> (8'd119 - exp_s3[7:0]);
+        else
+            mant_sub = {8'd0, man_prod} << (exp_s3[7:0] - 8'd119);
+
         if (nan_s3) begin
             // Canonical quiet NaN (per docs/test_values_bf16_bf16_f32.md).
             c_next = F32_QNAN;
@@ -248,13 +257,11 @@ module vhfastmulb16_f32_lat4 (
             c_next = {sign_lat3, (exp_unb[7:0] - 8'd141), mant_norm[22:0]};
         end else begin
             // F32 subnormal result: truncate (RTZ).
-            shift = 8'd142 - exp_unb[7:0];
-            if (shift >= 8'd24) begin
+            // Zero when S <= 95 (equivalent to shift >= 24).
+            if (exp_s3 <= 8'd95)
                 c_next = {sign_lat3, 31'h00000000};
-            end else begin
-                mant_sub = mant_norm >> shift[4:0];
+            else
                 c_next = {sign_lat3, 8'h00, mant_sub[22:0]};
-            end
         end
     end
 
