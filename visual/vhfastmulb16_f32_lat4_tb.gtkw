@@ -1,0 +1,54 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Sun Nov  8 02:39:23 2026
+[*]
+[dumpfile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/build/vhfastmulb16_f32_lat4.vcd"
+[dumpfile_mtime] "Sun Nov  8 02:38:02 2026"
+[dumpfile_size] 4023
+[savefile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/visual/vhfastmulb16_f32_lat4_tb.gtkw"
+[timestart] 110400
+[size] 1418 1215
+[pos] 232 -227
+*-15.900000 156000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_f32_lat4_tb.
+[sst_width] 269
+[signals_width] 211
+[sst_expanded] 1
+[sst_vpaned_height] 371
+@420
+vhfastmulb16_f32_lat4_tb.EXP_CHECK
+vhfastmulb16_f32_lat4_tb.LAT
+vhfastmulb16_f32_lat4_tb.MAX_PRINT
+vhfastmulb16_f32_lat4_tb.N
+vhfastmulb16_f32_lat4_tb.checked
+@28
+vhfastmulb16_f32_lat4_tb.clk
+vhfastmulb16_f32_lat4_tb.en
+@420
+vhfastmulb16_f32_lat4_tb.errors
+@23
+[color] 3
+vhfastmulb16_f32_lat4_tb.ina[15:0]
+[color] 3
+vhfastmulb16_f32_lat4_tb.inb[15:0]
+@22
+vhfastmulb16_f32_lat4_tb.hold_val[31:0]
+vhfastmulb16_f32_lat4_tb.outc[31:0]
+@420
+vhfastmulb16_f32_lat4_tb.k
+@28
+vhfastmulb16_f32_lat4_tb.reset
+@28
+[treeopen] vhfastmulb16_f32_lat4_tb.uut.
+vhfastmulb16_f32_lat4_tb.uut.man_prod[15:0]
+vhfastmulb16_f32_lat4_tb.uut.exp_s3[8:0]
+vhfastmulb16_f32_lat4_tb.uut.flags_s3[2:0]
+vhfastmulb16_f32_lat4_tb.uut.sign_lat3
+vhfastmulb16_f32_lat4_tb.uut.k[3:0]
+vhfastmulb16_f32_lat4_tb.uut.exp_unb[9:0]
+vhfastmulb16_f32_lat4_tb.uut.c_next[31:0]
+vhfastmulb16_f32_lat4_tb.uut.en_pipe
+@420
+vhfastmulb16_f32_lat4_tb.uut.shift[7:0]
+[pattern_trace] 1
+[pattern_trace] 0

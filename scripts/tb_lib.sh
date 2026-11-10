@@ -3,12 +3,17 @@
 # Напрямую не запускается: подключается из tests/run_test_*.sh
 #
 # Обёртка обязана задать до подключения:
+#   TB          - путь тестбенча относительно корня проекта
+#   SRC         - массив исходников DUT относительно корня проекта
+#                 (или SRC_FILE - файл со списком, по одному пути в строке,
+#                  '#' начинает комментарий)
+# Необязательно (есть значения по умолчанию):
 #   NAME        - базовое имя артефактов:
 #                 build/<NAME>.vvp, build/<NAME>.vcd, logs/<NAME>.log
-#   GTKW_NAME     - базовое имя файла visual/<GTKW_NAME>.gtkw
-#   SRC         - массив исходников DUT относительно корня проекта
-#   TB          - путь тестбенча относительно корня проекта
-#   RESULT_MODE - критерий успеха:
+#                 по умолчанию - имя тестбенча без суффиксов .v и _tb
+#   GTKW_NAME   - базовое имя файла visual/<GTKW_NAME>.gtkw
+#                 по умолчанию - имя файла тестбенча без .v
+#   RESULT_MODE - критерий успеха (по умолчанию passed):
 #                   passed  - в логе должна быть строка "TEST PASSED"
 #                   no_fail - в логе должен быть "PASSED" и не быть "x FAILED"
 #
@@ -22,6 +27,30 @@ _LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$_LIB_DIR/.." && pwd)"
 BUILD="$ROOT/build"
 LOG_DIR="$ROOT/logs"
+
+# Значения по умолчанию выводятся из TB, обёртке достаточно задать TB и SRC.
+if [ -z "${NAME:-}" ] && [ -n "${TB:-}" ]; then
+    NAME="$(basename "$TB" .v)"
+    NAME="${NAME%_tb}"
+fi
+if [ -z "${GTKW_NAME:-}" ] && [ -n "${TB:-}" ]; then
+    GTKW_NAME="$(basename "$TB" .v)"
+fi
+RESULT_MODE="${RESULT_MODE:-passed}"
+
+# SRC_FILE - список исходников в файле (по одному пути в строке).
+declare -a SRC
+if [ -n "${SRC_FILE:-}" ]; then
+    _src_file="$SRC_FILE"
+    [ "${_src_file#/}" = "$_src_file" ] && _src_file="$ROOT/$_src_file"
+    SRC=()
+    while IFS= read -r _line || [ -n "$_line" ]; do
+        _line="${_line%%#*}"
+        _line="$(printf '%s' "$_line" | tr -d '[:space:]')"
+        [ -n "$_line" ] && SRC+=("$_line")
+    done < "$_src_file"
+    unset _line _src_file
+fi
 
 SIM="$BUILD/$NAME.vvp"
 VCD="$BUILD/$NAME.vcd"
@@ -87,7 +116,9 @@ check_result() {
 sim() {
     check_config
     build
-    ( cd "$ROOT" && vvp "$SIM" ) | tee "$LOG"
+    # `|| true` нужен: set -euo pipefail разрушает скрипт до check_result,
+    # если vvp завершится с ненулевым кодом (падение симуляции).
+    ( cd "$ROOT" && vvp "$SIM" ) | tee "$LOG" || true
 
     if ! check_result; then
         echo "RESULT: FAILED (лог: $LOG)"

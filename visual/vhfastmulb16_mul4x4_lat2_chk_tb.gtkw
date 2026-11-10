@@ -1,0 +1,39 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Sun Nov  8 03:00:54 2026
+[*]
+[dumpfile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/build/vhfastmulb16_mul4x4_lat2_chk.vcd"
+[dumpfile_mtime] "Sun Nov  8 02:50:48 2026"
+[dumpfile_size] 4242
+[savefile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/visual/vhfastmulb16_mul4x4_lat2_chk_tb.gtkw"
+[timestart] 98400
+[size] 1920 1006
+[pos] -1 -1
+*-14.700001 196000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_mul4x4_lat2_chk_tb.
+[treeopen] vhfastmulb16_mul4x4_lat2_chk_tb.uut.
+[sst_width] 278
+[signals_width] 154
+[sst_expanded] 1
+[sst_vpaned_height] 328
+@28
+vhfastmulb16_mul4x4_lat2_chk_tb.clk
+vhfastmulb16_mul4x4_lat2_chk_tb.reset
+vhfastmulb16_mul4x4_lat2_chk_tb.uut.en_lat1
+vhfastmulb16_mul4x4_lat2_chk_tb.en
+@421
+[color] 7
+vhfastmulb16_mul4x4_lat2_chk_tb.k
+@22
+[color] 3
+vhfastmulb16_mul4x4_lat2_chk_tb.a[3:0]
+[color] 3
+vhfastmulb16_mul4x4_lat2_chk_tb.b[3:0]
+[color] 6
+vhfastmulb16_mul4x4_lat2_chk_tb.c[7:0]
+vhfastmulb16_mul4x4_lat2_chk_tb.uut.a_lat[3:0]
+vhfastmulb16_mul4x4_lat2_chk_tb.uut.b_lat[3:0]
+vhfastmulb16_mul4x4_lat2_chk_tb.uut.c1[9:0]
+vhfastmulb16_mul4x4_lat2_chk_tb.uut.s1[9:0]
+[pattern_trace] 1
+[pattern_trace] 0
