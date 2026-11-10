@@ -34,13 +34,13 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 |---------|----------|
 | **Format** | BF16: `s[15] \| exp[14:7] \| frac[6:0]` (8-bit exponent, bias 127; 7-bit mantissa) |
 | **Rounding** | RTZ (truncation) in `vhfastmulb16_rtz_lat3`; RNE (IEEE 754 round-to-nearest-even) in `vhfastmulb16_rne_lat3` |
-| **Subnormal inputs** | **Flush To Zero (FTZ)**: operands with `exp=0` are flushed to zero (both ±0 and subnormals) before the pipeline |
+| **Subnormal inputs** | **Flush To Zero (FTZ)**: subnormal operands (`exp=0`, `frac≠0`) are flushed to zero before the pipeline; ±0 is already zero |
 | **Subnormal results** | Not generated: exp underflow (≤0 after normalization) flushes the result to ±0 |
-| **Zero** | Any operand with `exp=0` → result ±0 (canonical `s\|8'h00\|7'h00`) |
-| **Infinity** | Any operand with `exp=255, frac=0` → result ±Inf (`s\|8'hFF\|7'h00`); Inf × 0 = NaN |
-| **NaN** | Any operand with `exp=255, frac≠0` → quiet NaN, payload preservation per IEEE 754 (priority A > B): `0\|8'hFF\|1'b1\|payload[5:0]` |
+| **Zero** | Zero operand (`exp=0`), unless the other operand is Inf or NaN → result ±0 (canonical `s\|8'h00\|7'h00`) |
+| **Infinity** | Inf operand (`exp=255, frac=0`) and no NaN → result ±Inf (`s\|8'hFF\|7'h00`); Inf × 0 = NaN |
+| **NaN** | Any operand with `exp=255, frac≠0` → quiet NaN, payload preserved (priority A > B): `s\|8'hFF\|1'b1\|payload[5:0]` |
 | **Exception priority** | NaN > Inf > Zero > normal multiply; overflow saturates to ±Inf, underflow flushes to ±0 |
-| **Sign** | `sign_a XOR sign_b` (except canonical NaN result, which carries the computed sign) |
+| **Sign** | `sign_a XOR sign_b` for all results, including NaN |
 | **Pipeline** | 3 clock cycles latency, full-drain behavior: after `en=0` the pipeline finishes accepted data for 2 more cycles, then holds the last result (HOLD, no zero-fill) |
 
 ### F32-output module (`vhfastmulb16_f32_lat4`)
@@ -59,30 +59,31 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 
 - The BF16-output top-level modules `vhfastmulb16_rtz_lat3` and `vhfastmulb16_rne_lat3` are available (latency 3).
 - The F32-output top-level module `vhfastmulb16_f32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
-- The latency-2/3 building blocks are available: `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul8x8`, `vhfastmulb16_mul8x8_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
+- The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul8x8`, `vhfastmulb16_mul8x8_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
-- The modules are implemented in pure logic without the multiplication operator `*`; replacing the carry-propagate adder with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
+- The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul8x8` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
 
 ## Source Files
 
-The `src/` directory contains **14** Verilog source files:
+The `src/` directory contains **15** Verilog source files:
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
 | 1 | `vhfastmulb16_mul4x4.v` | `vhfastmulb16_mul4x4` | 4x4-bit multiplication without the `*` operator (CSA tree) | 1 clk |
 | 2 | `vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
-| 3 | `vhfastmulb16_mul8x8.v` | `vhfastmulb16_mul8x8` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
-| 4 | `vhfastmulb16_mul8x8_lat3.v` | `vhfastmulb16_mul8x8_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
-| 5 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
-| 6 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
-| 7 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
-| 8 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
-| 9 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
-| 10 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
-| 11 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
-| 12 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
-| 13 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
-| 14 | `vhfastmulb16_f32_lat4.v` | `vhfastmulb16_f32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
+| 3 | `vhfastmulb16_mul4x4_comb.v` | `vhfastmulb16_mul4x4_comb` | 4x4-bit combinational multiplication (CSA tree, no output register) | 0 clk |
+| 4 | `vhfastmulb16_mul8x8.v` | `vhfastmulb16_mul8x8` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
+| 5 | `vhfastmulb16_mul8x8_lat3.v` | `vhfastmulb16_mul8x8_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
+| 6 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
+| 7 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
+| 8 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
+| 9 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
+| 10 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
+| 11 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
+| 12 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
+| 13 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
+| 14 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 15 | `vhfastmulb16_f32_lat4.v` | `vhfastmulb16_f32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
 
 ### Module Dependencies
 
@@ -98,9 +99,7 @@ vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
 └── vhfastmulb16_except_lat3 (alternative for latency-3)
 
 vhfastmulb16_f32_lat4
-├── vhfastmulb16_mul8x8_lat3
-│   └── vhfastmulb16_mul4x4_lat2 (x4)
-├── vhfastmulb16_add8x8_lat2
+├── vhfastmulb16_mul4x4_comb (x4)
 └── vhfastmulb16_sign
 ```
 
@@ -157,7 +156,7 @@ See `scripts/run_test_*.sh` for the complete mapping.
 Run the simulation with:
 
 ```bash
-# All tests
+# All testbench scripts
 ./scripts/run_all.sh sim
 
 # Individual tests
@@ -186,6 +185,8 @@ Run the simulation with:
 ./scripts/run_all.sh clean
 ```
 
+`run_all.sh` runs every `scripts/run_test_*.sh`; the benches without a dedicated
+script (`vhfastmulb16_mul4x4_chk_tb.v`, `vhfastmulb16_add8x8_reva_tb.v`) are not included.
 See the [docs/testbenches_list.md](docs/testbenches_list.md) file for more details.
 
 ## Test Vectors
@@ -213,11 +214,13 @@ The reference test vector table is kept in [docs/test_values_details.md](docs/te
 
 ## FPGA Resource Estimates
 
-The implementation targets the Xilinx XC6SLX9 (Spartan-6 LX9).
+The implementation is estimated for Xilinx Spartan-6 (XC6SLX9, XC6SLX16),
+Spartan-7 (XC7S15) and Artix-7 (XC7A15T).
 Detailed manual RTL estimates are maintained in:
 
-- [`docs/statistic_top.md`](docs/statistic_top.md) — top-level modules (RTZ, RNE, F32);
-- [`docs/statistic_others.md`](docs/statistic_others.md) — submodules and bottom-up breakdown.
+- [`docs/stat/stat_top_all.md`](docs/stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32) across FPGA families;
+- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — submodules and bottom-up breakdown;
+- [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md), [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), [`docs/stat/stat_top_artix7.md`](docs/stat/stat_top_artix7.md) — per-device details.
 
 All values are manual estimates (±20–25%), not synthesis reports.
 

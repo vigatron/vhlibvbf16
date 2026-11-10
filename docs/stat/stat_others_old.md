@@ -177,7 +177,7 @@
 
 > Примечание: `mul8x8` включает 4× `mul4x4`, поэтому сумма частей больше итога.
 > Варианты с другой latency (`mul4x4_lat2`, `mul8x8_lat3`) и F32 top-level
-> оценены в `docs/statistic_top.md`.
+> оценены в `docs/stat/stat_top_spartan6_old.md`.
 
 ---
 
