@@ -139,34 +139,110 @@ module vhfastmulb16_addf32_rne_lat4 (
     // ------------------------------------------------------------------
     // Stage S1: exponent compare, mantissa alignment with sticky bit
     //   Combinational during cycle N, captured at N+1 edge
+    //
+    //   Timing driven structure:
+    //     * |ea - eb| is computed by two independent Kogge-Stone
+    //       subtractors; each one drives its own shifter, so no
+    //       absolute-value mux sits in front of the barrel shifters;
+    //     * the magnitude comparison runs in parallel with the alignment
+    //       and only selects the final hi/lo pair and the sign;
+    //     * a true difference >= 32 is flushed to the sticky bit after the
+    //       shifter, off the shift-amount critical path.
     // ------------------------------------------------------------------
-    wire [7:0] exp_diff = (a_exp_eff >= b_exp_eff) ? (a_exp_eff - b_exp_eff) : (b_exp_eff - a_exp_eff);
+    wire [7:0] ea = a_exp_eff;
+    wire [7:0] eb = b_exp_eff;
 
-    // Which operand has larger magnitude?
-    wire a_larger = (a_exp_eff > b_exp_eff) ||
-                    ((a_exp_eff == b_exp_eff) && (a_man >= b_man));
+    // d_ab is the true difference when ea >= eb, d_ba when eb >= ea.
+    // Kogge-Stone prefix subtractors: 8 gate levels instead of the 12 of the
+    // synthesised carry-chain, and both run in parallel.
+    function automatic [7:0] sub8_ks;
+        input [7:0] fa;
+        input [7:0] fb;
+        reg [7:0] fpx, fg, fgi, fg1, fp1, fg2, fp2, fg3;
+        begin
+            fpx = ~(fa ^ fb);                 // propagate for fa + ~fb
+            fg  = fa & ~fb;                   // generate  for fa + ~fb
+            fgi = fg | (fpx & 8'h01);         // inject carry-in
+            fg1 = fgi | (fpx & {fgi[6:0], 1'b0});
+            fp1 = fpx & {fpx[6:0], 1'b0};
+            fg2 = fg1 | (fp1 & {fg1[5:0], 2'b00});
+            fp2 = fp1 & {fp1[5:0], 2'b00};
+            fg3 = fg2 | (fp2 & {fg2[3:0], 4'b0000});
+            sub8_ks = fpx ^ {fg3[6:0], 1'b1};
+        end
+    endfunction
 
-    // Sign of result (NaN and both-zero handled separately below)
-    wire sign_res_c = res_nan ? nan_sign_c :
-                      res_zero ? (a_sign & b_sign) :      // IEEE-754: (-0)+(-0)=-0
-                      op_add ? a_sign : (a_larger ? a_sign : b_sign);
+    wire [7:0] d_ab = sub8_ks(ea, eb);
+    wire [7:0] d_ba = sub8_ks(eb, ea);
 
     // 27-bit extended mantissas: 24-bit significand + 3 low bits (G/R/S).
-    // Alignment shifts the smaller significand right and ORs every lost
-    // bit into the LSB (sticky).  A shift >= 27 flushes it completely.
     wire [26:0] a_man_ext = {a_man, 3'b000};
     wire [26:0] b_man_ext = {b_man, 3'b000};
 
-    wire [4:0]  shift_amt = (exp_diff >= 8'd27) ? 5'd27 : exp_diff[4:0];
+    // Sticky-inclusive right shift: every discarded bit is ORed into bit 0.
+    // p5[i] = |x[i:0] is a log-depth prefix OR, so the sticky bit is the
+    // prefix entry selected by sh (no shift-mask decoder, no subtract).
+    wire [26:0] ap1 = a_man_ext | (a_man_ext << 1);
+    wire [26:0] ap2 = ap1 | (ap1 << 2);
+    wire [26:0] ap3 = ap2 | (ap2 << 4);
+    wire [26:0] ap4 = ap3 | (ap3 << 8);
+    wire [26:0] ap5 = ap4 | (ap4 << 16);
+    wire [31:0] apv = {{5{ap5[26]}}, ap5};
+
+    wire [26:0] bp1 = b_man_ext | (b_man_ext << 1);
+    wire [26:0] bp2 = bp1 | (bp1 << 2);
+    wire [26:0] bp3 = bp2 | (bp2 << 4);
+    wire [26:0] bp4 = bp3 | (bp3 << 8);
+    wire [26:0] bp5 = bp4 | (bp4 << 16);
+    wire [31:0] bpv = {{5{bp5[26]}}, bp5};
+
+    // pv2[j] = |x[j-1:0] (left shift by one); index 0 is zero so shift == 0
+    // yields no sticky, and the replicated high bits clamp the flush cases.
+    wire [31:0] apv2 = {apv[30:0], 1'b0};
+    wire [31:0] bpv2 = {bpv[30:0], 1'b0};
+
+    wire [4:0] sh_ab = d_ab[4:0];   // shifts b
+    wire [4:0] sh_ba = d_ba[4:0];   // shifts a
+    wire       fl_ab = |d_ab[7:5];
+    wire       fl_ba = |d_ba[7:5];
+
+    wire [26:0] a_sh = (a_man_ext >> sh_ba) | {26'd0, apv2[sh_ba]};
+    wire [26:0] b_sh = (b_man_ext >> sh_ab) | {26'd0, bpv2[sh_ab]};
+
+    // |ea - eb| >= 32: the smaller operand is represented by its sticky bit
+    // alone (zero stays zero).  The mux sits after the shifter.
+    wire [26:0] a_al = fl_ba ? {26'd0, |a_man_ext} : a_sh;
+    wire [26:0] b_al = fl_ab ? {26'd0, |b_man_ext} : b_sh;
+
+    // Magnitude compare of {exponent, mantissa}: identical to the original
+    // (exponent first, mantissa on ties) but built as a parallel-prefix
+    // "equal in all higher bits" tree instead of a carry chain.
+    //   e_sufK[i] = &e_bit[i+K-1:i], i.e. a suffix AND growing downwards;
+    //   higher_eq[i] = &e_bit[31:i+1] (all bits above i are equal).
+    wire [31:0] mag_a  = {ea, a_man};
+    wire [31:0] mag_b  = {eb, b_man};
+    wire [31:0] g_bit  = mag_a & ~mag_b;
+    wire [31:0] e_bit  = ~(mag_a ^ mag_b);
+    wire [31:0] e_suf1  = e_bit  & {1'b1,            e_bit[31:1]};
+    wire [31:0] e_suf2  = e_suf1 & {2'b11,           e_suf1[31:2]};
+    wire [31:0] e_suf4  = e_suf2 & {4'hF,            e_suf2[31:4]};
+    wire [31:0] e_suf8  = e_suf4 & {8'hFF,           e_suf4[31:8]};
+    wire [31:0] e_suf16 = e_suf8 & {16'hFFFF,        e_suf8[31:16]};
+    wire [31:0] higher_eq = {1'b1, e_suf16[31:1]};
+    wire        a_larger  = (|(g_bit & higher_eq)) | (&e_bit);
+
+    // Sign of result (NaN and both-zero handled separately below).
+    // When op_add is set both signs are equal, so the magnitude mux already
+    // yields a_sign; the NaN/zero cases are folded into one late mux.
+    wire sign_mag  = a_larger ? a_sign : b_sign;
+    wire sign_spec = res_nan ? nan_sign_c : (a_sign & b_sign);
+    wire spec_sel  = res_nan || res_zero;
+    wire sign_res_c = spec_sel ? sign_spec : sign_mag;
+
     wire [26:0] hi_man_ext = a_larger ? a_man_ext : b_man_ext;
-    wire [26:0] lo_man_ext = a_larger ? b_man_ext : a_man_ext;
+    wire [26:0] lo_man_al_c = a_larger ? b_al : a_al;
 
-    wire [26:0] lo_shifted     = lo_man_ext >> shift_amt;
-    wire [26:0] lo_sticky_mask = (27'd1 << shift_amt) - 27'd1;
-    wire        lo_sticky      = |(lo_man_ext & lo_sticky_mask);
-    wire [26:0] lo_man_al_c    = lo_shifted | {26'd0, lo_sticky};
-
-    wire [7:0] exp_max_c = a_larger ? a_exp_eff : b_exp_eff;
+    wire [7:0] exp_max_c = a_larger ? ea : eb;
 
     // ------------------------------------------------------------------
     // Stage S1 -> Stage S2 registers (capture at N+1 edge)
@@ -229,7 +305,6 @@ module vhfastmulb16_addf32_rne_lat4 (
     reg        zero_and_sign_d2;
     reg        nan_sign_d2;
     reg [22:0] nan_frac_d2;
-    reg        is_zero_d2;   // exact cancellation (man_raw == 0, not both-inputs-zero)
 
     always @(posedge clk) begin
         if (reset) begin
@@ -241,7 +316,6 @@ module vhfastmulb16_addf32_rne_lat4 (
             zero_and_sign_d2 <= 1'b0;
             nan_sign_d2    <= 1'b0;
             nan_frac_d2    <= 23'd0;
-            is_zero_d2     <= 1'b0;
         end else if (en_pipe) begin
             man_raw_d1      <= man_raw_c;
             exp_max_d2      <= exp_max_d1;
@@ -251,12 +325,11 @@ module vhfastmulb16_addf32_rne_lat4 (
             zero_and_sign_d2 <= zero_and_sign_d1;
             nan_sign_d2     <= nan_sign_d1;
             nan_frac_d2     <= nan_frac_d1;
-            is_zero_d2      <= (man_raw_c == 28'd0) && !is_bz_d1;
         end
     end
 
     // ------------------------------------------------------------------
-    // Stage S3: carry fix-up + normalization (LZD) + signed exponent
+    // Stage S3: normalization (LZD) + signed exponent
     //   Combinational during cycle N+2, captured at N+3 edge
     //   man_norm has its leading one at bit 26; exp_pre is a 9-bit
     //   two's-complement unbiased exponent (negative => subnormal).
@@ -267,49 +340,53 @@ module vhfastmulb16_addf32_rne_lat4 (
                             man_raw_d1[26:0];
     wire [8:0]  exp_adj   = {1'b0, exp_max_d2} + {8'd0, man_carry};
 
-    // Leading-zero detect on the full 27-bit extended mantissa
-    reg [4:0] lzd_c;
-    always @(*) begin
-        casez (man_norm0)
-            27'b1??????????????????????????: lzd_c = 5'd0;
-            27'b01?????????????????????????: lzd_c = 5'd1;
-            27'b001????????????????????????: lzd_c = 5'd2;
-            27'b0001???????????????????????: lzd_c = 5'd3;
-            27'b00001??????????????????????: lzd_c = 5'd4;
-            27'b000001?????????????????????: lzd_c = 5'd5;
-            27'b0000001????????????????????: lzd_c = 5'd6;
-            27'b00000001???????????????????: lzd_c = 5'd7;
-            27'b000000001??????????????????: lzd_c = 5'd8;
-            27'b0000000001?????????????????: lzd_c = 5'd9;
-            27'b00000000001????????????????: lzd_c = 5'd10;
-            27'b000000000001???????????????: lzd_c = 5'd11;
-            27'b0000000000001??????????????: lzd_c = 5'd12;
-            27'b00000000000001?????????????: lzd_c = 5'd13;
-            27'b000000000000001????????????: lzd_c = 5'd14;
-            27'b0000000000000001???????????: lzd_c = 5'd15;
-            27'b00000000000000001??????????: lzd_c = 5'd16;
-            27'b000000000000000001?????????: lzd_c = 5'd17;
-            27'b0000000000000000001????????: lzd_c = 5'd18;
-            27'b00000000000000000001???????: lzd_c = 5'd19;
-            27'b000000000000000000001??????: lzd_c = 5'd20;
-            27'b0000000000000000000001?????: lzd_c = 5'd21;
-            27'b00000000000000000000001????: lzd_c = 5'd22;
-            27'b000000000000000000000001???: lzd_c = 5'd23;
-            27'b0000000000000000000000001??: lzd_c = 5'd24;
-            27'b00000000000000000000000001?: lzd_c = 5'd25;
-            27'b000000000000000000000000001: lzd_c = 5'd26;
-            default:                        lzd_c = 5'd26;
-        endcase
-    end
+    // Leading-zero detect over the 28-bit raw sum.  The addition carry, when
+    // present, is the leading one, and it encodes a zero count, so the carry
+    // fix-up mux stays off the LZD path.
+    //   lz16[i] = |man_raw_d1[i+:...]  (suffix OR, doubling structure)
+    //   lz_oh   = one-hot leading-one position
+    wire [27:0] lz1   = man_raw_d1 | (man_raw_d1 >> 1);
+    wire [27:0] lz2   = lz1 | (lz1 >> 2);
+    wire [27:0] lz4   = lz2 | (lz2 >> 4);
+    wire [27:0] lz8   = lz4 | (lz4 >> 8);
+    wire [27:0] lz16  = lz8 | (lz8 >> 16);
+    wire [27:0] lz_oh = lz16 & ~{1'b0, lz16[27:1]};
+
+    // One-hot to binary: lzd = 26 - p, with the carry position (27) and
+    // position 26 both mapping to 0.  Masks are constant literals.
+    wire [4:0] lzd_c;
+    assign lzd_c[0] = |(lz_oh & 28'b0010101010101010101010101010);
+    assign lzd_c[1] = |(lz_oh & 28'b0001100110011001100110011001);
+    assign lzd_c[2] = |(lz_oh & 28'b0000011110000111100001111000);
+    assign lzd_c[3] = |(lz_oh & 28'b0000000001111111100000000111);
+    assign lzd_c[4] = |(lz_oh & 28'b0000000000000000011111111111);
 
     wire [26:0] man_norm_c = man_norm0 << lzd_c;
-    wire [8:0]  exp_pre_c  = exp_adj - {4'd0, lzd_c};
+
+    // exp_pre = exp_adj - lzd, Kogge-Stone prefix borrow chain.
+    wire [8:0] ep_lz = {4'd0, lzd_c};
+    wire [8:0] ep_p  = ~exp_adj | ep_lz;   // borrow propagate
+    wire [8:0] ep_g  = ~exp_adj & ep_lz;   // borrow generate
+    wire [8:0] ep_g1 = ep_g  | (ep_p  & {ep_g[7:0],  1'b0});
+    wire [8:0] ep_p1 = ep_p  & {ep_p[7:0],  1'b0};
+    wire [8:0] ep_g2 = ep_g1 | (ep_p1 & {ep_g1[6:0], 2'b00});
+    wire [8:0] ep_p2 = ep_p1 & {ep_p1[6:0], 2'b00};
+    wire [8:0] ep_g3 = ep_g2 | (ep_p2 & {ep_g2[4:0], 4'b0000});
+    wire [8:0] exp_pre_c = (exp_adj ^ ep_lz) ^ {ep_g3[7:0], 1'b0};
+
+    // Subnormal shift for S4: the RNE guard bit is at
+    //   man_norm >> (4 - exp_pre - 1) = man_norm >> (3 - exp_adj + lzd),
+    // so the complete shift is precomputed here (exp_pre >= -25 for finite
+    // inputs, five bits are sufficient).
+    wire [4:0] grs_base    = 5'd3 - exp_adj[4:0];
+    wire [4:0] grs_shift_c = grs_base + lzd_c;
 
     // ------------------------------------------------------------------
     // Stage S3 -> Stage S4 registers (capture at N+3 edge)
     // ------------------------------------------------------------------
     reg [26:0] man_norm_d1;
     reg [8:0]  exp_pre_d1;
+    reg [4:0]  grs_shift_d1;
     reg        sign_res_d3;
     reg [2:0]  flags_d3;
     reg        is_bz_d3;
@@ -322,6 +399,7 @@ module vhfastmulb16_addf32_rne_lat4 (
         if (reset) begin
             man_norm_d1    <= 27'd0;
             exp_pre_d1     <= 9'd0;
+            grs_shift_d1   <= 5'd0;
             sign_res_d3    <= 1'b0;
             flags_d3       <= 3'b000;
             is_bz_d3       <= 1'b0;
@@ -332,11 +410,12 @@ module vhfastmulb16_addf32_rne_lat4 (
         end else if (en_pipe) begin
             man_norm_d1    <= man_norm_c;
             exp_pre_d1     <= exp_pre_c;
+            grs_shift_d1   <= grs_shift_c;
             sign_res_d3    <= sign_res_d2;
             flags_d3       <= flags_d2;
             is_bz_d3       <= is_bz_d2;
             zero_and_sign_d3 <= zero_and_sign_d2;
-            is_zero_d3     <= is_zero_d2;
+            is_zero_d3     <= (man_raw_d1 == 28'd0) && !is_bz_d2;
             nan_sign_d3    <= nan_sign_d2;
             nan_frac_d3    <= nan_frac_d2;
         end
@@ -356,6 +435,9 @@ module vhfastmulb16_addf32_rne_lat4 (
     //   frac = man_norm >> (4 - exp_pre)
     //   G = bit below the 23-bit fraction, R = the next one,
     //   S = OR of all remaining low bits; carry out -> smallest normal
+    //
+    // exp_pre + 1 and the overflow/subnormal flags are derived directly from
+    // the registered exponent, in parallel with the rounding increment.
     // ------------------------------------------------------------------
     wire [23:0] kept     = man_norm_d1[26:3];
     wire        g_norm   = man_norm_d1[2];
@@ -366,11 +448,8 @@ module vhfastmulb16_addf32_rne_lat4 (
     wire [24:0] kept_inc = {1'b0, kept} + {24'd0, rup_norm};
     wire        ovf_norm = kept_inc[24];
     wire [23:0] kept_r   = ovf_norm ? 24'h800000 : kept_inc[23:0];
-    wire [8:0]  exp_norm = exp_pre_d1 + {8'd0, ovf_norm};
 
-    wire        sub_out   = exp_pre_d1[8] | (exp_pre_d1 == 9'd0);
-    wire [4:0]  sub_shift = 5'd4 - exp_pre_d1[4:0];      // 4..29
-    wire [26:0] man_grs   = man_norm_d1 >> (sub_shift - 5'd1);
+    wire [26:0] man_grs   = man_norm_d1 >> grs_shift_d1;
     wire        g_sub     = man_grs[0];
     wire        r_sub     = man_grs[1];
     wire        s_sub     = |man_grs[2:0];
@@ -381,32 +460,35 @@ module vhfastmulb16_addf32_rne_lat4 (
     wire        ovf_sub  = frac_inc[23];
     wire [22:0] frac_sub = frac_inc[22:0];
 
-    wire        exp_ovf    = !sub_out && (exp_norm >= 9'd255);
-    wire [7:0]  exp_final  = sub_out ? (ovf_sub ? 8'd1 : 8'd0) : exp_norm[7:0];
+    // exp_pre + 1, overflow and subnormal flags are derived from the
+    // registered exponent, in parallel with the rounding increment.
+    wire        sub_out    = exp_pre_d1[8] | (exp_pre_d1 == 9'd0);
+    wire [7:0]  exp_plus1  = exp_pre_d1[7:0] + 8'd1;
+    wire        exp_ge255  = (exp_pre_d1[7:0] == 8'hFF) & ~exp_pre_d1[8];
+    wire        exp_eq254  = (exp_pre_d1[7:0] == 8'hFE) & ~exp_pre_d1[8];
+    wire        exp_ovf    = !sub_out && (exp_ge255 | (exp_eq254 & ovf_norm));
+    wire [7:0]  exp_final  = sub_out ? (ovf_sub ? 8'd1 : 8'd0)
+                                      : (ovf_norm ? exp_plus1 : exp_pre_d1[7:0]);
     wire [22:0] frac_final = sub_out ? (ovf_sub ? 23'd0 : frac_sub)
-                                     : kept_r[22:0];
+                                      : kept_r[22:0];
+
+    // Output selection: NaN > Inf/overflow > zero > normal/subnormal.
+    // kind = {nan_or_inf, nan_or_zero}; the vector mux is only two levels.
+    wire [31:0] v_nan  = {nan_sign_d3, 8'hFF, nan_frac_d3};
+    wire [31:0] v_inf  = {sign_res_d3, 8'hFF, 23'h000000};
+    wire [31:0] v_zero = {zero_and_sign_d3 & flags_d3[0], 31'h00000000};
+    wire [31:0] v_norm = {sign_res_d3, exp_final, frac_final};
+
+    wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf;
+    wire        kind_lo = flags_d3[2] |
+                          ((flags_d3[0] | is_zero_d3) & ~(flags_d3[1] | exp_ovf));
+    wire [31:0] c_hi   = kind_lo ? v_nan : v_inf;
+    wire [31:0] c_lo   = kind_lo ? v_zero : v_norm;
 
     reg [31:0] c_next;
 
     always @(*) begin
-        if (flags_d3[2]) begin
-            // NaN: preserve sign and payload, force quiet bit
-            c_next = {nan_sign_d3, 8'hFF, nan_frac_d3};
-        end else if (flags_d3[1] || exp_ovf) begin
-            // Inf, or overflow after rounding: {sign, 255, 0}
-            c_next = {sign_res_d3, 8'hFF, 23'h000000};
-        end else if (flags_d3[0] || is_zero_d3) begin
-            // Zero
-            if (flags_d3[0])
-                // Both inputs zero: sign = a_sign & b_sign (IEEE-754: (-0)+(-0)=-0)
-                c_next = {zero_and_sign_d3, 31'h00000000};
-            else
-                // Exact cancellation: RNE -> +0
-                c_next = {1'b0, 31'h00000000};
-        end else begin
-            // Normal or subnormal result (exp_final == 0 => subnormal)
-            c_next = {sign_res_d3, exp_final, frac_final};
-        end
+        c_next = kind_hi ? c_hi : c_lo;
     end
 
     // ------------------------------------------------------------------
