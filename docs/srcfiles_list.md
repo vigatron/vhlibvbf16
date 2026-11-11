@@ -1,6 +1,6 @@
 # DUT Source Files List (src/*.v)
 
-Total modules: **15**
+Total modules: **16**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -19,6 +19,7 @@ Total modules: **15**
 | 13 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
 | 14 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
 | 15 | `vhfastmulb16_f32_lat4.v` | `vhfastmulb16_f32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
+| 16 | `vhfastmulb16_addf32_rtz_lat4.v` | `vhfastmulb16_addf32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
 
 ---
 
@@ -38,6 +39,9 @@ vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
 vhfastmulb16_f32_lat4
 ├── vhfastmulb16_mul4x4_comb (x4)
 └── vhfastmulb16_sign
+
+vhfastmulb16_addf32_rtz_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
 ```
 
 ---
@@ -50,7 +54,7 @@ vhfastmulb16_f32_lat4
 | Mul8x8 | - | `mul8x8` | `mul8x8_lat3` | - |
 | Flags | `flags_lat1` | `flags_lat2` | - | - |
 | Exceptions | - | `except_lat2` | `except_lat3` | - |
-| Top-level | - | - | `rtz_lat3`, `rne_lat3` | `f32_lat4` |
+| Top-level | - | - | `rtz_lat3`, `rne_lat3` | `f32_lat4`, `addf32_rtz_lat4` |
 
 Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0).
 
@@ -58,10 +62,11 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 15 Verilog source files:
+The `src/` directory contains the following 16 Verilog source files:
 
 - `vhfastmulb16_add8x8_branch.v`
 - `vhfastmulb16_add8x8_lat2.v`
+- `vhfastmulb16_addf32_rtz_lat4.v`
 - `vhfastmulb16_except_lat2.v`
 - `vhfastmulb16_except_lat3.v`
 - `vhfastmulb16_f32_lat4.v`
