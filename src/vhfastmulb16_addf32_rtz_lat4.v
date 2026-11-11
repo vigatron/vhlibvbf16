@@ -20,7 +20,10 @@
  *
  * Computes outf32c = inf32a + inf32b per IEEE-754 binary32.
  * Since the exact f32 sum may require more than 24 significand bits,
- * the result is truncated (RTZ) — guard/round/sticky bits are not used.
+ * the mantissa datapath is extended to 27 bits (24 significand bits +
+ * guard/round/sticky).  RTZ rounding simply drops the three low bits,
+ * but the extension is required to align the smaller operand without
+ * losing information (sticky is folded into bit 0).
  *
  * Subnormal operands are not flushed to zero: they are normalized into
  * the F32 result, which allows exact representation of sums such as
@@ -33,10 +36,10 @@
  * and exact cancellation of non-zero operands yields +0.
  *
  * Pipeline is balanced 4 stages:
- *   S1: operand unpack, class flags, exponent compare, mantissa alignment
- *   S2: mantissa add/sub (27-bit raw result)
- *   S3: normalization (LZD), RTZ truncation, subnormal handling
- *   S4: F32 pack mux -> output register
+ *   S1: operand unpack, class flags, exponent compare, mantissa alignment (with sticky)
+ *   S2: mantissa add/sub (28-bit raw result, bit 27 = carry)
+ *   S3: carry fix-up, normalization (LZD), 9-bit signed exponent
+ *   S4: subnormal shift, RTZ truncation, F32 pack -> output register
  *
  * @param clk     Clock signal.
  * @param reset   Synchronous reset, active high, priority over en.
@@ -130,7 +133,6 @@ module vhfastmulb16_addf32_rtz_lat4 (
     //   Combinational during cycle N, captured at N+1 edge
     // ------------------------------------------------------------------
     wire [7:0] exp_diff = (a_exp_eff >= b_exp_eff) ? (a_exp_eff - b_exp_eff) : (b_exp_eff - a_exp_eff);
-    wire [4:0] exp_diff_capped = (exp_diff >= 5'd26) ? 5'd25 : exp_diff[4:0];
 
     // Which operand has larger magnitude?
     wire a_larger = (a_exp_eff > b_exp_eff) ||
@@ -141,20 +143,28 @@ module vhfastmulb16_addf32_rtz_lat4 (
                       res_zero ? (a_sign & b_sign) :      // IEEE-754: (-0)+(-0)=-0
                       op_add ? a_sign : (a_larger ? a_sign : b_sign);
 
-    // 26-bit extended mantissas for alignment: {2'b00, man}
-    wire [25:0] a_man_ext = {2'b00, a_man};
-    wire [25:0] b_man_ext = {2'b00, b_man};
+    // 27-bit extended mantissas: 24-bit significand + 3 low bits (G/R/S).
+    // Alignment shifts the smaller significand right and ORs every lost
+    // bit into the LSB (sticky).  A shift >= 27 flushes it completely.
+    wire [26:0] a_man_ext = {a_man, 3'b000};
+    wire [26:0] b_man_ext = {b_man, 3'b000};
 
-    wire [25:0] a_man_al_c = a_larger ? a_man_ext : (a_man_ext >> exp_diff_capped);
-    wire [25:0] b_man_al_c = a_larger ? (b_man_ext >> exp_diff_capped) : b_man_ext;
+    wire [4:0]  shift_amt = (exp_diff >= 8'd27) ? 5'd27 : exp_diff[4:0];
+    wire [26:0] hi_man_ext = a_larger ? a_man_ext : b_man_ext;
+    wire [26:0] lo_man_ext = a_larger ? b_man_ext : a_man_ext;
+
+    wire [26:0] lo_shifted     = lo_man_ext >> shift_amt;
+    wire [26:0] lo_sticky_mask = (27'd1 << shift_amt) - 27'd1;
+    wire        lo_sticky      = |(lo_man_ext & lo_sticky_mask);
+    wire [26:0] lo_man_al_c    = lo_shifted | {26'd0, lo_sticky};
 
     wire [7:0] exp_max_c = a_larger ? a_exp_eff : b_exp_eff;
 
     // ------------------------------------------------------------------
     // Stage S1 -> Stage S2 registers (capture at N+1 edge)
     // ------------------------------------------------------------------
-    reg [25:0] man_a_al_d1;
-    reg [25:0] man_b_al_d1;
+    reg [26:0] man_hi_al_d1;
+    reg [26:0] man_lo_al_d1;
     reg [7:0]  exp_max_d1;
     reg        sign_res_d1;
     reg        op_add_d1;
@@ -163,49 +173,47 @@ module vhfastmulb16_addf32_rtz_lat4 (
     reg        zero_and_sign_d1;
     reg        nan_sign_d1;
     reg [22:0] nan_frac_d1;
-    reg        a_larger_d1;  // операнд a имеет больший модуль (нужен на S2 для вычитания)
 
     always @(posedge clk) begin
         if (reset) begin
-            man_a_al_d1     <= 26'd0;
-            man_b_al_d1     <= 26'd0;
-            exp_max_d1      <= 8'd0;
-            sign_res_d1     <= 1'b0;
-            op_add_d1       <= 1'b0;
-            flags_d1        <= 3'b000;
-            is_bz_d1        <= 1'b0;
+            man_hi_al_d1     <= 27'd0;
+            man_lo_al_d1     <= 27'd0;
+            exp_max_d1       <= 8'd0;
+            sign_res_d1      <= 1'b0;
+            op_add_d1        <= 1'b0;
+            flags_d1         <= 3'b000;
+            is_bz_d1         <= 1'b0;
             zero_and_sign_d1 <= 1'b0;
-            nan_sign_d1     <= 1'b0;
-            nan_frac_d1     <= 23'd0;
+            nan_sign_d1      <= 1'b0;
+            nan_frac_d1      <= 23'd0;
         end else if (en_pipe) begin
-            man_a_al_d1     <= a_man_al_c;
-            man_b_al_d1     <= b_man_al_c;
-            exp_max_d1      <= exp_max_c;
-            sign_res_d1     <= sign_res_c;
-            op_add_d1       <= op_add;
-            flags_d1        <= {res_nan, res_inf, res_zero};
-            is_bz_d1        <= res_zero;
+            man_hi_al_d1     <= hi_man_ext;
+            man_lo_al_d1     <= lo_man_al_c;
+            exp_max_d1       <= exp_max_c;
+            sign_res_d1      <= sign_res_c;
+            op_add_d1        <= op_add;
+            flags_d1         <= {res_nan, res_inf, res_zero};
+            is_bz_d1         <= res_zero;
             zero_and_sign_d1 <= a_sign & b_sign;
-            nan_sign_d1     <= nan_sign_c;
-            nan_frac_d1     <= nan_frac_c;
-            a_larger_d1     <= a_larger;
+            nan_sign_d1      <= nan_sign_c;
+            nan_frac_d1      <= nan_frac_c;
         end
     end
 
     // ------------------------------------------------------------------
     // Stage S2: mantissa add/sub
+    //   man_hi_al_d1 is always the larger magnitude, so subtraction is
+    //   unconditional hi - lo (bit 27 is only set by addition carry).
     //   Combinational during cycle N+1, captured at N+2 edge
     // ------------------------------------------------------------------
-    wire [26:0] man_raw_c = op_add_d1 ?
-                            ({1'b0, man_a_al_d1} + {1'b0, man_b_al_d1}) :
-                            (a_larger_d1 ?
-                             ({1'b0, man_a_al_d1} - {1'b0, man_b_al_d1}) :
-                             ({1'b0, man_b_al_d1} - {1'b0, man_a_al_d1}));
+    wire [27:0] man_raw_c = op_add_d1 ?
+                            ({1'b0, man_hi_al_d1} + {1'b0, man_lo_al_d1}) :
+                            ({1'b0, man_hi_al_d1} - {1'b0, man_lo_al_d1});
 
     // ------------------------------------------------------------------
     // Stage S2 -> Stage S3 registers (capture at N+2 edge)
     // ------------------------------------------------------------------
-    reg [26:0] man_raw_d1;
+    reg [27:0] man_raw_d1;
     reg [7:0]  exp_max_d2;
     reg        sign_res_d2;
     reg [2:0]  flags_d2;
@@ -217,7 +225,7 @@ module vhfastmulb16_addf32_rtz_lat4 (
 
     always @(posedge clk) begin
         if (reset) begin
-            man_raw_d1     <= 27'd0;
+            man_raw_d1     <= 28'd0;
             exp_max_d2     <= 8'd0;
             sign_res_d2    <= 1'b0;
             flags_d2       <= 3'b000;
@@ -235,72 +243,65 @@ module vhfastmulb16_addf32_rtz_lat4 (
             zero_and_sign_d2 <= zero_and_sign_d1;
             nan_sign_d2     <= nan_sign_d1;
             nan_frac_d2     <= nan_frac_d1;
-            is_zero_d2      <= (man_raw_c == 27'd0) && !is_bz_d1;
+            is_zero_d2      <= (man_raw_c == 28'd0) && !is_bz_d1;
         end
     end
 
     // ------------------------------------------------------------------
-    // Stage S3: normalization, RTZ truncation, subnormal handling
+    // Stage S3: carry fix-up + normalization (LZD) + signed exponent
     //   Combinational during cycle N+2, captured at N+3 edge
+    //   man_norm has its leading one at bit 26; exp_pre is a 9-bit
+    //   two's-complement unbiased exponent (negative => subnormal).
     // ------------------------------------------------------------------
-    wire man_overflow = man_raw_d1[24];               // result >= 2.0 -> shift right 1
-    wire [25:0] man_norm1 = man_overflow ? man_raw_d1[25:0] >> 1 : man_raw_d1[25:0];
-    wire [7:0]  exp_norm1 = man_overflow ? exp_max_d2 + 8'd1 : exp_max_d2;
+    wire        man_carry = man_raw_d1[27];
+    wire [26:0] man_norm0 = man_carry ?
+                            ({1'b0, man_raw_d1[27:1]} | {26'd0, man_raw_d1[0]}) :
+                            man_raw_d1[26:0];
+    wire [8:0]  exp_adj   = {1'b0, exp_max_d2} + {8'd0, man_carry};
 
-    // Leading-zero detect on man_norm1[23:0]
+    // Leading-zero detect on the full 27-bit extended mantissa
     reg [4:0] lzd_c;
     always @(*) begin
-        casez (man_norm1[23:0])
-            24'b1???????????????????????: lzd_c = 5'd0;
-            24'b01??????????????????????: lzd_c = 5'd1;
-            24'b001?????????????????????: lzd_c = 5'd2;
-            24'b0001????????????????????: lzd_c = 5'd3;
-            24'b00001???????????????????: lzd_c = 5'd4;
-            24'b000001??????????????????: lzd_c = 5'd5;
-            24'b0000001?????????????????: lzd_c = 5'd6;
-            24'b00000001????????????????: lzd_c = 5'd7;
-            24'b000000001???????????????: lzd_c = 5'd8;
-            24'b0000000001??????????????: lzd_c = 5'd9;
-            24'b00000000001?????????????: lzd_c = 5'd10;
-            24'b000000000001????????????: lzd_c = 5'd11;
-            24'b0000000000001???????????: lzd_c = 5'd12;
-            24'b00000000000001??????????: lzd_c = 5'd13;
-            24'b000000000000001?????????: lzd_c = 5'd14;
-            24'b0000000000000001????????: lzd_c = 5'd15;
-            24'b00000000000000001???????: lzd_c = 5'd16;
-            24'b000000000000000001??????: lzd_c = 5'd17;
-            24'b0000000000000000001?????: lzd_c = 5'd18;
-            24'b00000000000000000001????: lzd_c = 5'd19;
-            24'b000000000000000000001???: lzd_c = 5'd20;
-            24'b0000000000000000000001??: lzd_c = 5'd21;
-            24'b00000000000000000000001?: lzd_c = 5'd22;
-            default:                     lzd_c = 5'd23;
+        casez (man_norm0)
+            27'b1??????????????????????????: lzd_c = 5'd0;
+            27'b01?????????????????????????: lzd_c = 5'd1;
+            27'b001????????????????????????: lzd_c = 5'd2;
+            27'b0001???????????????????????: lzd_c = 5'd3;
+            27'b00001??????????????????????: lzd_c = 5'd4;
+            27'b000001?????????????????????: lzd_c = 5'd5;
+            27'b0000001????????????????????: lzd_c = 5'd6;
+            27'b00000001???????????????????: lzd_c = 5'd7;
+            27'b000000001??????????????????: lzd_c = 5'd8;
+            27'b0000000001?????????????????: lzd_c = 5'd9;
+            27'b00000000001????????????????: lzd_c = 5'd10;
+            27'b000000000001???????????????: lzd_c = 5'd11;
+            27'b0000000000001??????????????: lzd_c = 5'd12;
+            27'b00000000000001?????????????: lzd_c = 5'd13;
+            27'b000000000000001????????????: lzd_c = 5'd14;
+            27'b0000000000000001???????????: lzd_c = 5'd15;
+            27'b00000000000000001??????????: lzd_c = 5'd16;
+            27'b000000000000000001?????????: lzd_c = 5'd17;
+            27'b0000000000000000001????????: lzd_c = 5'd18;
+            27'b00000000000000000001???????: lzd_c = 5'd19;
+            27'b000000000000000000001??????: lzd_c = 5'd20;
+            27'b0000000000000000000001?????: lzd_c = 5'd21;
+            27'b00000000000000000000001????: lzd_c = 5'd22;
+            27'b000000000000000000000001???: lzd_c = 5'd23;
+            27'b0000000000000000000000001??: lzd_c = 5'd24;
+            27'b00000000000000000000000001?: lzd_c = 5'd25;
+            27'b000000000000000000000000001: lzd_c = 5'd26;
+            default:                        lzd_c = 5'd26;
         endcase
     end
 
-    // LZD shift capped at exp_norm1 to avoid negative exponent
-    wire lzd_gt_exp = ({3'd0, lzd_c} > exp_norm1);
-    wire [4:0] lzd_eff = lzd_gt_exp ? exp_norm1[4:0] : lzd_c;
-
-    wire [25:0] man_shifted = man_norm1 << lzd_eff;
-    wire [7:0]  exp_pre = lzd_gt_exp ? 8'd0 : (exp_norm1 - lzd_c);
-
-    // Subnormal output: exp <= 0
-    wire subnormal_out = lzd_gt_exp || (exp_pre == 8'd0);
-    wire [7:0]  exp_final = subnormal_out ? 8'd0 : exp_pre;
-
-    // For subnormal: frac = man_norm1 << (exp_norm1 - 1), masked to 23 bits
-    // (equivalent to man_shifted >> (1 + lzd_c - exp_norm1))
-    wire [4:0] exp_norm1_5 = exp_norm1[4:0];
-    wire [22:0] frac_subnormal = (man_norm1 << (exp_norm1_5 - 5'd1)) & 23'h7FFFFF;
-    wire [22:0] frac_normal  = man_shifted[22:0];
-    wire [22:0] frac_c = subnormal_out ? frac_subnormal : frac_normal;
+    wire [26:0] man_norm_c = man_norm0 << lzd_c;
+    wire [8:0]  exp_pre_c  = exp_adj - {4'd0, lzd_c};
 
     // ------------------------------------------------------------------
     // Stage S3 -> Stage S4 registers (capture at N+3 edge)
     // ------------------------------------------------------------------
-    reg [22:0] frac_d1;
-    reg [7:0]  exp_final_d1;
+    reg [26:0] man_norm_d1;
+    reg [8:0]  exp_pre_d1;
     reg        sign_res_d3;
     reg [2:0]  flags_d3;
     reg        is_bz_d3;
@@ -311,8 +312,8 @@ module vhfastmulb16_addf32_rtz_lat4 (
 
     always @(posedge clk) begin
         if (reset) begin
-            frac_d1        <= 23'd0;
-            exp_final_d1   <= 8'd0;
+            man_norm_d1    <= 27'd0;
+            exp_pre_d1     <= 9'd0;
             sign_res_d3    <= 1'b0;
             flags_d3       <= 3'b000;
             is_bz_d3       <= 1'b0;
@@ -321,8 +322,8 @@ module vhfastmulb16_addf32_rtz_lat4 (
             nan_sign_d3    <= 1'b0;
             nan_frac_d3    <= 23'd0;
         end else if (en_pipe) begin
-            frac_d1        <= frac_c;
-            exp_final_d1   <= exp_final;
+            man_norm_d1    <= man_norm_c;
+            exp_pre_d1     <= exp_pre_c;
             sign_res_d3    <= sign_res_d2;
             flags_d3       <= flags_d2;
             is_bz_d3       <= is_bz_d2;
@@ -334,16 +335,28 @@ module vhfastmulb16_addf32_rtz_lat4 (
     end
 
     // ------------------------------------------------------------------
-    // Stage S4: F32 pack (combinational) -> output register
+    // Stage S4: subnormal shift / truncation + F32 pack -> output register
+    //   Normal:    exp = exp_pre (1..254), frac = man_norm[25:3]
+    //              (three G/R/S bits are dropped, RTZ truncation)
+    //   Subnormal: value = 1.f * 2^(exp_pre - 127)
+    //              frac = man_norm >> (4 - exp_pre), exp field = 0
     // ------------------------------------------------------------------
+    wire        exp_nonpos = exp_pre_d1[8] | (exp_pre_d1 == 9'd0);
+    wire [4:0]  sub_shift  = 5'd4 - exp_pre_d1[4:0];
+    wire [26:0] man_sub     = man_norm_d1 >> sub_shift;
+    wire [22:0] frac_sub    = man_sub[22:0];
+    wire [22:0] frac_norm   = man_norm_d1[25:3];
+    wire [22:0] frac_sel    = exp_nonpos ? frac_sub : frac_norm;
+    wire [7:0]  exp_sel     = exp_nonpos ? 8'd0 : exp_pre_d1[7:0];
+
     reg [31:0] c_next;
 
     always @(*) begin
         if (flags_d3[2]) begin
             // NaN: preserve sign and payload, force quiet bit
             c_next = {nan_sign_d3, 8'hFF, nan_frac_d3};
-        end else if (flags_d3[1] || exp_final_d1 >= 8'hFF) begin
-            // Inf or overflow: {sign, 255, 0}
+        end else if (flags_d3[1] || (exp_pre_d1 == 9'd255)) begin
+            // Inf, or overflow of a finite sum: {sign, 255, 0}
             c_next = {sign_res_d3, 8'hFF, 23'h000000};
         end else if (flags_d3[0] || is_zero_d3) begin
             // Zero
@@ -353,12 +366,9 @@ module vhfastmulb16_addf32_rtz_lat4 (
             else
                 // Exact cancellation: RTZ -> +0
                 c_next = {1'b0, 31'h00000000};
-        end else if (exp_final_d1 >= 8'd1) begin
-            // Normal F32 result: exact, no rounding (RTZ truncation already applied)
-            c_next = {sign_res_d3, exp_final_d1, frac_d1};
         end else begin
-            // F32 subnormal result: exp = 0, truncated significand
-            c_next = {sign_res_d3, 8'h00, frac_d1};
+            // Normal (exp_sel >= 1) or subnormal (exp_sel == 0) result
+            c_next = {sign_res_d3, exp_sel, frac_sel};
         end
     end
 
