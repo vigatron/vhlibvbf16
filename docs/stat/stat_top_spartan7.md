@@ -158,7 +158,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 | **Регистры S2→S3** | 0 | 67 | man_raw(28) + exp_max(8) + flags/sign/nan_frac/etc |
 | Carry fix-up + LZD 27-bit + 9-bit signed exponent (S3) | ~85 | 0 | исправление переноса, приоритетный энкодер 27 бит, коррекция экспоненты |
 | **Регистры S3→S4** | 0 | 67 | man_norm(27) + exp_pre(9) + flags/sign/nan_frac/etc |
-| Subnormal shift + RTZ truncation + F32 pack mux (S4) | ~45 | 0 | сдвиг для субнормала, отсечение 3低бита, приоритетный mux ~5 ветвей × 32 бит |
+| Subnormal shift + RTZ truncation + F32 pack mux (S4) | ~45 | 0 | сдвиг для субнормала, отсечение 3 младших бит, приоритетный mux ~5 ветвей × 32 бит |
 | Выходной регистр outf32c (32 бита) | 0 | 32 | регистр результата |
 | **ИТОГО** | **~290** | **~263** | |
 
