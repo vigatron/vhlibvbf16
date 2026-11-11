@@ -11,7 +11,7 @@
 Compact pipelined BFloat16 multiplier (Verilog) — RTZ/RNE, no DSP required.  
 
 Author: V01G04A81  
-Rev: 0.0.2  
+Rev: 0.0.3  
 
 
 `vhfastmulb16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
