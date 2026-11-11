@@ -1,0 +1,83 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Wed Nov 11 03:36:58 2026
+[*]
+[dumpfile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/build/vhfastmulb16_addf32_rne_lat4.vcd"
+[dumpfile_mtime] "Wed Nov 11 03:27:11 2026"
+[dumpfile_size] 57894
+[savefile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/visual/vhfastmulb16_addf32_rne_lat4_tb.gtkw"
+[timestart] 0
+[size] 1400 800
+[pos] 200 0
+*-15.900000 156000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_addf32_rne_lat4_tb.
+[treeopen] vhfastmulb16_addf32_rne_lat4_tb.uut.
+[sst_width] 269
+[signals_width] 211
+[sst_expanded] 1
+[sst_vpaned_height] 371
+@420
+vhfastmulb16_addf32_rne_lat4_tb.N
+vhfastmulb16_addf32_rne_lat4_tb.MAX_PRINT
+vhfastmulb16_addf32_rne_lat4_tb.LAT
+@28
+vhfastmulb16_addf32_rne_lat4_tb.clk
+vhfastmulb16_addf32_rne_lat4_tb.reset
+vhfastmulb16_addf32_rne_lat4_tb.en
+[color] 3
+vhfastmulb16_addf32_rne_lat4_tb.inf32a[31:0]
+[color] 3
+vhfastmulb16_addf32_rne_lat4_tb.inf32b[31:0]
+@29
+[color] 2
+vhfastmulb16_addf32_rne_lat4_tb.outf32c[31:0]
+@420
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_sign
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_sign
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_exp[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_exp[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_frac[22:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_frac[22:0]
+@28
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_zero
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_zero
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_sub
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_sub
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_inf
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_inf
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_nan
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_nan
+vhfastmulb16_addf32_rne_lat4_tb.uut.res_nan
+vhfastmulb16_addf32_rne_lat4_tb.uut.res_inf
+vhfastmulb16_addf32_rne_lat4_tb.uut.res_zero
+vhfastmulb16_addf32_rne_lat4_tb.uut.op_add
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_exp_eff[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_exp_eff[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_man[23:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.b_man[23:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.a_larger
+vhfastmulb16_addf32_rne_lat4_tb.uut.en_d1
+vhfastmulb16_addf32_rne_lat4_tb.uut.en_d2
+vhfastmulb16_addf32_rne_lat4_tb.uut.en_d3
+vhfastmulb16_addf32_rne_lat4_tb.uut.en_d4
+vhfastmulb16_addf32_rne_lat4_tb.uut.en_pipe
+@420
+vhfastmulb16_addf32_rne_lat4_tb.uut.exp_max_d2[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.sign_res_d2
+vhfastmulb16_addf32_rne_lat4_tb.uut.flags_d2[2:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.is_zero_d2
+vhfastmulb16_addf32_rne_lat4_tb.uut.man_overflow
+vhfastmulb16_addf32_rne_lat4_tb.uut.lzd_c[4:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.exp_norm1[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.exp_pre[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.subnormal_out
+vhfastmulb16_addf32_rne_lat4_tb.uut.exp_final[7:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.g_bit
+vhfastmulb16_addf32_rne_lat4_tb.uut.r_bit
+vhfastmulb16_addf32_rne_lat4_tb.uut.s_bit
+vhfastmulb16_addf32_rne_lat4_tb.uut.round_up
+vhfastmulb16_addf32_rne_lat4_tb.uut.flags_d3[2:0]
+vhfastmulb16_addf32_rne_lat4_tb.uut.sign_res_d3
+vhfastmulb16_addf32_rne_lat4_tb.uut.c_next[31:0]
+[pattern_trace] 1
+[pattern_trace] 0
