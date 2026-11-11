@@ -75,12 +75,16 @@ The `src/` directory contains the following 17 Verilog source files:
 - `vhfastmulb16_except_lat2.v`
 - `vhfastmulb16_except_lat3.v`
 - `vhfastmulb16_f32_lat4.v`
+- `vhfastmulb16_f32_lat4.v`
 - `vhfastmulb16_flags_lat1.v`
 - `vhfastmulb16_flags_lat2.v`
 - `vhfastmulb16_mul4x4.v`
 - `vhfastmulb16_mul4x4_comb.v`
 - `vhfastmulb16_mul4x4_lat2.v`
+- `vhfastmulb16_mul4x4_comb.v`
+- `vhfastmulb16_mul4x4_lat2.v`
 - `vhfastmulb16_mul8x8.v`
+- `vhfastmulb16_mul8x8_lat3.v`
 - `vhfastmulb16_mul8x8_lat3.v`
 - `vhfastmulb16_rne_lat3.v`
 - `vhfastmulb16_rtz_lat3.v`

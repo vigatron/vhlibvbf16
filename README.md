@@ -37,11 +37,13 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 | **Format** | BF16: `s[15] \| exp[14:7] \| frac[6:0]` (8-bit exponent, bias 127; 7-bit mantissa) |
 | **Rounding** | RTZ (truncation) in `vhfastmulb16_rtz_lat3`; RNE (IEEE 754 round-to-nearest-even) in `vhfastmulb16_rne_lat3` |
 | **Subnormal inputs** | **Flush To Zero (FTZ)**: subnormal operands (`exp=0`, `frac≠0`) are flushed to zero before the pipeline; ±0 is already zero |
+| **Subnormal inputs** | **Flush To Zero (FTZ)**: subnormal operands (`exp=0`, `frac≠0`) are flushed to zero before the pipeline; ±0 is already zero |
 | **Subnormal results** | Not generated: exp underflow (≤0 after normalization) flushes the result to ±0 |
 | **Zero** | Zero operand (`exp=0`) → result ±0 (canonical `s\|8'h00\|7'h00`); Inf × 0 → NaN, NaN × 0 → NaN |
 | **Infinity** | Inf operand (`exp=255, frac=0`) and no NaN → result ±Inf (`s\|8'hFF\|7'h00`); Inf × 0 = NaN |
 | **NaN** | Any operand with `exp=255, frac≠0` → quiet NaN, payload preserved (priority A > B): `s\|8'hFF\|1'b1\|payload[5:0]` |
 | **Exception priority** | NaN > Inf > Zero > normal multiply; overflow saturates to ±Inf, underflow flushes to ±0 |
+| **Sign** | `sign_a XOR sign_b` for all results, including NaN |
 | **Sign** | `sign_a XOR sign_b` for all results, including NaN |
 | **Pipeline** | 3 clock cycles latency, full-drain behavior: after `en=0` the pipeline finishes accepted data for 2 more cycles, then holds the last result (HOLD, no zero-fill) |
 
@@ -162,11 +164,16 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_mul4x4_chk_tb.v` | `vhfastmulb16_mul4x4` (check/debug) |
 | `tests/vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` |
 | `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
+| `tests/vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` |
+| `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
 | `tests/vhfastmulb16_mul8x8_tb.v` | `vhfastmulb16_mul8x8` |
 | `tests/vhfastmulb16_mul8x8_chk_tb.v` | `vhfastmulb16_mul8x8` (check/debug) |
 | `tests/vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` |
 | `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` | `vhfastmulb16_mul8x8_lat3` (check/debug) |
+| `tests/vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` |
+| `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` | `vhfastmulb16_mul8x8_lat3` (check/debug) |
 | `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
+| `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
 | `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
 | `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
 | `tests/vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` |
@@ -200,12 +207,15 @@ Run the simulation with:
 
 ```bash
 # All testbench scripts
+# All testbench scripts
 ./scripts/run_all.sh sim
 
 # Individual tests
 ./scripts/run_test_mul4x4.sh sim
 ./scripts/run_test_mul4x4_lat2.sh sim
+./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul8x8.sh sim
+./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
@@ -234,6 +244,8 @@ Run the simulation with:
 ./scripts/run_all.sh clean
 ```
 
+`run_all.sh` runs every `scripts/run_test_*.sh`; the benches without a dedicated
+script (`vhfastmulb16_mul4x4_chk_tb.v`, `vhfastmulb16_add8x8_reva_tb.v`) are not included.
 `run_all.sh` runs every `scripts/run_test_*.sh`; the benches without a dedicated
 script (`vhfastmulb16_mul4x4_chk_tb.v`, `vhfastmulb16_add8x8_reva_tb.v`) are not included.
 See the [docs/testbenches_list.md](docs/testbenches_list.md) file for more details.

@@ -27,6 +27,7 @@
 | 19 | `vhfastmulb16_addf32_rne_lat4_rand_tb.v` | `vhfastmulb16_addf32_rne_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
 
 ## Визуализационные / вспомогательные тестбенчи
+## Визуализационные / вспомогательные тестбенчи
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
@@ -44,7 +45,9 @@
 # Все тесты через скрипты в scripts/
 ./scripts/run_test_mul4x4.sh sim
 ./scripts/run_test_mul4x4_lat2.sh sim
+./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul8x8.sh sim
+./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
@@ -69,6 +72,7 @@
 
 # Очистка артефактов
 ./scripts/run_test_f32_lat4.sh clean
+./scripts/run_test_f32_lat4.sh clean
 ```
 
 ---
@@ -88,6 +92,7 @@
 ## Наименование
 
 - `<module>_tb.v` — основной проверяющий тестбенч
+- `<module>_tb.chk.v` / `<module>_chk_tb.v` — визуализационный/упрощённый
 - `<module>_tb.chk.v` / `<module>_chk_tb.v` — визуализационный/упрощённый
 - `<module>_latN_tb.v` — если модуль имеет версию с латентностью N
 - `vhfastmulb16_f32_lat4_rand_tb.v` — случайный regression с Python golden-моделью
