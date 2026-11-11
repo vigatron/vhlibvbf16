@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/*.v)
 
-Всего файлов: **24**
+Всего файлов: **28**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -25,6 +25,10 @@
 | 17 | `vhfastmulb16_addf32_rne_lat4_tb.v` | `vhfastmulb16_addf32_rne_lat4` | Directed + streaming, `LAT=4` | 32 |
 | 18 | `vhfastmulb16_addf32_rtz_lat4_rand_tb.v` | `vhfastmulb16_addf32_rtz_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
 | 19 | `vhfastmulb16_addf32_rne_lat4_rand_tb.v` | `vhfastmulb16_addf32_rne_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
+| 20 | `vhfastmulb16_addf16_rtz_lat4_tb.v` | `vhfastmulb16_addf16_rtz_lat4` | Directed + streaming, `LAT=4` | 32 |
+| 21 | `vhfastmulb16_addf16_rne_lat4_tb.v` | `vhfastmulb16_addf16_rne_lat4` | Directed + streaming, `LAT=4` | 32 |
+| 22 | `vhfastmulb16_addf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_addf16_rtz_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
+| 23 | `vhfastmulb16_addf16_rne_lat4_rand_tb.v` | `vhfastmulb16_addf16_rne_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
 
 ## Визуализационные / вспомогательные тестбенчи
 ## Визуализационные / вспомогательные тестбенчи
@@ -63,12 +67,18 @@
 ./scripts/run_test_addf32_rne_lat4.sh sim
 ./scripts/run_test_addf32_rtz_lat4_rand.sh sim
 ./scripts/run_test_addf32_rne_lat4_rand.sh sim
+./scripts/run_test_addf16_rtz_lat4.sh sim
+./scripts/run_test_addf16_rne_lat4.sh sim
+./scripts/run_test_addf16_rtz_lat4_rand.sh sim
+./scripts/run_test_addf16_rne_lat4_rand.sh sim
 
 # С визуализацией (gtkwave)
 ./scripts/run_test_f32_lat4.sh wave
 ./scripts/run_test_f32_lat4_rand.sh wave
 ./scripts/run_test_addf32_rtz_lat4_rand.sh wave
 ./scripts/run_test_addf32_rne_lat4_rand.sh wave
+./scripts/run_test_addf16_rtz_lat4_rand.sh wave
+./scripts/run_test_addf16_rne_lat4_rand.sh wave
 
 # Очистка артефактов
 ./scripts/run_test_f32_lat4.sh clean

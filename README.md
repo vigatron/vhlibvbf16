@@ -8,14 +8,33 @@
 ![Build](https://img.shields.io/badge/build-verified-brightgreen)
 
 
-Compact pipelined BF16/FP32 arithmetic library (Verilog) — BF16 multiplier, BF16×BF16→F32 multiplier and FP32 adders; RTZ/RNE, no DSP required.  
-
 Author: V01G04A81  
-Rev: 0.0.3  
+Rev: 0.0.4  
 
+
+## Description
+
+Compact pipelined BF16/FP32 arithmetic library (Verilog)  
+BF16 multiplier, BF16×BF16→F32 multiplier and FP32 adders; RTZ/RNE, no DSP required.  
 
 `vhfastmulb16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
+
+
+## Top Modules
+
+The following top-level modules are the primary entry points of the library:
+
+| Module | File | Function | Output Format | Latency | Rounding |
+|--------|------|----------|---------------|---------|----------|
+| `vhfastmulb16_rtz_lat3` | `src/vhfastmulb16_rtz_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
+| `vhfastmulb16_rne_lat3` | `src/vhfastmulb16_rne_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
+| `vhfastmulb16_f32_lat4` | `src/vhfastmulb16_f32_lat4.v` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
+| `vhfastmulb16_addf32_rtz_lat4` | `src/vhfastmulb16_addf32_rtz_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_addf32_rne_lat4` | `src/vhfastmulb16_addf32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_addf16_rtz_lat4` | `src/vhfastmulb16_addf16_rtz_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_addf16_rne_lat4` | `src/vhfastmulb16_addf16_rne_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
+
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
 constructs in `src/`); the testbenches in `tests/` are **SystemVerilog**
@@ -85,7 +104,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 
 ## Source Files
 
-The `src/` directory contains **17** Verilog source files:
+The `src/` directory contains **19** Verilog source files:
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -106,20 +125,10 @@ The `src/` directory contains **17** Verilog source files:
 | 15 | `vhfastmulb16_f32_lat4.v` | `vhfastmulb16_f32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
 | 16 | `vhfastmulb16_addf32_rtz_lat4.v` | `vhfastmulb16_addf32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
 | 17 | `vhfastmulb16_addf32_rne_lat4.v` | `vhfastmulb16_addf32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
+| 18 | `vhfastmulb16_addf16_rtz_lat4.v` | `vhfastmulb16_addf16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
+| 19 | `vhfastmulb16_addf16_rne_lat4.v` | `vhfastmulb16_addf16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
 
-## Top Modules
-
-The following top-level modules are the primary entry points of the library:
-
-| Module | File | Function | Output Format | Latency | Rounding |
-|--------|------|----------|---------------|---------|----------|
-| `vhfastmulb16_rtz_lat3` | `src/vhfastmulb16_rtz_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
-| `vhfastmulb16_rne_lat3` | `src/vhfastmulb16_rne_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
-| `vhfastmulb16_f32_lat4` | `src/vhfastmulb16_f32_lat4.v` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
-| `vhfastmulb16_addf32_rtz_lat4` | `src/vhfastmulb16_addf32_rtz_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_addf32_rne_lat4` | `src/vhfastmulb16_addf32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
-
-### Module Dependencies
+## Module Dependencies
 
 ```
 vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
@@ -153,6 +162,7 @@ vhfastmulb16_addf32_rne_lat4
 | Exceptions | - | `vhfastmulb16_except_lat2` | `vhfastmulb16_except_lat3` | - |
 | Top-level (BF16 × BF16) | - | - | `vhfastmulb16_rtz_lat3`, `vhfastmulb16_rne_lat3` | `vhfastmulb16_f32_lat4` |
 | Top-level (FP32 add) | - | - | - | `vhfastmulb16_addf32_rtz_lat4`, `vhfastmulb16_addf32_rne_lat4` |
+| Top-level (FP16 add) | - | - | - | `vhfastmulb16_addf16_rtz_lat4`, `vhfastmulb16_addf16_rne_lat4` |
 
 ## Testbenches
 
@@ -189,6 +199,10 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_addf32_rne_lat4_tb.v` | `vhfastmulb16_addf32_rne_lat4` (directed + en=0 gaps, LAT=4) |
 | `tests/vhfastmulb16_addf32_rtz_lat4_rand_tb.v` | `vhfastmulb16_addf32_rtz_lat4` (random/directed regression, LAT=4) |
 | `tests/vhfastmulb16_addf32_rne_lat4_rand_tb.v` | `vhfastmulb16_addf32_rne_lat4` (random/directed regression, LAT=4) |
+| `tests/vhfastmulb16_addf16_rtz_lat4_tb.v` | `vhfastmulb16_addf16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/vhfastmulb16_addf16_rne_lat4_tb.v` | `vhfastmulb16_addf16_rne_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/vhfastmulb16_addf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_addf16_rtz_lat4` (random/directed regression, LAT=4) |
+| `tests/vhfastmulb16_addf16_rne_lat4_rand_tb.v` | `vhfastmulb16_addf16_rne_lat4` (random/directed regression, LAT=4) |
 
 Most testbenches have a dedicated run script. In particular, several
 `*_chk_tb.v` benches are also runnable directly:
@@ -231,6 +245,10 @@ Run the simulation with:
 ./scripts/run_test_addf32_rne_lat4.sh sim
 ./scripts/run_test_addf32_rtz_lat4_rand.sh sim
 ./scripts/run_test_addf32_rne_lat4_rand.sh sim
+./scripts/run_test_addf16_rtz_lat4.sh sim
+./scripts/run_test_addf16_rne_lat4.sh sim
+./scripts/run_test_addf16_rtz_lat4_rand.sh sim
+./scripts/run_test_addf16_rne_lat4_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/run_test_mul4x4.sh wave
@@ -239,6 +257,8 @@ Run the simulation with:
 ./scripts/run_test_f32_lat4_rand.sh wave
 ./scripts/run_test_addf32_rtz_lat4_rand.sh wave
 ./scripts/run_test_addf32_rne_lat4_rand.sh wave
+./scripts/run_test_addf16_rtz_lat4_rand.sh wave
+./scripts/run_test_addf16_rne_lat4_rand.sh wave
 
 # Clean up build artifacts
 ./scripts/run_all.sh clean
