@@ -8,14 +8,33 @@
 ![Build](https://img.shields.io/badge/build-verified-brightgreen)
 
 
-Compact pipelined BF16/FP32 arithmetic library (Verilog) — BF16 multiplier, BF16×BF16→F32 multiplier and FP32 adders; RTZ/RNE, no DSP required.  
-
 Author: V01G04A81  
 Rev: 0.0.4  
 
 
+## Description
+
+Compact pipelined BF16/FP32 arithmetic library (Verilog)  
+BF16 multiplier, BF16×BF16→F32 multiplier and FP32 adders; RTZ/RNE, no DSP required.  
+
 `vhfastmulb16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
+
+
+## Top Modules
+
+The following top-level modules are the primary entry points of the library:
+
+| Module | File | Function | Output Format | Latency | Rounding |
+|--------|------|----------|---------------|---------|----------|
+| `vhfastmulb16_rtz_lat3` | `src/vhfastmulb16_rtz_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
+| `vhfastmulb16_rne_lat3` | `src/vhfastmulb16_rne_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
+| `vhfastmulb16_f32_lat4` | `src/vhfastmulb16_f32_lat4.v` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
+| `vhfastmulb16_addf32_rtz_lat4` | `src/vhfastmulb16_addf32_rtz_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_addf32_rne_lat4` | `src/vhfastmulb16_addf32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_addf16_rtz_lat4` | `src/vhfastmulb16_addf16_rtz_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_addf16_rne_lat4` | `src/vhfastmulb16_addf16_rne_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
+
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
 constructs in `src/`); the testbenches in `tests/` are **SystemVerilog**
@@ -109,21 +128,7 @@ The `src/` directory contains **19** Verilog source files:
 | 18 | `vhfastmulb16_addf16_rtz_lat4.v` | `vhfastmulb16_addf16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
 | 19 | `vhfastmulb16_addf16_rne_lat4.v` | `vhfastmulb16_addf16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
 
-## Top Modules
-
-The following top-level modules are the primary entry points of the library:
-
-| Module | File | Function | Output Format | Latency | Rounding |
-|--------|------|----------|---------------|---------|----------|
-| `vhfastmulb16_rtz_lat3` | `src/vhfastmulb16_rtz_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
-| `vhfastmulb16_rne_lat3` | `src/vhfastmulb16_rne_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
-| `vhfastmulb16_f32_lat4` | `src/vhfastmulb16_f32_lat4.v` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
-| `vhfastmulb16_addf32_rtz_lat4` | `src/vhfastmulb16_addf32_rtz_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_addf32_rne_lat4` | `src/vhfastmulb16_addf32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
-| `vhfastmulb16_addf16_rtz_lat4` | `src/vhfastmulb16_addf16_rtz_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_addf16_rne_lat4` | `src/vhfastmulb16_addf16_rne_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
-
-### Module Dependencies
+## Module Dependencies
 
 ```
 vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
