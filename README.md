@@ -25,18 +25,19 @@ It multiplies two BF16 numbers and produces a BF16 result on the output.
 
 The following top-level modules are the primary entry points of the library:
 
-| Module | File | Function | Output Format | Latency | Rounding |
-|--------|------|----------|---------------|---------|----------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | `src/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `src/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | `src/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | `src/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | `src/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | `src/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | `src/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | `src/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | BF16 + BF16 adder | BF16 | 4 clk | RTZ (truncation) |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | `src/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | BF16 + BF16 adder | BF16 | 4 clk | RNE (IEEE-754) |
+| Module | Function | Output Format | Latency | Rounding |
+|---------|----------|---------------|---------|----------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | BF16 × BF16 multiplier | BF16 | 3 clk | RTZ (truncation) |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | BF16 × BF16 multiplier | BF16 | 3 clk | RNE (IEEE-754) |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | BF16 × BF16 multiplier | F32 | 4 clk | None (exact) |
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | FP32 + FP32 adder | F32 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | BF16 + BF16 adder | BF16 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | BF16 + BF16 adder | BF16 | 4 clk | RNE (IEEE-754) |
 
+The corresponding files are located in the `src` folder.
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
 constructs in `src/`); the testbenches in `tests/` are **SystemVerilog**
