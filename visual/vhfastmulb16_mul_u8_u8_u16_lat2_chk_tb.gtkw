@@ -1,0 +1,34 @@
+[*]
+[*] GTKWave Analyzer save file
+[*]
+[dumpfile] "../build/vhfastmulb16_mul_u8_u8_u16_lat2_chk.vcd"
+[timestart] 0
+[size] 1280 800
+[pos] -1 -1
+[treeopen] vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.
+[sst_width] 290
+[signals_width] 290
+[sst_expanded] 1
+[sst_vpaned_height] 300
+@28
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.clk
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.reset
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.en
+@22
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.a[7:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.b[7:0]
+@22
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.a_high[3:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.a_low[3:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.b_high[3:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.b_low[3:0]
+@22
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.p_hh[7:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.p_hl[7:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.p_lh[7:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.p_ll[7:0]
+@22
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.uut.sum[15:0]
+vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.c[15:0]
+[pattern_trace] 1
+[pattern_trace] 0

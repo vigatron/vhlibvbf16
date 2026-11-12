@@ -129,7 +129,7 @@ module vhfastmulb16_rne_lat3 (
     // ---------------------------------------------------
     wire [15:0] c_man_mul;
 
-    vhfastmulb16_mul8x8 mul_man (
+    vhfastmulb16_mul_u8_u8_u16_lat2 mul_man (
         .clk(clk),
         .reset(reset),
         .en(en_pipe),

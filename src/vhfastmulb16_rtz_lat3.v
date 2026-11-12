@@ -54,7 +54,7 @@ module vhfastmulb16_rtz_lat3 (
     assign a_frac = a[6:0];
     assign b_frac = b[6:0];
 
-    // vhfastmulb16_mul8x8 - умножение мантисс 8x8 -> 16 бит
+    // vhfastmulb16_mul_u8_u8_u16_lat2 - умножение мантисс 8x8 -> 16 бит
     // Для нормальных: {1'b1, frac}, для субнормалов (после FTZ): {1'b0, 0} = 0
     wire [7:0] a_man = a_is_subnormal ? 8'h00 : { 1'b1, a_frac };
     wire [7:0] b_man = b_is_subnormal ? 8'h00 : { 1'b1, b_frac };
@@ -146,7 +146,7 @@ module vhfastmulb16_rtz_lat3 (
 
     wire [15:0] c_man_mul;
     
-    vhfastmulb16_mul8x8 mul_man (
+    vhfastmulb16_mul_u8_u8_u16_lat2 mul_man (
     .clk(clk),
     .reset(reset),
     .en(en_pipe),

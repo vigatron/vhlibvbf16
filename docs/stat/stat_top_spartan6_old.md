@@ -42,7 +42,7 @@
 
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
-| `mul8x8` (4× `mul4x4` + дерево сумматоров) | ~210 | 48 | 4× CSA-структура + 3 carry-chain adder (8+8+8 бит = 24 LUT) |
+| `mul_u8_u8_u16_lat2` (4× `mul4x4` + дерево сумматоров) | ~210 | 48 | 4× CSA-структура + 3 carry-chain adder (8+8+8 бит = 24 LUT) |
 | `add8x8_lat2` | ~18 | 19 | 9-bit add + 9-bit sub (константа 127), carry chain |
 | `sign` | ~1 | 3 | 1 XOR (частично поглощается LUT соседней логики) |
 | `except_lat2` (включая 2× `flags_lat1`) | ~54 | 63 | флаги, классификация NaN/Inf/Zero, NaN payload mux |
@@ -85,7 +85,7 @@
 
 | Подмодуль | LUTs | FF |
 |-----------|------|-----|
-| `mul8x8` | ~210 | 48 |
+| `mul_u8_u8_u16_lat2` | ~210 | 48 |
 | `add8x8_lat2` | ~18 | 19 |
 | `sign` | ~1 | 3 |
 | `except_lat2` | ~54 | 63 |
@@ -145,13 +145,13 @@ latency равна 4 тактам.
 
 ### RTZ:
 ```
-mul4x4 (CSA) → mul8x8 CPA → exp_sum + man_msb → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux → output reg
 ```
 ~5.5 ns (180 MHz)
 
 ### RNE:
 ```
-mul4x4 (CSA) → mul8x8 CPA → man_shifted/G/R/S → RNE increment → exp_norm → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → man_shifted/G/R/S → RNE increment → exp_norm → c_next mux → output reg
 ```
 ~6.2 ns (160 MHz)
 
@@ -161,7 +161,7 @@ mul4x4 (CSA) → mul8x8 CPA → man_shifted/G/R/S → RNE increment → exp_norm
 
 | Оптимизация | Экономия LUTs | Сложность |
 |-------------|---------------|-----------|
-| Перенести `mul8x8` на DSP48A1 | ~-200 LUTs (mul8x8 → ~0-10) | Замена структурного умножителя на DSP-инстанс |
+| Перенести `mul_u8_u8_u16_lat2` на DSP48A1 | ~-200 LUTs (mul_u8_u8_u16_lat2 → ~0-10) | Замена структурного умножителя на DSP-инстанс |
 | Убрать избыточные mux `*_exp_eff` (логически ≡ входу) | ~-30 LUTs | Простейшая правка |
 | Объединить `except_lat2` + `flags_lat1` (флаги комбинационно) | ~-20 LUTs | Рефакторинг |
 | **Потенциальный итог RTZ** | **~150-200 LUTs (~3%)** | |

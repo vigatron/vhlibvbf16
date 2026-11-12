@@ -1,11 +1,11 @@
 `timescale 1ns/1ps
 // =============================================================
-// Визуализационный тестбенч для vhfastmulb16_mul8x8
+// Визуализационный тестбенч для vhfastmulb16_mul_u8_u8_u16_lat2
 //   4 пары чисел подаются подряд, каждый такт новая пара
 //   латентность результата 2 такта
 // =============================================================
 
-module vhfastmulb16_mul8x8_chk_tb;
+module vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb;
 
     localparam MAX_PRINT = 10;      // сколько ошибок печатать подробно
 
@@ -17,7 +17,7 @@ module vhfastmulb16_mul8x8_chk_tb;
     reg  [7:0]  b;
     wire [15:0] c;
 
-    vhfastmulb16_mul8x8 uut (
+    vhfastmulb16_mul_u8_u8_u16_lat2 uut (
     .clk   (clk),
     .reset (reset),
     .en    (en),
@@ -54,8 +54,8 @@ module vhfastmulb16_mul8x8_chk_tb;
 
     // ---------------- Основной сценарий ----------------
     initial begin
-        $dumpfile("build/vhfastmulb16_mul8x8_chk.vcd");
-        $dumpvars(0, vhfastmulb16_mul8x8_chk_tb);
+        $dumpfile("build/vhfastmulb16_mul_u8_u8_u16_lat2_chk.vcd");
+        $dumpvars(0, vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb);
 
         errors = 0;
         exp[0] = 16'd9;      // 1 * 9

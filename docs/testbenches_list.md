@@ -8,7 +8,7 @@
 |---|------|-------------------|-----|----------|
 | 1 | `vhfastmulb16_mul4x4_tb.v` | `vhfastmulb16_mul4x4` | Exhaustive (все 16×16) | 256 |
 | 2 | `vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` | Exhaustive (все 16×16), LAT=2 | 256 |
-| 3 | `vhfastmulb16_mul8x8_tb.v` | `vhfastmulb16_mul8x8` | Exhaustive (все 256×256) | 65 536 |
+| 3 | `vhfastmulb16_mul_u8_u8_u16_lat2_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` | Exhaustive (все 256×256) | 65 536 |
 | 4 | `vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` | Exhaustive (все 256×256), LAT=3 | 65 536 |
 | 5 | `vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` | Directed / visual (16 пар) | 16 |
 | 6 | `vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` | Exhaustive (все 256×256) | 65 536 |
@@ -36,7 +36,7 @@
 |---|------|--------|----------|
 | 24 | `vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
 | 25 | `vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
-| 26 | `vhfastmulb16_mul8x8_chk_tb.v` | `mul8x8` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 26 | `vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
 | 27 | `vhfastmulb16_mul8x8_lat3_chk_tb.v` | `mul8x8_lat3` | 4 пары, LAT=3 |
 | 28 | `vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
 
@@ -48,7 +48,7 @@
 # Все тесты через скрипты в scripts/
 ./scripts/run_test_mul4x4.sh sim
 ./scripts/run_test_mul4x4_lat2.sh sim
-./scripts/run_test_mul8x8.sh sim
+./scripts/run_test_mul_u8_u8_u16_lat2.sh sim
 ./scripts/run_test_mul8x8_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim

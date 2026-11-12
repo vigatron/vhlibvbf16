@@ -54,7 +54,7 @@ Fmax = 1 / T_clk
 
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
-| `mul8x8` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA (carry chain) |
+| `mul_u8_u8_u16_lat2` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA (carry chain) |
 | `add8x8_lat2` | ~18 | 19 | 9-bit add + 9-bit sub (константа 127), carry chain |
 | `sign` | ~1 | 3 | 1 XOR (частично поглощается LUT соседней логики) |
 | `except_lat2` (включая 2× `flags_lat1`) | ~54 | 63 | флаги, классификация NaN/Inf/Zero, NaN payload mux |
@@ -65,7 +65,7 @@ Fmax = 1 / T_clk
 | `en_pipe` + выходной регистр c (16 бит) | ~2 | 18 | 2 FF для en_d1/d2, 16 FF для c |
 | **ИТОГО** | **~392** | **~151** | |
 
-#### Детали glue-логики RTZ (~116 LUTs без mul8x8/add8x8/sign/except):
+#### Детали glue-логики RTZ (~116 LUTs без mul_u8_u8_u16_lat2/add8x8/sign/except):
 - FTZ-детектирование (exp==0 && frac!=0): 2× ~3 = **6 LUT**
 - mux `*_exp_eff` (8 бит × 2): **16 LUT**
 - mux `*_frac_eff` (7 бит × 2): **14 LUT**
@@ -103,7 +103,7 @@ Fmax = 1 / T_clk
 
 | Подмодуль | LUTs | FF |
 |-----------|------|-----|
-| `mul8x8` | ~208 | 48 |
+| `mul_u8_u8_u16_lat2` | ~208 | 48 |
 | `add8x8_lat2` | ~18 | 19 |
 | `sign` | ~1 | 3 |
 | `except_lat2` | ~54 | 63 |
@@ -248,13 +248,13 @@ F32-упаковкой, поэтому его latency равна 4 тактам,
 
 ### RTZ:
 ```
-mul4x4 (CSA) → mul8x8 CPA → exp_sum + man_msb → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux → output reg
 ```
 ~5.2–6.2 ns (160–175–200 MHz). Критический путь проходит через 9-битный инкремент экспоненты (CARRY4), компараторы vs 381/254 и 5-ветвевой приоритетный mux `c_next`.
 
 ### RNE:
 ```
-mul4x4 (CSA) → mul8x8 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm (полное 9-битное сложение) → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm (полное 9-битное сложение) → c_next mux → output reg
 ```
 ~5.6–6.4–7.1 ns (140–155–180 MHz). В отличие от RTZ, в критический путь вступают **две последовательные carry-цепочки** (инкремент мантиссы + сложение экспоненты), что снижает Fmax на ~10–15%.
 
@@ -369,12 +369,12 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 
 | Оптимизация | Экономия LUTs | Сложность |
 |-------------|---------------|-----------|
-| Перенести `mul8x8` на DSP48A1 | ~-200 LUTs (mul8x8 → ~0-10) | Замена структурного умножителя на DSP-инстанс |
+| Перенести `mul_u8_u8_u16_lat2` на DSP48A1 | ~-200 LUTs (mul_u8_u8_u16_lat2 → ~0-10) | Замена структурного умножителя на DSP-инстанс |
 | Убрать избыточные mux `*_exp_eff` | ~-16 LUTs | `a_exp_eff ≡ a_exp` при субнормале (exp=0) |
 | Объединить `except_lat2` + `flags_lat1` | ~-10 LUTs | Флаги комбинационно, поглощение выходных регистров |
 | **Потенциальный итог RTZ (все оптимизации)** | **~170-220 LUTs (~3-4%)** | |
 
-> Spartan-6 XC6SLX9 имеет **16 DSP48A1**. Использование 1 для `mul8x8`
+> Spartan-6 XC6SLX9 имеет **16 DSP48A1**. Использование 1 для `mul_u8_u8_u16_lat2`
 > (без остальных оптимизаций) сокращает RTZ top до **~190-240 LUTs (~3.3-4.2%)**.
 
 ### DSP48 для FP32 аддеров (`add_fp32_*`)

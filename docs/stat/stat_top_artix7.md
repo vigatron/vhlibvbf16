@@ -54,7 +54,7 @@ Routing задержка оценивается как +35% к чистой ло
 
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
-| `mul8x8` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA |
+| `mul_u8_u8_u16_lat2` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA |
 | `add8x8_lat2` | ~18 | 19 | 9-bit add + 9-bit sub (константа 127) |
 | `sign` | ~1 | 3 | 1 XOR |
 | `except_lat2` (включая 2× `flags_lat1`) | ~54 | 63 | флаги, классификация NaN/Inf/Zero, NaN payload mux |
@@ -88,7 +88,7 @@ Routing задержка оценивается как +35% к чистой ло
 
 | Подмодуль | LUTs | FF |
 |-----------|------|-----|
-| `mul8x8` | ~208 | 48 |
+| `mul_u8_u8_u16_lat2` | ~208 | 48 |
 | `add8x8_lat2` | ~18 | 19 |
 | `sign` | ~1 | 3 |
 | `except_lat2` | ~54 | 63 |
@@ -218,13 +218,13 @@ Routing задержка оценивается как +35% к чистой ло
 
 ### RTZ:
 ```
-mul4x4 (CSA) → mul8x8 CPA → exp_sum + man_msb → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux → output reg
 ```
 ~3.8–4.3–5.0 ns (~200–230–260 MHz).
 
 ### RNE:
 ```
-mul4x4 (CSA) → mul8x8 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm → c_next mux → output reg
 ```
 ~4.2–4.8–5.6 ns (~180–210–240 MHz).
 
@@ -268,12 +268,12 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 
 | Оптимизация | Экономия LUTs | Сложность |
 |-------------|---------------|-----------|
-| Перенести `mul8x8` на DSP48E1 | ~-200 LUTs | 1× DSP48E1 (25×18 multiplier) |
+| Перенести `mul_u8_u8_u16_lat2` на DSP48E1 | ~-200 LUTs | 1× DSP48E1 (25×18 multiplier) |
 | Убрать избыточные mux `*_exp_eff` | ~-16 LUTs | Простейшая правка |
 | Объединить `except_lat2` + `flags_lat1` | ~-10 LUTs | Рефакторинг флагов |
 | **Потенциальный итог RTZ** | **~170-220 LUTs (~1.6-2.1%)** | |
 
-> Artix-7 XC7A15T имеет **45 DSP48E1**. Использование 1 для `mul8x8`
+> Artix-7 XC7A15T имеет **45 DSP48E1**. Использование 1 для `mul_u8_u8_u16_lat2`
 > сокращает RTZ top до **~190-240 LUTs (~1.8-2.3%)**.
 
 ### DSP48 для FP32 аддеров (`add_fp32_*`)

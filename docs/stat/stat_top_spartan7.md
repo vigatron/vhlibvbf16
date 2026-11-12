@@ -53,7 +53,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
-| `mul8x8` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA (carry chain) |
+| `mul_u8_u8_u16_lat2` (4× `mul4x4` + CSA-дерево + CPA) | ~208 | 48 | 4× CSA-структура + 2 уровня CSA + 16-битный CPA (carry chain) |
 | `add8x8_lat2` | ~18 | 19 | 9-bit add + 9-bit sub (константа 127), carry chain |
 | `sign` | ~1 | 3 | 1 XOR |
 | `except_lat2` (включая 2× `flags_lat1`) | ~54 | 63 | флаги, классификация NaN/Inf/Zero, NaN payload mux |
@@ -91,7 +91,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 | Подмодуль | LUTs | FF |
 |-----------|------|-----|
-| `mul8x8` | ~208 | 48 |
+| `mul_u8_u8_u16_lat2` | ~208 | 48 |
 | `add8x8_lat2` | ~18 | 19 |
 | `sign` | ~1 | 3 |
 | `except_lat2` | ~54 | 63 |
@@ -221,13 +221,13 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 ### RTZ:
 ```
-mul4x4 (CSA) → mul8x8 CPA → exp_sum + man_msb → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux → output reg
 ```
 ~4.2–4.7–5.6 ns (XC7S15-1: 180–205–240 MHz; XC7S15-2: 200–225–260 MHz).
 
 ### RNE:
 ```
-mul4x4 (CSA) → mul8x8 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm → c_next mux → output reg
+mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm → c_next mux → output reg
 ```
 ~4.8–5.5–6.2 ns (XC7S15-1: 160–180–210 MHz; XC7S15-2: 180–200–230 MHz).
 
@@ -271,12 +271,12 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 
 | Оптимизация | Экономия LUTs | Сложность |
 |-------------|---------------|-----------|
-| Перенести `mul8x8` на DSP48E1 | ~-200 LUTs | 1× DSP48E1 (25×18 multiplier) |
+| Перенести `mul_u8_u8_u16_lat2` на DSP48E1 | ~-200 LUTs | 1× DSP48E1 (25×18 multiplier) |
 | Убрать избыточные mux `*_exp_eff` | ~-16 LUTs | Простейшая правка |
 | Объединить `except_lat2` + `flags_lat1` | ~-10 LUTs | Рефакторинг флагов |
 | **Потенциальный итог RTZ** | **~170-220 LUTs (~2-3%)** | |
 
-> Spartan-7 XC7S15 имеет **20 DSP48E1**. Использование 1 для `mul8x8`
+> Spartan-7 XC7S15 имеет **20 DSP48E1**. Использование 1 для `mul_u8_u8_u16_lat2`
 > сокращает RTZ top до **~190-240 LUTs (~2.4-3.0%)**.
 
 ### DSP48 для FP32 аддеров (`add_fp32_*`)

@@ -4,14 +4,14 @@
 // Author: Viktor Glebov / V01G04A81
 // License: MIT
 // https://github.com/vigatron/vhlibvbf16
-// File: vhfastmulb16_mul8x8.v
-// Module: vhfastmulb16_mul8x8
+// File: vhfastmulb16_mul_u8_u8_u16_lat2.v
+// Module: vhfastmulb16_mul_u8_u8_u16_lat2
 // Multiplication of two 8-bit numbers
 // Uses 4 instances of vhfastmulb16_mul4x4
 // Latency: 2 clk (fully pipelined)
 // ----------------------------------------------
 
-module vhfastmulb16_mul8x8 (
+module vhfastmulb16_mul_u8_u8_u16_lat2 (
     input  wire        clk,
     input  wire        reset,
     input  wire        en,
