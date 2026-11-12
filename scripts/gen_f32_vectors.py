@@ -4,7 +4,7 @@
 @brief Generate and validate BF16 x BF16 -> Float32 test vectors.
 
 The generator uses a bit-exact reference model of the planned
-`vhfastmulb16_f32_lat4` DUT:
+`vhfastmulb16_mul_bf16_bf16_fp32_lat4` DUT:
   * normal products are represented exactly in F32;
   * F32 subnormal results are truncated (RTZ), no rounding;
   * BF16 subnormal inputs are not flushed to zero;
@@ -20,7 +20,7 @@ Output format (one 64-bit hexadecimal word per line):
     bits[31:0]  = expected F32 result
 
 Usage:
-    ./scripts/gen_f32_vectors.py --out build/vhfastmulb16_f32_lat4_rand.hex
+    ./scripts/gen_f32_vectors.py --out build/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand.hex
     ./scripts/gen_f32_vectors.py --count 4096 --seed 1234 --out build/vectors.hex
     ./scripts/gen_f32_vectors.py --self-check
 """
@@ -43,7 +43,7 @@ INF_F32 = 0x7F800000
 def bf16_product_f32(a, b):
     """@brief Return the bit-exact F32 product of two BF16 words.
 
-    Implements the same semantics as vhfastmulb16_f32_lat4:
+    Implements the same semantics as vhfastmulb16_mul_bf16_bf16_fp32_lat4:
     canonical qNaN, no FTZ for BF16 subnormals, RTZ for F32 subnormals.
     """
     a_sign = (a >> 15) & 1
@@ -182,7 +182,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate BF16 x BF16 -> F32 test vectors")
     parser.add_argument("--count", type=int, default=2048, help="total number of vectors (default: 2048)")
     parser.add_argument("--seed", type=int, default=12345, help="random seed (default: 12345)")
-    parser.add_argument("--out", default="build/vhfastmulb16_f32_lat4_rand.hex", help="output hex file")
+    parser.add_argument("--out", default="build/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand.hex", help="output hex file")
     parser.add_argument("--self-check", action="store_true", help="validate the model against docs JSON")
     args = parser.parse_args()
 

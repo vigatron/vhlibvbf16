@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 // =============================================================
-// Тестбенч для vhfastmulb16_f32_lat4
+// Тестбенч для vhfastmulb16_mul_bf16_bf16_fp32_lat4
 //   N пар чисел подаются подряд, каждый такт новая пара
 //   latency = LAT = 4 такта, проверка результата в потоке
 //   Тестовые векторы: testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
@@ -14,7 +14,7 @@
 //   BF16 subnormal входы НЕ flush-ятся в ноль.
 // =============================================================
 
-module vhfastmulb16_f32_lat4_tb;
+module vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb;
 
     localparam integer N         = 32;  // число тестовых пар (16 + 4 extended + 12 directed)
     localparam integer LAT       = 4;   // latency DUT, тактов
@@ -30,7 +30,7 @@ module vhfastmulb16_f32_lat4_tb;
 
     wire [31:0] outc;
 
-    vhfastmulb16_f32_lat4 uut (
+    vhfastmulb16_mul_bf16_bf16_fp32_lat4 uut (
         .clk   (clk),
         .reset (reset),
         .en    (en),
@@ -126,8 +126,8 @@ module vhfastmulb16_f32_lat4_tb;
 
     // ---------------- Основной сценарий ----------------
     initial begin
-        $dumpfile("build/vhfastmulb16_f32_lat4.vcd");
-        $dumpvars(0, vhfastmulb16_f32_lat4_tb);
+        $dumpfile("build/vhfastmulb16_mul_bf16_bf16_fp32_lat4.vcd");
+        $dumpvars(0, vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb);
 
         checked = 0;
         errors  = 0;

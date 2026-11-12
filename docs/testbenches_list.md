@@ -19,8 +19,8 @@
 | 11 | `vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` | Directed + pipeline (LAT=3) | 24 |
 | 12 | `vhfastmulb16_rtz_lat3_tb.v` | `vhfastmulb16_rtz_lat3` | Visual (16 векторов из таблицы) | 16 |
 | 13 | `vhfastmulb16_rne_lat3_tb.v` | `vhfastmulb16_rne_lat3` | Visual (16 векторов из таблицы) | 16 |
-| 14 | `vhfastmulb16_f32_lat4_tb.v` | `vhfastmulb16_f32_lat4` | Directed + streaming, `LAT=4` | 32 |
-| 15 | `vhfastmulb16_f32_lat4_rand_tb.v` | `vhfastmulb16_f32_lat4` | Random regression (Python golden model), `LAT=4` | 2048 |
+| 14 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Directed + streaming, `LAT=4` | 32 |
+| 15 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Random regression (Python golden model), `LAT=4` | 2048 |
 | 16 | `vhfastmulb16_add_fp32_rtz_lat4_tb.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Directed + streaming, `LAT=4` | 32 |
 | 17 | `vhfastmulb16_add_fp32_rne_lat4_tb.v` | `vhfastmulb16_add_fp32_rne_lat4` | Directed + streaming, `LAT=4` | 32 |
 | 18 | `vhfastmulb16_add_fp32_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Random/directed regression (Python IEEE-754 model), `LAT=4` | 4096 |
@@ -58,8 +58,8 @@
 ./scripts/run_test_except_lat3.sh sim
 ./scripts/run_test_mul_fb16_rtz_lat3.sh sim
 ./scripts/run_test_mul_fb16_rne_lat3.sh sim
-./scripts/run_test_f32_lat4.sh sim
-./scripts/run_test_f32_lat4_rand.sh sim
+./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh sim
+./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
 ./scripts/run_test_add_fp32_rtz_lat4.sh sim
 ./scripts/run_test_add_fp32_rne_lat4.sh sim
 ./scripts/run_test_add_fp32_rtz_lat4_rand.sh sim
@@ -70,15 +70,15 @@
 ./scripts/run_test_add_fp16_rne_lat4_rand.sh sim
 
 # С визуализацией (gtkwave)
-./scripts/run_test_f32_lat4.sh wave
-./scripts/run_test_f32_lat4_rand.sh wave
+./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh wave
+./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh wave
 ./scripts/run_test_add_fp32_rtz_lat4_rand.sh wave
 ./scripts/run_test_add_fp32_rne_lat4_rand.sh wave
 ./scripts/run_test_add_fp16_rtz_lat4_rand.sh wave
 ./scripts/run_test_add_fp16_rne_lat4_rand.sh wave
 
 # Очистка артефактов
-./scripts/run_test_f32_lat4.sh clean
+./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh clean
 ```
 
 ---
@@ -106,7 +106,7 @@
 - `<module>_tb.v` — основной проверяющий тестбенч
 - `<module>_tb.chk.v` / `<module>_chk_tb.v` — визуализационный/упрощённый
 - `<module>_latN_tb.v` — если модуль имеет версию с латентностью N
-- `vhfastmulb16_f32_lat4_rand_tb.v` — случайный regression с Python golden-моделью
+- `vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v` — случайный regression с Python golden-моделью
 - `vhfastmulb16_add_fp32_*_rand_tb.v` — случайный/directed regression FP32-сумматоров
   с бит-точным эталоном (`scripts/gen_fp32_vectors.py`)
 - `vhfastmulb16_add_fp16_*_rand_tb.v` — случайный/directed regression FP16-сумматоров

@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Случайный/directed regression для vhfastmulb16_f32_lat4.
-# Векторы генерируются Python-моделью в build/vhfastmulb16_f32_lat4_rand.hex.
+# Случайный/directed regression для vhfastmulb16_mul_bf16_bf16_fp32_lat4.
+# Векторы генерируются Python-моделью в build/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand.hex.
 # Seed можно переопределить через окружение:
-#   VEC_SEED=1 ./scripts/run_test_f32_lat4_rand.sh sim
+#   VEC_SEED=1 ./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
 # См. scripts/tb_lib.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"   # tb_lib.sh вычислит такой же ROOT заново
 
-SRC_FILE=scripts/f32_lat4.src
-TB=tests/vhfastmulb16_f32_lat4_rand_tb.v
+SRC_FILE=scripts/mul_bf16_bf16_fp32_lat4.src
+TB=tests/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v
 
 # Число векторов должно совпадать с localparam N в тестбенче
 # ($readmemh читает ровно N строк) - значение проверяется ниже.
 VEC_COUNT=2048
 VEC_SEED="${VEC_SEED:-12345}"
-VEC_FILE="$ROOT/build/vhfastmulb16_f32_lat4_rand.hex"
+VEC_FILE="$ROOT/build/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand.hex"
 
 case "${1:-sim}" in
     sim|all|wave)

@@ -105,7 +105,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 ---
 
-### 3. `vhfastmulb16_f32_lat4` (BF16 x BF16 -> F32, exact, no rounding)
+### 3. `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (BF16 x BF16 -> F32, exact, no rounding)
 
 | Ресурс | XC7S15-1 | XC7S15-2 | % от XC7S15 |
 |--------|----------|----------|-------------|
@@ -209,7 +209,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 |--------|------|-----|---------|----------|-------------------|
 | `vhfastmulb16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~4.9%** |
 | `vhfastmulb16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~5.3%** |
-| `vhfastmulb16_f32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~3.9%** |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~3.9%** |
 | `vhfastmulb16_add_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~3.6%** |
 | `vhfastmulb16_add_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~4.3%** |
 | `vhfastmulb16_add_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~2.0%** |

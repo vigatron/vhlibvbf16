@@ -95,7 +95,7 @@
 
 ---
 
-### 3. `vhfastmulb16_f32_lat4` (BF16 x BF16 -> F32, exact, no rounding)
+### 3. `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (BF16 x BF16 -> F32, exact, no rounding)
 
 | Ресурс | Оценка | % от доступных (5,720 LUT6) |
 |--------|--------|----------------|
@@ -133,7 +133,7 @@ mul4x4_lat2 → mul8x8_lat3 CPA → leading-one → mant_norm shifter
 |--------|------|-----|---------|----------|
 | `vhfastmulb16_rtz_lat3` | ~400 | ~150 | 3 | truncation (RTZ) |
 | `vhfastmulb16_rne_lat3` | ~430 | ~150 | 3 | IEEE 754 RNE |
-| `vhfastmulb16_f32_lat4` | ~420 | ~130 | 4 | exact BF16 product; RTZ for F32 subnormal |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~420 | ~130 | 4 | exact BF16 product; RTZ for F32 subnormal |
 
 RNE добавляет ~+30 LUTs относительно RTZ. F32-модуль использует
 3-ступенчатый `mul8x8_lat3` и отдельную F32-упаковку, поэтому его

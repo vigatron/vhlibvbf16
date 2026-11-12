@@ -4,8 +4,8 @@
 // Author: Viktor Glebov / V01G04A81
 // License: MIT
 // https://github.com/vigatron/vhlibvbf16
-// File: vhfastmulb16_f32_lat4.v
-// Module: vhfastmulb16_f32_lat4
+// File: vhfastmulb16_mul_bf16_bf16_fp32_lat4.v
+// Module: vhfastmulb16_mul_bf16_bf16_fp32_lat4
 // BF16 x BF16 -> Float32 exact product (no rounding)
 // Operation takes 4 clk (latency 4), fully pipelined
 // Pipeline balanced 2+2:
@@ -45,7 +45,7 @@
  * @param inb   Second BF16 operand: [15] sign, [14:7] exp, [6:0] frac.
  * @param outc  F32 result: [31] sign, [30:23] exp, [22:0] frac.
  */
-module vhfastmulb16_f32_lat4 (
+module vhfastmulb16_mul_bf16_bf16_fp32_lat4 (
     input  wire        clk,
     input  wire        reset,
     input  wire        en,
