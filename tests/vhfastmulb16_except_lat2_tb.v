@@ -113,7 +113,7 @@ module vhfastmulb16_except_lat2_tb;
     endfunction
 
     // Ожидаемый c: только спецзначение, при normal — 0.
-    // Знак всегда 0 (его формирует vhfastmulb16).
+    // Знак всегда 0 (его формирует vhfastmulb16_mul_bf16_bf16_bf16).
     // NaN payload preservation: если x=NaN — берём payload из x, иначе из y
     // Quiet bit (bit 6) = 1
     function [15:0] exp_c(input [15:0] x, input [15:0] y);

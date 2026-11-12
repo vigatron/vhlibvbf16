@@ -1,0 +1,5 @@
+# Источники DUT vhfastmulb16_mul_bf16_bf16_fp32_lat4 (LAT=4).
+# Используется тестбенчи run_test_mul_bf16_bf16_fp32_lat4.sh и run_test_mul_bf16_bf16_fp32_lat4_rand.sh.
+src/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v
+src/vhfastmulb16_mul4x4_comb.v
+src/vhfastmulb16_sign.v

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Тестбенч vhfastmulb16_add8x8_tb (артефакты/gtkw - с суффиксом _chk)
 # См. scripts/tb_lib.sh
-NAME=vhfastmulb16_add8x8_chk
-GTKW_NAME=vhfastmulb16_add8x8_chk_tb
+NAME=vhfastmulb16_add8x8
+GTKW_NAME=vhfastmulb16_add8x8_lat2_tb
 SRC=(
     src/vhfastmulb16_add8x8_lat2.v
 )

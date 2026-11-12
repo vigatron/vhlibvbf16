@@ -160,7 +160,7 @@ module vhfastmulb16_add8x8_chk_tb;
         // Ожидание готовности данных из Block 1
         wait(data_ready);
 
-        $dumpfile("build/vhfastmulb16_add8x8_chk.vcd");
+        $dumpfile("build/vhfastmulb16_add8x8.vcd");
         $dumpvars(0, vhfastmulb16_add8x8_chk_tb);
 
         errors = 0;

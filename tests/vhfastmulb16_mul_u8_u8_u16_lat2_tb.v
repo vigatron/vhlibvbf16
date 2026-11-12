@@ -1,0 +1,173 @@
+`timescale 1ns/1ps
+// =============================================================
+// Testbench для vhfastmulb16_mul_u8_u8_u16_lat2
+//   c = a * b (8x8 -> 16), латентность 2 такта, синхронные en/reset
+// =============================================================
+
+module vhfastmulb16_mul_u8_u8_u16_lat2_tb;
+
+    localparam MAX_PRINT = 10;      // сколько ошибок печатать подробно
+
+    // ---------------- DUT ----------------
+    reg         clk;
+    reg         reset;
+    reg         en;
+    reg  [7:0]  a;
+    reg  [7:0]  b;
+    wire [15:0] c;
+
+    vhfastmulb16_mul_u8_u8_u16_lat2 dut (
+        .clk   (clk),
+        .reset (reset),
+        .en    (en),
+        .a     (a),
+        .b     (b),
+        .c     (c)
+    );
+
+    initial begin
+        clk = 1'b0;
+        forever #5 clk = ~clk;          // 100 MHz
+    end
+
+    // ---------------- Scoreboard ----------------
+    integer    checked;
+    integer    errors;
+    integer    i, j;
+    reg [15:0] exp_p1;                  // ожидание для входа, поданного 1 такт назад
+    reg [15:0] exp_p2;                  // ожидание для текущего значения c
+    reg [15:0] held;
+
+    task check_c(input [15:0] expct);
+        begin
+            checked = checked + 1;
+            if (c !== expct) begin
+                errors = errors + 1;
+                if (errors <= MAX_PRINT)
+                    $display("[ERROR] t=%0t | exp=%h got=%h", $time, expct, c);
+            end
+        end
+    endtask
+
+    // Один такт: проверить выход, сдвинуть ожидания, подать новый вектор (en=1)
+    task step(input [7:0] na, input [7:0] nb, input do_check);
+        begin
+            @(negedge clk);
+            if (do_check) check_c(exp_p2);
+            exp_p2 = exp_p1;
+            exp_p1 = {8'h00, na} * {8'h00, nb};
+            a  = na;
+            b  = nb;
+            en = 1'b1;
+        end
+    endtask
+
+    // ---------------- Directed corner cases ----------------
+    reg [7:0] dir_a [0:19];
+    reg [7:0] dir_b [0:19];
+
+    initial begin
+        dir_a[0]=8'h00; dir_b[0]=8'h00;
+        dir_a[1]=8'h00; dir_b[1]=8'hFF;
+        dir_a[2]=8'hFF; dir_b[2]=8'h00;
+        dir_a[3]=8'h01; dir_b[3]=8'h01;
+        dir_a[4]=8'h01; dir_b[4]=8'hFF;
+        dir_a[5]=8'hFF; dir_b[5]=8'h01;
+        dir_a[6]=8'hFF; dir_b[6]=8'hFF;
+        dir_a[7]=8'h80; dir_b[7]=8'h80;
+        dir_a[8]=8'h7F; dir_b[8]=8'h7F;
+        dir_a[9]=8'h7F; dir_b[9]=8'h80;
+        dir_a[10]=8'h0F; dir_b[10]=8'h0F;
+        dir_a[11]=8'h10; dir_b[11]=8'h10;
+        dir_a[12]=8'hF0; dir_b[12]=8'h0F;
+        dir_a[13]=8'h0F; dir_b[13]=8'hF0;
+        dir_a[14]=8'hAA; dir_b[14]=8'h55;
+        dir_a[15]=8'h55; dir_b[15]=8'hAA;
+        dir_a[16]=8'h12; dir_b[16]=8'h34;
+        dir_a[17]=8'hFE; dir_b[17]=8'hFF;
+        dir_a[18]=8'h80; dir_b[18]=8'h02;
+        dir_a[19]=8'h02; dir_b[19]=8'h80;
+    end
+
+    // ---------------- Основной сценарий ----------------
+    initial begin
+        $dumpfile("build/vhfastmulb16_mul_u8_u8_u16_lat2.vcd");
+        $dumpvars(0, vhfastmulb16_mul_u8_u8_u16_lat2_tb);
+
+        checked = 0;
+        errors  = 0;
+        exp_p1  = 16'h0000;
+        exp_p2  = 16'h0000;
+
+        // ---- Сброс: 5 тактов ----
+        reset = 1'b1; en = 1'b0; a = 8'h00; b = 8'h00;
+        repeat (5) @(negedge clk);
+        reset = 1'b0;
+
+        // ---- Тест 0: после сброса c == 0 ----
+        @(negedge clk);
+        check_c(16'h0000);
+
+        // Прогрев конвейера (2 такта)
+        step(8'h00, 8'h00, 1'b0);
+        step(8'h00, 8'h00, 1'b0);
+
+        // ---- Тест 1: directed corner cases ----
+        for (i = 0; i < 20; i = i + 1)
+            step(dir_a[i], dir_b[i], 1'b1);
+
+        // ---- Тест 2: исчерпывающий 256 x 256 = 65536 векторов ----
+        for (i = 0; i < 256; i = i + 1)
+            for (j = 0; j < 256; j = j + 1)
+                step(i, j, 1'b1);
+
+        // ---- Тест 3: en=0 -> выход держится ----
+        step(8'h12, 8'h34, 1'b0);
+        step(8'h00, 8'h00, 1'b0);
+        @(negedge clk);
+        held = c;
+        a  = 8'hAA;
+        b  = 8'h55;
+        en = 1'b0;
+        repeat (4) @(negedge clk);
+        if (c !== held) begin
+            errors = errors + 1;
+            $display("[ERROR] t=%0t | en=0 hold | exp=%h got=%h", $time, held, c);
+        end
+        en = 1'b1;
+
+        // ---- Тест 4: reset обнуляет выход (приоритет над en) ----
+        step(8'h55, 8'h66, 1'b0);
+        step(8'h77, 8'h88, 1'b0);
+        @(negedge clk);
+        reset = 1'b1;
+        en    = 1'b1;
+        a     = 8'h99;
+        b     = 8'hBB;
+        @(negedge clk);
+        check_c(16'h0000);
+        @(negedge clk);
+        check_c(16'h0000);
+        reset = 1'b0;
+        en    = 1'b0;
+
+        // ---- Итог ----
+        $display("---------------------------------------------");
+        $display("Checked vectors: %0d", checked);
+        $display("Errors:          %0d", errors);
+        if (errors == 0)
+            $display("TEST PASSED");
+        else
+            $display("TEST FAILED");
+        $display("---------------------------------------------");
+        $finish;
+    end
+
+    // ---------------- Watchdog ----------------
+    initial begin
+        #5000000;
+        $display("[ERROR] Testbench timeout!");
+        $finish;
+    end
+
+endmodule

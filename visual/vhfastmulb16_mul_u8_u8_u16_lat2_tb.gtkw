@@ -1,0 +1,31 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Thu Nov 12 08:35:26 2026
+[*]
+[dumpfile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/build/vhfastmulb16_mul_u8_u8_u16_lat2.vcd"
+[dumpfile_mtime] "Thu Nov 12 08:29:23 2026"
+[dumpfile_size] 31936626
+[savefile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/visual/vhfastmulb16_mul_u8_u8_u16_lat2_tb.gtkw"
+[timestart] 0
+[size] 1280 800
+[pos] 234 147
+*-17.100000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_mul_u8_u8_u16_lat2_tb.
+[sst_width] 290
+[signals_width] 290
+[sst_expanded] 1
+[sst_vpaned_height] 300
+@28
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.clk
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.reset
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.en
+@22
+[color] 3
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.a[7:0]
+[color] 3
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.b[7:0]
+@23
+[color] 2
+vhfastmulb16_mul_u8_u8_u16_lat2_tb.c[15:0]
+[pattern_trace] 1
+[pattern_trace] 0

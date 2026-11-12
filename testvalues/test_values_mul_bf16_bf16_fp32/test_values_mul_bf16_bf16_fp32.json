@@ -1,0 +1,585 @@
+{
+  "$schema": "bf16xbf16->f32 exact product test vectors",
+  "format": {
+    "input": "BF16 (1s/8e/7m)",
+    "output": "F32 (1s/8e/23m) = exact product of the two BF16 values, no intermediate BF16 rounding",
+    "output_c": "BF16 column = result rounded RNE (reference for the BF16 output of vhfastmulb16_mul_bf16_bf16_bf16); it differs from the F32 output for #7 and #8. F32 column = exact product",
+    "special_cases": "NaN in -> qNaN 0x7FC0/0x7FC00000; Inf*0 -> qNaN; Inf*finite -> Inf with XOR sign; zero*finite -> zero with XOR sign"
+  },
+  "test_vectors": [
+    {
+      "no": 1,
+      "operation": "1.0 * 1.0 = 1.0",
+      "input_a": {
+        "hex": "0x3F80",
+        "bf16": "16'h3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32_bits": "0x3F800000"
+      },
+      "input_b": {
+        "hex": "0x3F80",
+        "bf16": "16'h3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32_bits": "0x3F800000"
+      },
+      "output_c": {
+        "bf16": "16'h3F80",
+        "hex": "0x3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x3F800000",
+          "binary": "00111111100000000000000000000000",
+          "value": "1.0",
+          "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Multiplication by one"
+    },
+    {
+      "no": 2,
+      "operation": "2.0 * 3.5 = 7.0",
+      "input_a": {
+        "hex": "0x4000",
+        "bf16": "16'h4000",
+        "bit_structure": "s:0, exp:128 (0x80), mant:0 (0x00)",
+        "float32_bits": "0x40000000"
+      },
+      "input_b": {
+        "hex": "0x4060",
+        "bf16": "16'h4060",
+        "bit_structure": "s:0, exp:128 (0x80), mant:96 (0x60)",
+        "float32_bits": "0x40600000"
+      },
+      "output_c": {
+        "bf16": "16'h40E0",
+        "hex": "0x40E0",
+        "bit_structure": "s:0, exp:129 (0x81), mant:96 (0x60)",
+        "float32": {
+          "hex": "0x40E00000",
+          "binary": "01000000111000000000000000000000",
+          "value": "7.0",
+          "bit_structure": "s:0, exp:129 (0x81), mant:6291456 (0x600000)"
+        }
+      },
+      "test_description": "Basic integers & fractions"
+    },
+    {
+      "no": 3,
+      "operation": "-1.5 * 4.0 = -6.0",
+      "input_a": {
+        "hex": "0xBFC0",
+        "bf16": "16'hBFC0",
+        "bit_structure": "s:1, exp:127 (0x7F), mant:64 (0x40)",
+        "float32_bits": "0xBFC00000"
+      },
+      "input_b": {
+        "hex": "0x4080",
+        "bf16": "16'h4080",
+        "bit_structure": "s:0, exp:129 (0x81), mant:0 (0x00)",
+        "float32_bits": "0x40800000"
+      },
+      "output_c": {
+        "bf16": "16'hC0C0",
+        "hex": "0xC0C0",
+        "bit_structure": "s:1, exp:129 (0x81), mant:64 (0x40)",
+        "float32": {
+          "hex": "0xC0C00000",
+          "binary": "11000000110000000000000000000000",
+          "value": "-6.0",
+          "bit_structure": "s:1, exp:129 (0x81), mant:4194304 (0x400000)"
+        }
+      },
+      "test_description": "Negative by positive"
+    },
+    {
+      "no": 4,
+      "operation": "0.5 * 0.25 = 0.125",
+      "input_a": {
+        "hex": "0x3F00",
+        "bf16": "16'h3F00",
+        "bit_structure": "s:0, exp:126 (0x7E), mant:0 (0x00)",
+        "float32_bits": "0x3F000000"
+      },
+      "input_b": {
+        "hex": "0x3E80",
+        "bf16": "16'h3E80",
+        "bit_structure": "s:0, exp:125 (0x7D), mant:0 (0x00)",
+        "float32_bits": "0x3E800000"
+      },
+      "output_c": {
+        "bf16": "16'h3E00",
+        "hex": "0x3E00",
+        "bit_structure": "s:0, exp:124 (0x7C), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x3E000000",
+          "binary": "00111110000000000000000000000000",
+          "value": "0.125",
+          "bit_structure": "s:0, exp:124 (0x7C), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Values less than one"
+    },
+    {
+      "no": 5,
+      "operation": "128.0 * 0.0078125 = 1.0",
+      "input_a": {
+        "hex": "0x4300",
+        "bf16": "16'h4300",
+        "bit_structure": "s:0, exp:134 (0x86), mant:0 (0x00)",
+        "float32_bits": "0x43000000"
+      },
+      "input_b": {
+        "hex": "0x3C00",
+        "bf16": "16'h3C00",
+        "bit_structure": "s:0, exp:120 (0x78), mant:0 (0x00)",
+        "float32_bits": "0x3C000000"
+      },
+      "output_c": {
+        "bf16": "16'h3F80",
+        "hex": "0x3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x3F800000",
+          "binary": "00111111100000000000000000000000",
+          "value": "1.0",
+          "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Reciprocal powers of two"
+    },
+    {
+      "no": 6,
+      "operation": "3.140625 * 2.0 = 6.28125",
+      "input_a": {
+        "hex": "0x4049",
+        "bf16": "16'h4049",
+        "bit_structure": "s:0, exp:128 (0x80), mant:73 (0x49)",
+        "float32_bits": "0x40490000"
+      },
+      "input_b": {
+        "hex": "0x4000",
+        "bf16": "16'h4000",
+        "bit_structure": "s:0, exp:128 (0x80), mant:0 (0x00)",
+        "float32_bits": "0x40000000"
+      },
+      "output_c": {
+        "bf16": "16'h40C9",
+        "hex": "0x40C9",
+        "bit_structure": "s:0, exp:129 (0x81), mant:73 (0x49)",
+        "float32": {
+          "hex": "0x40C90000",
+          "binary": "01000000110010010000000000000000",
+          "value": "6.28125",
+          "bit_structure": "s:0, exp:129 (0x81), mant:4784128 (0x490000)"
+        }
+      },
+      "test_description": "Fractional precision"
+    },
+    {
+      "no": 7,
+      "operation": "-100.0 * -0.10009765625 = 10.009765625",
+      "input_a": {
+        "hex": "0xC2C8",
+        "bf16": "16'hC2C8",
+        "bit_structure": "s:1, exp:133 (0x85), mant:72 (0x48)",
+        "float32_bits": "0xC2C80000"
+      },
+      "input_b": {
+        "hex": "0xBDCD",
+        "bf16": "16'hBDCD",
+        "bit_structure": "s:1, exp:123 (0x7B), mant:77 (0x4D)",
+        "float32_bits": "0xBDCD0000"
+      },
+      "output_c": {
+        "bf16": "16'h4120",
+        "hex": "0x4120",
+        "bit_structure": "s:0, exp:130 (0x82), mant:32 (0x20)",
+        "float32": {
+          "hex": "0x41202800",
+          "binary": "01000001001000000010100000000000",
+          "value": "10.009765625",
+          "bit_structure": "s:0, exp:130 (0x82), mant:2107392 (0x202800)"
+        }
+      },
+      "test_description": "Two negative values (exact F32)"
+    },
+    {
+      "no": 8,
+      "operation": "10.0 * 0.30078125 = 3.0078125",
+      "input_a": {
+        "hex": "0x4120",
+        "bf16": "16'h4120",
+        "bit_structure": "s:0, exp:130 (0x82), mant:32 (0x20)",
+        "float32_bits": "0x41200000"
+      },
+      "input_b": {
+        "hex": "0x3E9A",
+        "bf16": "16'h3E9A",
+        "bit_structure": "s:0, exp:125 (0x7D), mant:26 (0x1A)",
+        "float32_bits": "0x3E9A0000"
+      },
+      "output_c": {
+        "bf16": "16'h4040",
+        "hex": "0x4040",
+        "bit_structure": "s:0, exp:128 (0x80), mant:64 (0x40)",
+        "float32": {
+          "hex": "0x40408000",
+          "binary": "01000000010000001000000000000000",
+          "value": "3.0078125",
+          "bit_structure": "s:0, exp:128 (0x80), mant:4227072 (0x408000)"
+        }
+      },
+      "test_description": "Mantissa precision check (exact F32)"
+    },
+    {
+      "no": 9,
+      "operation": "1.0 * 0.0 = 0.0",
+      "input_a": {
+        "hex": "0x3F80",
+        "bf16": "16'h3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32_bits": "0x3F800000"
+      },
+      "input_b": {
+        "hex": "0x0000",
+        "bf16": "16'h0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x00000000"
+      },
+      "output_c": {
+        "bf16": "16'h0000",
+        "hex": "0x0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x00000000",
+          "binary": "00000000000000000000000000000000",
+          "value": "+0.0",
+          "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Multiplied by zero"
+    },
+    {
+      "no": 10,
+      "operation": "+Inf * 2.0 = +Inf",
+      "input_a": {
+        "hex": "0x7F80",
+        "bf16": "16'h7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0x7F800000"
+      },
+      "input_b": {
+        "hex": "0x4000",
+        "bf16": "16'h4000",
+        "bit_structure": "s:0, exp:128 (0x80), mant:0 (0x00)",
+        "float32_bits": "0x40000000"
+      },
+      "output_c": {
+        "bf16": "16'h7F80",
+        "hex": "0x7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x7F800000",
+          "binary": "01111111100000000000000000000000",
+          "value": "+Inf",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Inf by positive value"
+    },
+    {
+      "no": 11,
+      "operation": "-Inf * +Inf = -Inf",
+      "input_a": {
+        "hex": "0xFF80",
+        "bf16": "16'hFF80",
+        "bit_structure": "s:1, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0xFF800000"
+      },
+      "input_b": {
+        "hex": "0x7F80",
+        "bf16": "16'h7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0x7F800000"
+      },
+      "output_c": {
+        "bf16": "16'hFF80",
+        "hex": "0xFF80",
+        "bit_structure": "s:1, exp:255 (0xFF), mant:0 (0x00)",
+        "float32": {
+          "hex": "0xFF800000",
+          "binary": "11111111100000000000000000000000",
+          "value": "-Inf",
+          "bit_structure": "s:1, exp:255 (0xFF), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Different infinities"
+    },
+    {
+      "no": 12,
+      "operation": "+Inf * 0.0 = NaN",
+      "input_a": {
+        "hex": "0x7F80",
+        "bf16": "16'h7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0x7F800000"
+      },
+      "input_b": {
+        "hex": "0x0000",
+        "bf16": "16'h0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x00000000"
+      },
+      "output_c": {
+        "bf16": "16'h7FC0",
+        "hex": "0x7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32": {
+          "hex": "0x7FC00000",
+          "binary": "01111111110000000000000000000000",
+          "value": "quiet NaN",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:4194304 (0x400000)"
+        }
+      },
+      "test_description": "Indeterminacy"
+    },
+    {
+      "no": 13,
+      "operation": "NaN * 5.0 = NaN",
+      "input_a": {
+        "hex": "0x7FC0",
+        "bf16": "16'h7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32_bits": "0x7FC00000"
+      },
+      "input_b": {
+        "hex": "0x40A0",
+        "bf16": "16'h40A0",
+        "bit_structure": "s:0, exp:129 (0x81), mant:32 (0x20)",
+        "float32_bits": "0x40A00000"
+      },
+      "output_c": {
+        "bf16": "16'h7FC0",
+        "hex": "0x7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32": {
+          "hex": "0x7FC00000",
+          "binary": "01111111110000000000000000000000",
+          "value": "quiet NaN",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:4194304 (0x400000)"
+        }
+      },
+      "test_description": "NaN propagated"
+    },
+    {
+      "no": 14,
+      "operation": "NaN * +Inf = NaN",
+      "input_a": {
+        "hex": "0x7FC0",
+        "bf16": "16'h7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32_bits": "0x7FC00000"
+      },
+      "input_b": {
+        "hex": "0x7F80",
+        "bf16": "16'h7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0x7F800000"
+      },
+      "output_c": {
+        "bf16": "16'h7FC0",
+        "hex": "0x7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32": {
+          "hex": "0x7FC00000",
+          "binary": "01111111110000000000000000000000",
+          "value": "quiet NaN",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:4194304 (0x400000)"
+        }
+      },
+      "test_description": "NaN * Infinity"
+    },
+    {
+      "no": 15,
+      "operation": "0.0 * 0.0 = 0.0",
+      "input_a": {
+        "hex": "0x0000",
+        "bf16": "16'h0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x00000000"
+      },
+      "input_b": {
+        "hex": "0x0000",
+        "bf16": "16'h0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x00000000"
+      },
+      "output_c": {
+        "bf16": "16'h0000",
+        "hex": "0x0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x00000000",
+          "binary": "00000000000000000000000000000000",
+          "value": "+0.0",
+          "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Zero multiplied by zero"
+    },
+    {
+      "no": 16,
+      "operation": "-Inf * -0.0 = NaN",
+      "input_a": {
+        "hex": "0xFF80",
+        "bf16": "16'hFF80",
+        "bit_structure": "s:1, exp:255 (0xFF), mant:0 (0x00)",
+        "float32_bits": "0xFF800000"
+      },
+      "input_b": {
+        "hex": "0x8000",
+        "bf16": "16'h8000",
+        "bit_structure": "s:1, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x80000000"
+      },
+      "output_c": {
+        "bf16": "16'h7FC0",
+        "hex": "0x7FC0",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:64 (0x40)",
+        "float32": {
+          "hex": "0x7FC00000",
+          "binary": "01111111110000000000000000000000",
+          "value": "quiet NaN",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:4194304 (0x400000)"
+        }
+      },
+      "test_description": "-Inf * negative zero"
+    }
+  ],
+  "extended_vectors": [
+    {
+      "no": 17,
+      "operation": "max_BF16 * max_BF16 = +Inf",
+      "input_a": {
+        "hex": "0x7F7F",
+        "bf16": "16'h7F7F",
+        "bit_structure": "s:0, exp:254 (0xFE), mant:127 (0x7F)",
+        "float32_bits": "0x7F7F0000"
+      },
+      "input_b": {
+        "hex": "0x7F7F",
+        "bf16": "16'h7F7F",
+        "bit_structure": "s:0, exp:254 (0xFE), mant:127 (0x7F)",
+        "float32_bits": "0x7F7F0000"
+      },
+      "output_c": {
+        "bf16": "16'h7F80",
+        "hex": "0x7F80",
+        "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x7F800000",
+          "binary": "01111111100000000000000000000000",
+          "value": "+Inf",
+          "bit_structure": "s:0, exp:255 (0xFF), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "F32 overflow (product exceeds F32 range)"
+    },
+    {
+      "no": 18,
+      "operation": "min_subnormal_BF16 * min_subnormal_BF16 = +0.0",
+      "input_a": {
+        "hex": "0x0001",
+        "bf16": "16'h0001",
+        "bit_structure": "s:0, exp:0 (0x00), mant:1 (0x01)",
+        "float32_bits": "0x00010000"
+      },
+      "input_b": {
+        "hex": "0x0001",
+        "bf16": "16'h0001",
+        "bit_structure": "s:0, exp:0 (0x00), mant:1 (0x01)",
+        "float32_bits": "0x00010000"
+      },
+      "output_c": {
+        "bf16": "16'h0000",
+        "hex": "0x0000",
+        "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x00000000",
+          "binary": "00000000000000000000000000000000",
+          "value": "+0.0",
+          "bit_structure": "s:0, exp:0 (0x00), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "F32 underflow to zero"
+    },
+    {
+      "no": 19,
+      "operation": "min_subnormal_BF16 * 1.0",
+      "input_a": {
+        "hex": "0x0001",
+        "bf16": "16'h0001",
+        "bit_structure": "s:0, exp:0 (0x00), mant:1 (0x01)",
+        "float32_bits": "0x00010000"
+      },
+      "input_b": {
+        "hex": "0x3F80",
+        "bf16": "16'h3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32_bits": "0x3F800000"
+      },
+      "output_c": {
+        "bf16": "16'h0001",
+        "hex": "0x0001",
+        "bit_structure": "s:0, exp:0 (0x00), mant:1 (0x01)",
+        "float32": {
+          "hex": "0x00010000",
+          "binary": "00000000000000010000000000000000",
+          "value": "9.183549615799121e-41",
+          "bit_structure": "s:0, exp:0 (0x00), mant:65536 (0x010000)"
+        }
+      },
+      "test_description": "BF16 subnormal -> F32 subnormal"
+    },
+    {
+      "no": 20,
+      "operation": "-0.0 * 1.0 = -0.0",
+      "input_a": {
+        "hex": "0x8000",
+        "bf16": "16'h8000",
+        "bit_structure": "s:1, exp:0 (0x00), mant:0 (0x00)",
+        "float32_bits": "0x80000000"
+      },
+      "input_b": {
+        "hex": "0x3F80",
+        "bf16": "16'h3F80",
+        "bit_structure": "s:0, exp:127 (0x7F), mant:0 (0x00)",
+        "float32_bits": "0x3F800000"
+      },
+      "output_c": {
+        "bf16": "16'h8000",
+        "hex": "0x8000",
+        "bit_structure": "s:1, exp:0 (0x00), mant:0 (0x00)",
+        "float32": {
+          "hex": "0x80000000",
+          "binary": "10000000000000000000000000000000",
+          "value": "-0.0",
+          "bit_structure": "s:1, exp:0 (0x00), mant:0 (0x000000)"
+        }
+      },
+      "test_description": "Signed zero"
+    }
+  ],
+  "metadata": {
+    "title": "BF16 x BF16 -> F32 test vectors (exact product)",
+    "source": "testvalues/test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md",
+    "vector_count": 16,
+    "extended_vector_count": 4,
+    "special_values": {
+      "infinity": "0x7F800000 / 0xFF800000",
+      "quiet_nan": "0x7FC00000",
+      "positive_zero": "0x00000000",
+      "negative_zero": "0x80000000"
+    }
+  }
+}
