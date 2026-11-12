@@ -262,9 +262,10 @@ Run the simulation with:
 `run_all.sh` runs every `scripts/run_test_*.sh`; the benches without a dedicated
 script (`vhfastmulb16_mul4x4_chk_tb.v`, `vhfastmulb16_add8x8_reva_tb.v`) are not included.
 See the [docs/testbenches_list.md](docs/testbenches_list.md) file for more details.
-Test vectors are documented in `docs/test_values_mul_bf16_rne.md`,
-`docs/test_values_mul_bf16_rtz.md`, `docs/test_values_bf16_bf16_f32.md` and
-`docs/test_values_mul_bf16_bf16_details.md`.
+Test vectors are documented in `docs/vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rne.md`,
+`docs/vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rtz.md`,
+`docs/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md` and
+`docs/vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md`.
 
 
 ## FPGA Resource Estimates

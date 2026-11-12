@@ -87,11 +87,11 @@
 
 | Файл | Описание |
 |------|----------|
-| `test_values_mul_bf16_bf16_details.md` | 16 основных тестов BF16 (1.0×1.0, 2.0×3.5, -1.5×4.0, Inf×0=NaN, etc.) |
-| `test_values_mul_bf16_rne.md` | Вектора для RNE округления |
-| `test_values_mul_bf16_rtz.md` | Вектора для RTZ (усечение) |
-| `test_values_bf16_bf16_f32.md` | BF16 x BF16 -> F32 exact product (16 + 4 extended) |
-| `test_values_bf16_bf16_f32.json` | Машиночитаемая версия F32-векторов |
+| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md` | 16 основных тестов BF16 (1.0×1.0, 2.0×3.5, -1.5×4.0, Inf×0=NaN, etc.) |
+| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rne.md` | Вектора для RNE округления |
+| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rtz.md` | Вектора для RTZ (усечение) |
+| `test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md` | BF16 x BF16 -> F32 exact product (16 + 4 extended) |
+| `test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json` | Машиночитаемая версия F32-векторов |
 
 ---
 
