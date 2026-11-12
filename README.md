@@ -320,8 +320,8 @@ The implementation is estimated for Xilinx Spartan-6 (XC6SLX9, XC6SLX16),
 Spartan-7 (XC7S15) and Artix-7 (XC7A15T).
 Detailed manual RTL estimates are maintained in:
 
-- [`docs/stat/stat_top_all.md`](docs/stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32, add_fp32, add_fp16) across FPGA families;
-- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — submodules and bottom-up breakdown;
+- [`docs/stat/stat_top_all.md`](docs/stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32, add_fp32, add_fp16, add_bf16) and their typical (typ) Fmax across FPGA families;
+- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — submodules, bottom-up breakdown and typical (typ) Fmax;
 - [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md), [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), [`docs/stat/stat_top_artix7.md`](docs/stat/stat_top_artix7.md) — per-device details.
 
 All values are manual estimates (±20–25%), not synthesis reports.
