@@ -189,7 +189,7 @@ Routing задержка оценивается как +35% к чистой ло
 | **ИТОГО (базовые уникальные)** | **~410** | **~260** | — | **7.2%** |
 
 > Примечание: `mul_u8_u8_u16_lat2` включает 4× `mul4x4`, поэтому сумма частей больше итога.
-> Варианты с другой latency (`mul4x4_lat2`, `mul8x8_lat3`) и F32 top-level
+> Варианты с другой latency (`mul4x4_lat2`, `mul_u8_u8_u16_lat3`) и F32 top-level
 > оценены в `docs/stat/stat_top_spartan6_old.md`.
 
 ---
@@ -200,7 +200,7 @@ Routing задержка оценивается как +35% к чистой ло
 |------------|------|-----|--------|--------|
 | `vhfastmulb16_rtz_lat3` | ~400 | ~150 | **~7%** | mul_u8_u8_u16_lat2 + add8x8_lat2 + sign + except_lat2 + glue |
 | `vhfastmulb16_rne_lat3` | ~430 | ~150 | **~7.5%** | RTZ + RNE rounding (always_comb, ~+30 LUT) |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~420 | ~130 | **~7.3%** | mul8x8_lat3 + add8x8_lat2 + sign + F32 pack + glue |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~420 | ~130 | **~7.3%** | mul_u8_u8_u16_lat3 + add8x8_lat2 + sign + F32 pack + glue |
 
 ---
 

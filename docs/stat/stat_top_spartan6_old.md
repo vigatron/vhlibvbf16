@@ -109,7 +109,7 @@
 
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
-| `mul8x8_lat3` (4× `mul4x4_lat2` + CPA) | ~230 | ~80 | 3-ступенчатый множитель мантисс |
+| `mul_u8_u8_u16_lat3` (4× `mul4x4_lat2` + CPA) | ~230 | ~80 | 3-ступенчатый множитель мантисс |
 | `add8x8_lat2` | ~18 | ~19 | 9-bit add + 9-bit sub (bias 127) |
 | `sign` | ~1 | 3 | 1 XOR, 3-ступенчатый конвейер |
 | F32 pack (leading-one, shifter, exp unwrap) | ~120 | 0 | приоритетный шифратор + 24-bit сдвиг + mux |
@@ -119,7 +119,7 @@
 #### Критический путь (оценка):
 
 ```
-mul4x4_lat2 → mul8x8_lat3 CPA → leading-one → mant_norm shifter
+mul4x4_lat2 → mul_u8_u8_u16_lat3 CPA → leading-one → mant_norm shifter
 → exp_unb → F32 pack mux → output reg
 ```
 
@@ -136,7 +136,7 @@ mul4x4_lat2 → mul8x8_lat3 CPA → leading-one → mant_norm shifter
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~420 | ~130 | 4 | exact BF16 product; RTZ for F32 subnormal |
 
 RNE добавляет ~+30 LUTs относительно RTZ. F32-модуль использует
-3-ступенчатый `mul8x8_lat3` и отдельную F32-упаковку, поэтому его
+3-ступенчатый `mul_u8_u8_u16_lat3` и отдельную F32-упаковку, поэтому его
 latency равна 4 тактам.
 
 ---

@@ -1,10 +1,10 @@
 `timescale 1ns/1ps
 // =============================================================
-// Testbench для vhfastmulb16_mul8x8_lat3
+// Testbench для vhfastmulb16_mul_u8_u8_u16_lat3
 //   c = a * b (8x8 -> 16), латентность 3 такта, синхронные en/reset
 // =============================================================
 
-module vhfastmulb16_mul8x8_lat3_tb;
+module vhfastmulb16_mul_u8_u8_u16_lat3_tb;
 
     localparam MAX_PRINT = 10;      // сколько ошибок печатать подробно
     localparam LAT = 3;             // латентность DUT
@@ -17,7 +17,7 @@ module vhfastmulb16_mul8x8_lat3_tb;
     reg  [7:0]  b;
     wire [15:0] c;
 
-    vhfastmulb16_mul8x8_lat3 dut (
+    vhfastmulb16_mul_u8_u8_u16_lat3 dut (
         .clk   (clk),
         .reset (reset),
         .en    (en),
@@ -95,8 +95,8 @@ module vhfastmulb16_mul8x8_lat3_tb;
 
     // ---------------- Основной сценарий ----------------
     initial begin
-        $dumpfile("build/vhfastmulb16_mul8x8_lat3.vcd");
-        $dumpvars(0, vhfastmulb16_mul8x8_lat3_tb);
+        $dumpfile("build/vhfastmulb16_mul_u8_u8_u16_lat3.vcd");
+        $dumpvars(0, vhfastmulb16_mul_u8_u8_u16_lat3_tb);
 
         checked = 0;
         errors  = 0;

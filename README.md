@@ -98,7 +98,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The FP16-adder top-level modules `vhfastmulb16_add_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
 - **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
 - **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
-- The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul8x8_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
+- The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
 - The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul_u8_u8_u16_lat2` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
 
@@ -112,7 +112,7 @@ The `src/` directory contains **19** Verilog source files:
 | 2 | `vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
 | 3 | `vhfastmulb16_mul4x4_comb.v` | `vhfastmulb16_mul4x4_comb` | 4x4-bit combinational multiplication (CSA tree, no output register) | 0 clk |
 | 4 | `vhfastmulb16_mul_u8_u8_u16_lat2.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
-| 5 | `vhfastmulb16_mul8x8_lat3.v` | `vhfastmulb16_mul8x8_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
+| 5 | `vhfastmulb16_mul_u8_u8_u16_lat3.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
 | 6 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
 | 7 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
 | 8 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
@@ -157,7 +157,7 @@ vhfastmulb16_add_fp32_rne_lat4
 | Component | Latency 1 | Latency 2 | Latency 3 | Latency 4 |
 |-----------|-----------|-----------|-----------|-----------|
 | Mul4x4 | `vhfastmulb16_mul4x4` | `vhfastmulb16_mul4x4_lat2` | - | - |
-| Mul8x8 | - | `vhfastmulb16_mul_u8_u8_u16_lat2` | `vhfastmulb16_mul8x8_lat3` | - |
+| Mul8x8 | - | `vhfastmulb16_mul_u8_u8_u16_lat2` | `vhfastmulb16_mul_u8_u8_u16_lat3` | - |
 | Flags | `vhfastmulb16_flags_lat1` | `vhfastmulb16_flags_lat2` | - | - |
 | Exceptions | - | `vhfastmulb16_except_lat2` | `vhfastmulb16_except_lat3` | - |
 | Top-level (BF16 × BF16) | - | - | `vhfastmulb16_rtz_lat3`, `vhfastmulb16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
@@ -176,8 +176,8 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
 | `tests/vhfastmulb16_mul_u8_u8_u16_lat2_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` |
 | `tests/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` (check/debug) |
-| `tests/vhfastmulb16_mul8x8_lat3_tb.v` | `vhfastmulb16_mul8x8_lat3` |
-| `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` | `vhfastmulb16_mul8x8_lat3` (check/debug) |
+| `tests/vhfastmulb16_mul_u8_u8_u16_lat3_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` |
+| `tests/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` (check/debug) |
 | `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
 | `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
 | `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
@@ -207,7 +207,7 @@ Most testbenches have a dedicated run script. In particular, several
 | `scripts/run_test_add8x8_lat2.sh` | `tests/vhfastmulb16_add8x8_tb.v` |
 | `scripts/run_test_flags_lat2.sh` | `tests/vhfastmulb16_flags_lat2_chk_tb.v` |
 | `scripts/run_test_mul4x4_lat2.sh` | `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` |
-| `scripts/run_test_mul8x8_lat3.sh` | `tests/vhfastmulb16_mul8x8_lat3_chk_tb.v` |
+| `scripts/run_test_mul_u8_u8_u16_lat3.sh` | `tests/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` |
 | `scripts/run_test_mul_u8_u8_u16_lat2_chk.sh` | `tests/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` |
 
 See `scripts/run_test_*.sh` for the complete mapping.
@@ -224,8 +224,8 @@ Run the simulation with:
 ./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul_u8_u8_u16_lat2.sh sim
-./scripts/run_test_mul8x8_lat3.sh sim
-./scripts/run_test_mul8x8_lat3.sh sim
+./scripts/run_test_mul_u8_u8_u16_lat3.sh sim
+./scripts/run_test_mul_u8_u8_u16_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
 ./scripts/run_test_sign.sh sim
 ./scripts/run_test_flags_lat1.sh sim

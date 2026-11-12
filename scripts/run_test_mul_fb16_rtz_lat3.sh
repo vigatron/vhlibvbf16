@@ -4,7 +4,7 @@
 SRC=(
     src/vhfastmulb16_rtz_lat3.v
     src/vhfastmulb16_add8x8_lat2.v
-    src/vhfastmulb16_mul8x8.v
+    src/vhfastmulb16_mul_u8_u8_u16_lat2.v
     src/vhfastmulb16_mul4x4.v
     src/vhfastmulb16_flags_lat1.v
     src/vhfastmulb16_sign.v
