@@ -1,6 +1,6 @@
 // =============================================================
-// vhfastmulb16_rne_lat3_tb.v
-// Visual testbench для vhfastmulb16_rne_lat3 - умножение BF16 чисел (RNE)
+// vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb.v
+// Visual testbench для vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 - умножение BF16 чисел (RTZ)
 // Потоковая проверка: в такте k подаётся пара k,
 // результат пары k-LAT проверяется в том же такте.
 // После 16-го числа en=0: конвейер дорабатывает остаток
@@ -10,7 +10,7 @@
 
 `timescale 1ns/1ps
 
-module vhfastmulb16_rne_lat3_tb;
+module vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb;
 
     // Частота тактового сигнала (для визуализации)
     localparam CLK_PERIOD = 10;
@@ -39,7 +39,7 @@ module vhfastmulb16_rne_lat3_tb;
     end
 
     // Подключение DUT
-    vhfastmulb16_rne_lat3 uut (
+    vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 uut (
     .clk(clk),
     .reset(reset),
     .en(en),
@@ -75,10 +75,10 @@ module vhfastmulb16_rne_lat3_tb;
     // Тесты
     initial begin
 
-        $dumpfile("build/vhfastmulb16_rne_lat3.vcd");
-        $dumpvars(0, vhfastmulb16_rne_lat3_tb);
+        $dumpfile("build/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.vcd");
+        $dumpvars(0, vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb);
         
-        $display("=== vhfastmulb16 Visual Testbench ===");
+        $display("=== vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 Visual Testbench ===");
         $display("Тестирование умножения BF16 чисел");
         $display("Использование 16 тестов из таблицы test_values_mul_bf16_bf16_details.md");
         $display("-----------------------------------");

@@ -3,7 +3,7 @@
   "format": {
     "input": "BF16 (1s/8e/7m)",
     "output": "F32 (1s/8e/23m) = exact product of the two BF16 values, no intermediate BF16 rounding",
-    "output_c": "BF16 column = result rounded RNE (reference for the BF16 output of vhfastmulb16); it differs from the F32 output for #7 and #8. F32 column = exact product",
+    "output_c": "BF16 column = result rounded RNE (reference for the BF16 output of vhfastmulb16_mul_bf16_bf16_bf16); it differs from the F32 output for #7 and #8. F32 column = exact product",
     "special_cases": "NaN in -> qNaN 0x7FC0/0x7FC00000; Inf*0 -> qNaN; Inf*finite -> Inf with XOR sign; zero*finite -> zero with XOR sign"
   },
   "test_vectors": [

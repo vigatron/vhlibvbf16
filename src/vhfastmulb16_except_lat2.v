@@ -26,7 +26,7 @@ module vhfastmulb16_except_lat2 (
     );
 
     // Канонические значения BF16 (знак всегда 0;
-    // знак результата формируется в vhfastmulb16)
+    // знак результата формируется в vhfastmulb16_mul_bf16_bf16_bf16)
     localparam [15:0] BF16_ZERO = 16'h0000;  // +0
     localparam [15:0] BF16_INF  = 16'h7F80;  // +Infinity
     // BF16_NAN больше не используется как константа — payload берётся из входа

@@ -4,8 +4,8 @@
 // Author: Viktor Glebov / V01G04A81
 // License: MIT
 // https://github.com/vigatron/vhlibvbf16
-// File: vhfastmulb16_rtz_lat3.v
-// Module: vhfastmulb16_rtz_lat3
+// File: vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v
+// Module: vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3
 // BF16 multiplication (RTZ rounding)
 // Result is BF16 number
 // Operation takes 3 clk (latency 3)
@@ -13,7 +13,7 @@
 // Subnormal inputs: Flush To Zero (FTZ), treated as 0
 // ----------------------------------------------
 
-module vhfastmulb16_rtz_lat3 (
+module vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 (
     input wire clk,
     input wire reset,
     input wire en,

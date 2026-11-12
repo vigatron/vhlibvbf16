@@ -10,7 +10,7 @@ If the exact product falls into the F32 subnormal range, the result is **truncat
 without rounding. NaN result is the canonical quiet NaN `0x7FC00000`.
 
 Column `Output C (BF16, RNE reference)` is the BF16 result rounded to nearest even.
-It is a reference for the BF16 output of `vhfastmulb16`; for #7 and #8 it differs from the F32 output.
+It is a reference for the BF16 output of `vhfastmulb16_mul_bf16_bf16_bf16`; for #7 and #8 it differs from the F32 output.
 
 Special cases: `NaN` in -> quiet NaN `0x7FC00000`; `Inf * 0` -> quiet NaN; `Inf * finite` -> `Inf`
 with sign = XOR of signs; `zero * finite` -> zero with sign = XOR of signs.

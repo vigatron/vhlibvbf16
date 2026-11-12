@@ -17,8 +17,8 @@
 | 9 | `vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` | Directed + pipeline (LAT=2) | 256 |
 | 10 | `vhfastmulb16_except_lat2_tb.v` | `vhfastmulb16_except_lat2` | Directed + pipeline (LAT=2) | 24 |
 | 11 | `vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` | Directed + pipeline (LAT=3) | 24 |
-| 12 | `vhfastmulb16_rtz_lat3_tb.v` | `vhfastmulb16_rtz_lat3` | Visual (16 векторов из таблицы) | 16 |
-| 13 | `vhfastmulb16_rne_lat3_tb.v` | `vhfastmulb16_rne_lat3` | Visual (16 векторов из таблицы) | 16 |
+| 12 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Visual (16 векторов из таблицы) | 16 |
+| 13 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Visual (16 векторов из таблицы) | 16 |
 | 14 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Directed + streaming, `LAT=4` | 32 |
 | 15 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Random regression (Python golden model), `LAT=4` | 2048 |
 | 16 | `vhfastmulb16_add_fp32_rtz_lat4_tb.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Directed + streaming, `LAT=4` | 32 |
@@ -56,8 +56,8 @@
 ./scripts/run_test_flags_lat2.sh sim
 ./scripts/run_test_except_lat2.sh sim
 ./scripts/run_test_except_lat3.sh sim
-./scripts/run_test_mul_fb16_rtz_lat3.sh sim
-./scripts/run_test_mul_fb16_rne_lat3.sh sim
+./scripts/run_test_mul_bf16_bf16_bf16_rtz_lat3.sh sim
+./scripts/run_test_mul_bf16_bf16_bf16_rne_lat3.sh sim
 ./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh sim
 ./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
 ./scripts/run_test_add_fp32_rtz_lat4.sh sim

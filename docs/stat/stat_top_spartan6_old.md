@@ -28,7 +28,7 @@
 
 ## Top-level модули
 
-### 1. `vhfastmulb16_rtz_lat3` (RTZ — Round Toward Zero)
+### 1. `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` (RTZ — Round Toward Zero)
 
 | Ресурс | Оценка | % от доступных (5,720 LUT6) |
 |--------|--------|----------------|
@@ -61,7 +61,7 @@
 
 ---
 
-### 2. `vhfastmulb16_rne_lat3` (RNE — Round to Nearest Even)
+### 2. `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` (RNE — Round to Nearest Even)
 
 | Ресурс | Оценка | % от доступных (5,720 LUT6) |
 |--------|--------|----------------|
@@ -131,8 +131,8 @@ mul4x4_lat2 → mul_u8_u8_u16_lat3 CPA → leading-one → mant_norm shifter
 
 | Модуль | LUTs | FF | Latency | Точность |
 |--------|------|-----|---------|----------|
-| `vhfastmulb16_rtz_lat3` | ~400 | ~150 | 3 | truncation (RTZ) |
-| `vhfastmulb16_rne_lat3` | ~430 | ~150 | 3 | IEEE 754 RNE |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~400 | ~150 | 3 | truncation (RTZ) |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~430 | ~150 | 3 | IEEE 754 RNE |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~420 | ~130 | 4 | exact BF16 product; RTZ for F32 subnormal |
 
 RNE добавляет ~+30 LUTs относительно RTZ. F32-модуль использует

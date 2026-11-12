@@ -40,7 +40,7 @@ Fmax = 1 / T_clk
 
 ## Top-level модули
 
-### 1. `vhfastmulb16_rtz_lat3` (RTZ — Round Toward Zero)
+### 1. `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` (RTZ — Round Toward Zero)
 
 | Ресурс | XC6SLX9 | XC6SLX16 | % от XC6SLX9 | % от XC6SLX16 |
 |--------|---------|----------|--------------|---------------|
@@ -78,7 +78,7 @@ Fmax = 1 / T_clk
 
 ---
 
-### 2. `vhfastmulb16_rne_lat3` (RNE — Round to Nearest Even)
+### 2. `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` (RNE — Round to Nearest Even)
 
 | Ресурс | XC6SLX9 | XC6SLX16 | % от XC6SLX9 | % от XC6SLX16 |
 |--------|---------|----------|--------------|---------------|
@@ -229,8 +229,8 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm shifter
 
 | Модуль | LUTs | FF | Latency | Точность | % LUTs (от 5,720) |
 |--------|------|-----|---------|----------|-------------------|
-| `vhfastmulb16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~6.9%** |
-| `vhfastmulb16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~7.5%** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~6.9%** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~7.5%** |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~5.4%** |
 | `vhfastmulb16_add_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~5.1%** |
 | `vhfastmulb16_add_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~5.9%** |

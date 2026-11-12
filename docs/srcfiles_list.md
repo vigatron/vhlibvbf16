@@ -15,8 +15,8 @@ Total modules: **18**
 | 9 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
 | 10 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
 | 11 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
-| 12 | `vhfastmulb16_rtz_lat3.v` | `vhfastmulb16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
-| 13 | `vhfastmulb16_rne_lat3.v` | `vhfastmulb16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 12 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
+| 13 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
 | 14 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
 | 15 | `vhfastmulb16_add_fp32_rtz_lat4.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
 | 16 | `vhfastmulb16_add_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
@@ -28,7 +28,7 @@ Total modules: **18**
 ## Module Dependencies
 
 ```
-vhfastmulb16_rtz_lat3 / vhfastmulb16_rne_lat3
+vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 / vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3
 ├── vhfastmulb16_add8x8_lat2
 ├── vhfastmulb16_mul_u8_u8_u16_lat2
 │   └── vhfastmulb16_mul4x4 (x4)
@@ -65,7 +65,7 @@ vhfastmulb16_add_fp16_rne_lat4
 | Mul8x8 | - | `mul_u8_u8_u16_lat2` | `mul_u8_u8_u16_lat3` | - |
 | Flags | `flags_lat1` | `flags_lat2` | - | - |
 | Exceptions | - | `except_lat2` | `except_lat3` | - |
-| Top-level (BF16 × BF16) | - | - | `rtz_lat3`, `rne_lat3` | `f32_lat4` |
+| Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
 | Top-level (FP32 add) | - | - | - | `add_fp32_rtz_lat4`, `add_fp32_rne_lat4` |
 | Top-level (FP16 add) | - | - | - | `add_fp16_rtz_lat4`, `add_fp16_rne_lat4` |
 
@@ -92,8 +92,8 @@ The `src/` directory contains the following 18 Verilog source files:
 - `vhfastmulb16_mul4x4_lat2.v`
 - `vhfastmulb16_mul_u8_u8_u16_lat2.v`
 - `vhfastmulb16_mul_u8_u8_u16_lat3.v`
-- `vhfastmulb16_rne_lat3.v`
-- `vhfastmulb16_rtz_lat3.v`
+- `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v`
+- `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v`
 - `vhfastmulb16_sign.v`
 
 No deprecated files are kept in the current version of `src/`.
