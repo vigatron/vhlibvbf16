@@ -3,7 +3,7 @@
 // Тестбенч для vhfastmulb16_f32_lat4
 //   N пар чисел подаются подряд, каждый такт новая пара
 //   latency = LAT = 4 такта, проверка результата в потоке
-//   Тестовые векторы: docs/test_values_mul_bf16_bf16_f32.json
+//   Тестовые векторы: testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
 //   (BF16 x BF16 -> F32 exact product, 16 основных + 4 extended)
 //   + 12 directed-векторов для F32 subnormal/RTZ и граничных случаев.
 //   Ожидаемый результат = колонка F32 (exact product).
@@ -40,7 +40,7 @@ module vhfastmulb16_f32_lat4_tb;
     );
 
     // ---------------- Тестовые векторы ----------------
-    // Источник: docs/test_values_mul_bf16_bf16_f32.json
+    // Источник: testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
     // ve[k] = ожидаемый результат (колонка F32, exact product)
     reg [15:0] va [0:N-1];
     reg [15:0] vb [0:N-1];

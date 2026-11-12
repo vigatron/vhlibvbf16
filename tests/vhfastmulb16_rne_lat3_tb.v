@@ -80,7 +80,7 @@ module vhfastmulb16_rne_lat3_tb;
         
         $display("=== vhfastmulb16 Visual Testbench ===");
         $display("Тестирование умножения BF16 чисел");
-        $display("Использование 16 тестов из таблицы test_values_details.md");
+        $display("Использование 16 тестов из таблицы test_values_mul_bf16_bf16_details.md");
         $display("-----------------------------------");
         
         checked = 0;

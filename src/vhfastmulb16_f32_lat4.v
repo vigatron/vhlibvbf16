@@ -342,7 +342,7 @@ module vhfastmulb16_f32_lat4 (
 
     always @(*) begin
         if (nan_s3) begin
-            // Canonical quiet NaN (per docs/test_values_mul_bf16_bf16_f32.md).
+            // Canonical quiet NaN (per testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md).
             c_next = F32_QNAN;
         end else if (inf_s3) begin
             c_next = {sign_s3, 8'hFF, 23'h000000};

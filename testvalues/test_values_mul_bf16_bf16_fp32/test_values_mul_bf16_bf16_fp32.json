@@ -572,7 +572,7 @@
   ],
   "metadata": {
     "title": "BF16 x BF16 -> F32 test vectors (exact product)",
-    "source": "docs/test_values_details.md",
+    "source": "testvalues/test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md",
     "vector_count": 16,
     "extended_vector_count": 4,
     "special_values": {

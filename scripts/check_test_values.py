@@ -4,7 +4,8 @@
 @brief Validator for the BF16 x BF16 -> F32 test vector tables.
 
 Checks that the expected results stored in
-`docs/test_values_mul_bf16_bf16_f32.json` and `docs/test_values_mul_bf16_bf16_f32.md`
+`testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json`
+and `testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md`
 match the value recomputed from the BF16 operands.
 
 Semantics being checked:
@@ -27,9 +28,13 @@ import struct
 import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOCS = os.path.join(BASE, "docs")
-JSON_PATH = os.path.join(DOCS, "test_values_mul_bf16_bf16_f32.json")
-MD_PATH = os.path.join(DOCS, "test_values_mul_bf16_bf16_f32.md")
+TESTVALUES = os.path.join(BASE, "testvalues")
+JSON_PATH = os.path.join(
+    TESTVALUES, "test_values_mul_bf16_bf16_fp32",
+    "test_values_mul_bf16_bf16_fp32.json")
+MD_PATH = os.path.join(
+    TESTVALUES, "test_values_mul_bf16_bf16_fp32",
+    "test_values_mul_bf16_bf16_fp32.md")
 
 QNAN_BF16 = 0x7FC0
 QNAN_F32 = 0x7FC00000

@@ -83,15 +83,21 @@
 
 ---
 
-## Тестовые векторы (docs/)
+## Тестовые векторы (testvalues/)
 
 | Файл | Описание |
 |------|----------|
-| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md` | 16 основных тестов BF16 (1.0×1.0, 2.0×3.5, -1.5×4.0, Inf×0=NaN, etc.) |
-| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rne.md` | Вектора для RNE округления |
-| `vest_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rtz.md` | Вектора для RTZ (усечение) |
+| `test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_details.md` | 16 основных тестов BF16 (1.0×1.0, 2.0×3.5, -1.5×4.0, Inf×0=NaN, etc.) |
+| `test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rne.md` | Вектора для RNE округления |
+| `test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_rtz.md` | Вектора для RTZ (усечение) |
 | `test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md` | BF16 x BF16 -> F32 exact product (16 + 4 extended) |
 | `test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json` | Машиночитаемая версия F32-векторов |
+| `test_values_add_bf16_bf16_bf16/test_values_add_bf16_bf16_bf16.json` | BF16 + BF16 -> BF16, 32 вектора (RNE/RTZ) |
+| `test_values_add_bf16_bf16_bf16/test_values_add_bf16_rne.md` | BF16 addition, только C (RNE) |
+| `test_values_add_bf16_bf16_bf16/test_values_add_bf16_rtz.md` | BF16 addition, только C (RTZ) |
+| `test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json` | FP16 + FP16 -> FP16, 32 вектора (RNE/RTZ) |
+| `test_values_add_fp16_fp16_fp16/test_values_add_fp16_rne.md` | FP16 addition, только C (RNE) |
+| `test_values_add_fp16_fp16_fp16/test_values_add_fp16_rtz.md` | FP16 addition, только C (RTZ) |
 
 ---
 

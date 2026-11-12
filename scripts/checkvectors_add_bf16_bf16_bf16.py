@@ -3,7 +3,7 @@
 # checkvectors_add_bf16_bf16_bf16.py
 # Проверка тестовых векторов сложения BF16 (A + B = C)
 # Сравнивает вычисленные результаты RNE/RTZ с данными из
-# docs/test_values_add_bf16_bf16_bf16/test_values_add_bf16_bf16_bf16.json
+# testvalues/test_values_add_bf16_bf16_bf16/test_values_add_bf16_bf16_bf16.json
 # =============================================================================
 
 import sys
@@ -348,7 +348,7 @@ def main():
     project_root = os.path.dirname(script_dir)
     default_json = os.path.join(
         project_root,
-        'docs',
+        'testvalues',
         'test_values_add_bf16_bf16_bf16',
         'test_values_add_bf16_bf16_bf16.json'
     )
