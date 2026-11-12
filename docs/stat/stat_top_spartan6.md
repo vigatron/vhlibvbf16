@@ -142,7 +142,7 @@ Fmax = 1 / T_clk
 | Регистры STAGE 3→4 (k, mant_norm, mant_sub, exp_unb, flags) | 0 | 66 | 4+24+24+10+1+1+1+1 = 66 FF |
 | F32 pack mux (STAGE 4, комбинационно) | ~80 | 0 | приоритетный mux ~5 ветвей × 32 бит |
 | Выходной регистр outc (32 бита) | 0 | 32 | регистр результата |
-| Exception classification + sign + exp_sum + muxes | ~52 | 7 | классификация, sign, mux эфф. операндов, сумматор экспонент |
+| Exception classification + sign + exp_sum + muxes | ~52 | 7 | классификация, sign, mux эффективных операндов, сумматор экспонент |
 | en_pipeline (4 задержки + OR) | ~4 | 4 | 4 FF + OR логика |
 | **ИТОГО** | **~308** | **~179** | |
 
@@ -173,14 +173,14 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm shifter
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
 | Operand unpack + классификация исключений (S1) | ~45 | 0 | сравнения exp/frac с 0/0xFF, флаги NaN/Inf/Zero, операнд sign |
-| Эффективная экспонента/мантисса (S1) | ~18 | 0 | мux exp_eff (8 бит ×2), hidden bit для man (1 бит ×2) |
-| exp_diff, shift_amt, a_larger, exp_max (S1) | ~55 | 0 | 8-битный компаратор/вычитание, мux, сравнение мантисс |
-| sign_res (S1) | ~5 | 0 | приоритетный мux результата знака |
-| hi/lo мux операндов 2×27 бит (S1) | ~54 | 0 | выбор большего/меньшего модуля без разворота в S2 |
+| Эффективная экспонента/мантисса (S1) | ~18 | 0 | mux exp_eff (8 бит ×2), hidden bit для man (1 бит ×2) |
+| exp_diff, shift_amt, a_larger, exp_max (S1) | ~55 | 0 | 8-битный компаратор/вычитание, mux, сравнение мантисс |
+| sign_res (S1) | ~5 | 0 | приоритетный mux результата знака |
+| hi/lo mux операндов 2×27 бит (S1) | ~54 | 0 | выбор большего/меньшего модуля без разворота в S2 |
 | Баррел-шейфер выравнивания мантисс 27 бит + sticky (S1) | ~78 | 0 | переменный сдвиг на shift_amt (5 бит управления), sticky в LSB |
 | en_pipeline (4 задержки + OR) | ~3 | 4 | 4 FF + OR логика |
 | **Регистры S1→S2** | 0 | 93 | man_hi_al(27) + man_lo_al(27) + exp_max(8) + flags/sign/op_add/nan/etc |
-| 28-битный mantissa add/sub (S2, unconditional hi - lo) | ~28 | 0 | CARRY4 цепочка, 28 бит, без мux порядка операндов |
+| 28-битный mantissa add/sub (S2, unconditional hi - lo) | ~28 | 0 | CARRY4 цепочка, 28 бит, без mux порядка операндов |
 | **Регистры S2→S3** | 0 | 67 | man_raw(28) + exp_max(8) + flags/sign/nan_frac/etc |
 | Carry fix-up + LZD 27-bit + 9-bit signed exponent (S3) | ~85 | 0 | исправление переноса, приоритетный энкодер 27 бит, коррекция экспоненты |
 | **Регистры S3→S4** | 0 | 67 | man_norm(27) + exp_pre(9) + flags/sign/nan_frac/etc |
@@ -217,7 +217,7 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm shifter
 | RNE rounding: G/R/S биты, round_up, inc_carry (S4) | +25 | 0 | инкремент significand, проверка tie-to-even на kept[0] |
 | Subnormal rounding (G/R/S + инкремент для субнормала, S4) | +20 | 0 | отдельная логика округления для субнормального результата |
 | exp_ovf корректировка при overflow significand | +5 | 0 | инкремент экспоненты при переносе mantissa |
-| sticky_d1 убран (sticky складется в LSB на S1) | 0 | -1 | регистр sticky_d1 больше не нужен |
+| sticky_d1 убран (sticky складывается в LSB на S1) | 0 | -1 | регистр sticky_d1 больше не нужен |
 | **ИТОГО** | **+50** | **0** | |
 
 #### Распределение:
@@ -331,10 +331,10 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 | Подмодуль | LUTs | FF | Примечание |
 |-----------|------|-----|------------|
 | Operand unpack + классификация исключений (S1) | ~20 | 0 | 5-битные сравнения exp, 10-битные сравнения frac |
-| Эффективная экспонента/мантисса (S1) | ~12 | 0 | мux exp_eff (5 бит ×2), hidden bit для man (1 бит ×2) |
-| exp_diff, shift_amt, a_larger, exp_max (S1) | ~35 | 0 | 5-битный компаратор/вычитание, мux, сравнение мантисс |
-| sign_res (S1) | ~3 | 0 | приоритетный мux результата знака |
-| hi/lo мux операндов 2×14 бит (S1) | ~28 | 0 | выбор большего/меньшего модуля без разворота в S2 |
+| Эффективная экспонента/мантисса (S1) | ~12 | 0 | mux exp_eff (5 бит ×2), hidden bit для man (1 бит ×2) |
+| exp_diff, shift_amt, a_larger, exp_max (S1) | ~35 | 0 | 5-битный компаратор/вычитание, mux, сравнение мантисс |
+| sign_res (S1) | ~3 | 0 | приоритетный mux результата знака |
+| hi/lo mux операндов 2×14 бит (S1) | ~28 | 0 | выбор большего/меньшего модуля без разворота в S2 |
 | Баррел-шейфер выравнивания мантисс 14 бит + sticky (S1) | ~45 | 0 | переменный сдвиг на shift_amt (5 бит управления), sticky в LSB |
 | en_pipeline (4 задержки + OR) | ~3 | 4 | 4 FF + OR логика |
 | **Регистры S1→S2** | 0 | 51 | man_hi_al(14) + man_lo_al(14) + exp_max(5) + flags/sign/op_add/nan/etc |
