@@ -3,7 +3,7 @@
 ![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
 ![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Date](https://img.shields.io/badge/date-2026--11--11-informational)
+![Date](https://img.shields.io/badge/date-2026--11--12-informational)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Build](https://img.shields.io/badge/build-verified-brightgreen)
 
@@ -15,7 +15,7 @@ Rev: 0.0.5
 ## Description
 
 Compact pipelined BF16/FP32 arithmetic library (Verilog)  
-BF16 multiplier, BF16×BF16→F32 multiplier and FP32 adders; RTZ/RNE, no DSP required.  
+BF16 multiplier, BF16×BF16→F32 multiplier, FP32 adders and FP16 adders; RTZ/RNE, no DSP required.  
 
 `vhfastmulb16_mul_bf16_bf16_bf16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
@@ -104,7 +104,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 
 ## Source Files
 
-The `src/` directory contains **19** Verilog source files:
+The `src/` directory contains **18** Verilog source files:
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -114,19 +114,18 @@ The `src/` directory contains **19** Verilog source files:
 | 4 | `vhfastmulb16_mul_u8_u8_u16_lat2.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
 | 5 | `vhfastmulb16_mul_u8_u8_u16_lat3.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
 | 6 | `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
-| 7 | `vhfastmulb16_add8x8_branch.v` | `vhfastmulb16_add8x8` | Addition of two 8-bit numbers and subtraction of 127 | 2 clk |
-| 8 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
-| 9 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
-| 10 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
-| 11 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
-| 12 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
-| 13 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
-| 14 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
-| 15 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
-| 16 | `vhfastmulb16_add_fp32_rtz_lat4.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
-| 17 | `vhfastmulb16_add_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
-| 18 | `vhfastmulb16_add_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
-| 19 | `vhfastmulb16_add_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
+| 7 | `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
+| 8 | `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
+| 9 | `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
+| 10 | `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
+| 11 | `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
+| 12 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
+| 13 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| 14 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
+| 15 | `vhfastmulb16_add_fp32_rtz_lat4.v` | `vhfastmulb16_add_fp32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
+| 16 | `vhfastmulb16_add_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
+| 17 | `vhfastmulb16_add_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
+| 18 | `vhfastmulb16_add_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
 
 ## Module Dependencies
 
@@ -216,17 +215,16 @@ Run the simulation with:
 
 ```bash
 # All testbench scripts
-# All testbench scripts
 ./scripts/run_all.sh sim
 
 # Individual tests
 ./scripts/run_test_mul4x4.sh sim
 ./scripts/run_test_mul4x4_lat2.sh sim
-./scripts/run_test_mul4x4_lat2.sh sim
 ./scripts/run_test_mul_u8_u8_u16_lat2.sh sim
-./scripts/run_test_mul_u8_u8_u16_lat3.sh sim
+./scripts/run_test_mul_u8_u8_u16_lat2_chk.sh sim
 ./scripts/run_test_mul_u8_u8_u16_lat3.sh sim
 ./scripts/run_test_add8x8_lat2.sh sim
+./scripts/run_test_add8x8_reva.sh sim
 ./scripts/run_test_sign.sh sim
 ./scripts/run_test_flags_lat1.sh sim
 ./scripts/run_test_flags_lat2.sh sim
@@ -260,7 +258,8 @@ Run the simulation with:
 ```
 
 `run_all.sh` runs every `scripts/run_test_*.sh`; the benches without a dedicated
-script (`vhfastmulb16_mul4x4_chk_tb.v`, `vhfastmulb16_add8x8_reva_tb.v`) are not included.
+script (`vhfastmulb16_flags_lat2_tb.v`, `vhfastmulb16_mul4x4_chk_tb.v`,
+`vhfastmulb16_mul4x4_lat2_tb.v`, `vhfastmulb16_mul_u8_u8_u16_lat3_tb.v`) are not included.
 See the [docs/testbenches_list.md](docs/testbenches_list.md) file for more details.
 
 ## Test Values
@@ -274,9 +273,10 @@ subdirectory per operation):
 | `testvalues/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
 | `testvalues/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
 | `testvalues/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
+| `testvalues/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
 
-Machine-readable `.json` files are validated by `scripts/check_test_values.py`
-(F32), `scripts/checkvectors_add_bf16_bf16_bf16.py` (BF16 add),
+The main machine-readable `.json` files are validated by `scripts/check_test_values.py`
+(BF16 x BF16 -> F32), `scripts/checkvectors_add_bf16_bf16_bf16.py` (BF16 add),
 `scripts/checkvectors_add_fp16_fp16_fp16.py` (FP16 add, RNE/RTZ) and
 `scripts/checkvectors_mul_bf16_bf16_fp32.py` (BF16 x BF16 -> F32); the FP16
 tables are generated from the directed testbench vectors by
