@@ -129,7 +129,7 @@ Routing задержка оценивается как +35% к чистой ло
 
 ---
 
-### 4. `vhfastmulb16_add_fp32_rtz_lat4` (FP32 + FP32 -> FP32, RTZ, latency 4)
+### 4. `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` (FP32 + FP32 -> FP32, RTZ, latency 4)
 
 | Ресурс | Оценка | % от доступных (10,400 LUT6) |
 |--------|--------|------------------------------|
@@ -170,7 +170,7 @@ Routing задержка оценивается как +35% к чистой ло
 
 ---
 
-### 5. `vhfastmulb16_add_fp32_rne_lat4` (FP32 + FP32 -> FP32, RNE, latency 4)
+### 5. `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` (FP32 + FP32 -> FP32, RNE, latency 4)
 
 | Ресурс | Оценка | % от доступных (10,400 LUT6) |
 |--------|--------|------------------------------|
@@ -207,10 +207,10 @@ Routing задержка оценивается как +35% к чистой ло
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~3.8%** |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~4.1%** |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~3.0%** |
-| `vhfastmulb16_add_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~2.8%** |
-| `vhfastmulb16_add_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~3.3%** |
-| `vhfastmulb16_add_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~1.5%** |
-| `vhfastmulb16_add_fp16_rne_lat4` | ~190 | ~151 | 4 | FP16+FP16→FP16, IEEE 754 RNE | **~1.8%** |
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~2.8%** |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~3.3%** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~1.5%** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~190 | ~151 | 4 | FP16+FP16→FP16, IEEE 754 RNE | **~1.8%** |
 
 ---
 
@@ -276,7 +276,7 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 > Artix-7 XC7A15T имеет **45 DSP48E1**. Использование 1 для `mul_u8_u8_u16_lat2`
 > сокращает RTZ top до **~190-240 LUTs (~1.8-2.3%)**.
 
-### DSP48 для FP32 аддеров (`add_fp32_*`)
+### DSP48 для FP32 аддеров (`add_fp32_fp32_fp32_*`)
 
 DSP48E1 **не применим** для FP32 аддеров без существенной переработки архитектуры:
 - баррел-шейфер выравнивания мантисс (27 бит, переменный сдвиг) — не отображается на DSP48;
@@ -287,7 +287,7 @@ DSP48E1 **не применим** для FP32 аддеров без сущест
 
 **Ожидаемая экономия при использовании DSP48E1 для аддеров: 0 LUT.**
 
-### DSP48 для FP16 аддеров (`add_fp16_*`)
+### DSP48 для FP16 аддеров (`add_fp16_fp16_fp16_*`)
 
 Те же ограничения, что и для FP32 аддеров: баррел-шейфер, LZD, логика округления и F16 pack не отображаются на DSP48E1. 15-битный add/sub частично помещается в порт A (25 бит) DSP48E1, но накладные расходы перекрывают любую экономию LUT.
 

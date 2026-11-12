@@ -4,7 +4,7 @@
 @brief Generate and validate FP32 + FP32 -> FP32 test vectors (RTZ / RNE).
 
 The generator uses a bit-exact integer reference model of the planned
-`vhfastmulb16_add_fp32_rtz_lat4` / `vhfastmulb16_add_fp32_rne_lat4` DUTs:
+`vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` / `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` DUTs:
   * finite operands are added exactly, then rounded to binary32:
       - RTZ: truncation toward zero (no guard/round/sticky);
       - RNE: round-to-nearest, ties to even (IEEE-754 default);
@@ -28,7 +28,7 @@ A sidecar file `<out>.labels` contains one category label per line
 Usage:
     ./scripts/gen_fp32_vectors.py --mode rne --out build/vectors.hex
     ./scripts/gen_fp32_vectors.py --mode rtz --count 4096 --seed 1234 \
-        --out build/vhfastmulb16_add_fp32_rtz_lat4_rand.hex
+        --out build/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4_rand.hex
     ./scripts/gen_fp32_vectors.py --mode rne --self-check
 """
 
@@ -490,7 +490,7 @@ def main():
 
     out_path = args.out
     if out_path is None:
-        out_path = "build/vhfastmulb16_add_fp32_{}_lat4_rand.hex".format(args.mode)
+        out_path = "build/vhfastmulb16_add_fp32_fp32_fp32_{}_lat4_rand.hex".format(args.mode)
     if not os.path.isabs(out_path):
         out_path = os.path.join(BASE, out_path)
 

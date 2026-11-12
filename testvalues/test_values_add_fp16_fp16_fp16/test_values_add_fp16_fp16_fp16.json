@@ -1,9 +1,9 @@
 {
-  "description": "FP16 Addition test vectors (A + B = C) for vhfastmulb16_add_fp16_rne_lat4 and vhfastmulb16_add_fp16_rtz_lat4",
+  "description": "FP16 Addition test vectors (A + B = C) for vhfastmulb16_add_fp16_fp16_fp16_rne_lat4 and vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4",
   "format": "fp16: [15] sign, [14:10] exp (bias=15), [9:0] frac",
   "rounding": ["RNE (round-to-nearest-even)", "RTZ (round toward zero)"],
   "notes": [
-    "Source: tests/vhfastmulb16_add_fp16_rne_lat4_tb.v and tests/vhfastmulb16_add_fp16_rtz_lat4_tb.v (directed vectors #1..#32)",
+    "Source: tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_tb.v and tests/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_tb.v (directed vectors #1..#32)",
     "All 32 vectors produce the same result for RNE and RTZ",
     "NaN: sign and payload preserved, quiet bit forced to 1"
   ],

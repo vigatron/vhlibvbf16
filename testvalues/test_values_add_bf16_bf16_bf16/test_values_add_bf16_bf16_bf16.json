@@ -1,5 +1,5 @@
 {
-  "description": "BF16 Addition test vectors (A + B = C) for vhfastmulb16_add_bf16_rne_lat4 and vhfastmulb16_add_bf16_rtz_lat4",
+  "description": "BF16 Addition test vectors (A + B = C) for vhfastmulb16_add_bf16_bf16_bf16_rne_lat4 and vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4",
   "format": "bf16: [15] sign, [14:7] exp (bias=127), [6:0] frac",
   "rounding": ["RNE (round-to-nearest-even)", "RTZ (round toward zero)"],
   "notes": [

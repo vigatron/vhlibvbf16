@@ -4,7 +4,7 @@ FP16 Addition: A + B = C
 
 RNE - Round to Nearest Even, RTZ - Round Toward Zero.
 
-Source: directed vectors from `tests/vhfastmulb16_add_fp16_rne_lat4_tb.v` and `tests/vhfastmulb16_add_fp16_rtz_lat4_tb.v`.
+Source: directed vectors from `tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_tb.v` and `tests/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_tb.v`.
 
 | № | A | B | C (RNE) | C (RTZ) | Description |
 | :-: | :-: | :-: | :-: | :-: | :--- |
