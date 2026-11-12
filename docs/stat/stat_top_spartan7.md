@@ -132,7 +132,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 ---
 
-### 4. `vhfastmulb16_addf32_rtz_lat4` (FP32 + FP32 -> FP32, RTZ, latency 4)
+### 4. `vhfastmulb16_add_fp32_rtz_lat4` (FP32 + FP32 -> FP32, RTZ, latency 4)
 
 | Ресурс | XC7S15-1 | XC7S15-2 | % от XC7S15 |
 |--------|----------|----------|-------------|
@@ -173,7 +173,7 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 
 ---
 
-### 5. `vhfastmulb16_addf32_rne_lat4` (FP32 + FP32 -> FP32, RNE, latency 4)
+### 5. `vhfastmulb16_add_fp32_rne_lat4` (FP32 + FP32 -> FP32, RNE, latency 4)
 
 | Ресурс | XC7S15-1 | XC7S15-2 | % от XC7S15 |
 |--------|----------|----------|-------------|
@@ -210,10 +210,10 @@ Speed grade -2 примерно на 12–15% быстрее speed grade -1. Rou
 | `vhfastmulb16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~4.9%** |
 | `vhfastmulb16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~5.3%** |
 | `vhfastmulb16_f32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~3.9%** |
-| `vhfastmulb16_addf32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~3.6%** |
-| `vhfastmulb16_addf32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~4.3%** |
-| `vhfastmulb16_addf16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~2.0%** |
-| `vhfastmulb16_addf16_rne_lat4` | ~190 | ~151 | 4 | FP16+FP16→FP16, IEEE 754 RNE | **~2.4%** |
+| `vhfastmulb16_add_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~3.6%** |
+| `vhfastmulb16_add_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~4.3%** |
+| `vhfastmulb16_add_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~2.0%** |
+| `vhfastmulb16_add_fp16_rne_lat4` | ~190 | ~151 | 4 | FP16+FP16→FP16, IEEE 754 RNE | **~2.4%** |
 
 ---
 
@@ -279,7 +279,7 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm шейфер → exp_unb
 > Spartan-7 XC7S15 имеет **20 DSP48E1**. Использование 1 для `mul8x8`
 > сокращает RTZ top до **~190-240 LUTs (~2.4-3.0%)**.
 
-### DSP48 для FP32 аддеров (`addf32_*`)
+### DSP48 для FP32 аддеров (`add_fp32_*`)
 
 DSP48E1 **не применим** для FP32 аддеров без существенной переработки архитектуры:
 - баррел-шейфер выравнивания мантисс (27 бит, переменный сдвиг) — не отображается на DSP48;
@@ -290,7 +290,7 @@ DSP48E1 **не применим** для FP32 аддеров без сущест
 
 **Ожидаемая экономия при использовании DSP48E1 для аддеров: 0 LUT.**
 
-### DSP48 для FP16 аддеров (`addf16_*`)
+### DSP48 для FP16 аддеров (`add_fp16_*`)
 
 Те же ограничения, что и для FP32 аддеров: баррел-шейфер, LZD, логика округления и F16 pack не отображаются на DSP48E1. 15-битный add/sub частично помещается в порт A (25 бит) DSP48E1, но накладные расходы перекрывают любую экономию LUT.
 

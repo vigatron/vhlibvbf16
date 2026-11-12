@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
 [*] Sun Nov  8 12:17:27 2026
 [*]
-[dumpfile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/build/vhfastmulb16_f32_lat4_rand.vcd"
+[dumpfile] "build/vhfastmulb16_f32_lat4_rand.vcd"
 [dumpfile_mtime] "Sun Nov  8 12:13:20 2026"
 [dumpfile_size] 2586226
-[savefile] "/home/stepper2/VHSourcesVHDL/remote/vhlibvbf16/visual/vhfastmulb16_f32_lat4_rand_tb.gtkw"
+[savefile] "visual/vhfastmulb16_f32_lat4_rand_tb.gtkw"
 [timestart] 20650600
 [size] 1920 1006
 [pos] 0 0

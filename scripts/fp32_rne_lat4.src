@@ -1,0 +1,3 @@
+# Источники DUT vhfastmulb16_add_fp32_rne_lat4 (LAT=4).
+# Используется тестбенчами run_test_add_fp32_rne_lat4.sh.
+src/vhfastmulb16_add_fp32_rne_lat4.v
