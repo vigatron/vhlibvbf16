@@ -9,7 +9,7 @@
 
 
 Author: V01G04A81  
-Rev: 0.0.4  
+Rev: 0.0.5  
 
 
 ## Description
@@ -95,7 +95,9 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The BF16-output top-level modules `vhfastmulb16_rtz_lat3` and `vhfastmulb16_rne_lat3` are available (latency 3).
 - The F32-output top-level module `vhfastmulb16_f32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
 - The FP32-adder top-level modules `vhfastmulb16_add_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
-- **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). See `aireports/analisis_11nov_2026.md`, sections 12–13: stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
+- The FP16-adder top-level modules `vhfastmulb16_add_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
+- **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
+- **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
 - The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul8x8`, `vhfastmulb16_mul8x8_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
 - The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul8x8` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.

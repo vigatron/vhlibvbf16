@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
 [*] Wed Nov 11 07:20:00 2026
 [*]
-[dumpfile] "build/vhfastmulb16_add_fp32_rtz_lat4_rand.vcd"
+[dumpfile] "../build/vhfastmulb16_add_fp32_rtz_lat4_rand.vcd"
 [dumpfile_mtime] ""
 [dumpfile_size] 0
 [savefile] "visual/vhfastmulb16_add_fp32_rtz_lat4_rand_tb.gtkw"

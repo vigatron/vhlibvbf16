@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
 [*] Sun Nov  8 03:00:54 2026
 [*]
-[dumpfile] "build/vhfastmulb16_mul4x4_lat2_chk.vcd"
+[dumpfile] "../build/vhfastmulb16_mul4x4_lat2_chk.vcd"
 [dumpfile_mtime] "Sun Nov  8 02:50:48 2026"
 [dumpfile_size] 4242
 [savefile] "visual/vhfastmulb16_mul4x4_lat2_chk_tb.gtkw"

@@ -3,7 +3,7 @@
 [*]
 [*] Wed Nov 11 03:36:58 2026
 [*]
-[dumpfile] "build/vhfastmulb16_add_fp16_rne_lat4.vcd"
+[dumpfile] "../build/vhfastmulb16_add_fp16_rne_lat4.vcd"
 [dumpfile_mtime] "Wed Nov 11 03:27:11 2026"
 [dumpfile_size] 57894
 [savefile] "visual/vhfastmulb16_add_fp16_rne_lat4_tb.gtkw"
@@ -66,9 +66,9 @@ vhfastmulb16_add_fp16_rne_lat4_tb.uut.en_pipe
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.exp_max_d2[4:0]
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.sign_res_d2
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.flags_d2[2:0]
-vhfastmulb16_add_fp16_rne_lat4_tb.uut.is_zero_d2
+vhfastmulb16_add_fp16_rne_lat4_tb.uut.is_zero_d3
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.lzd_c[3:0]
-vhfastmulb16_add_fp16_rne_lat4_tb.uut.exp_pre[5:0]
+vhfastmulb16_add_fp16_rne_lat4_tb.uut.exp_pre_d1[5:0]
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.grs_shift_d1[4:0]
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.flags_d3[2:0]
 vhfastmulb16_add_fp16_rne_lat4_tb.uut.sign_res_d3
