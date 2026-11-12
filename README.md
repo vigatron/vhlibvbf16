@@ -14,8 +14,8 @@ Rev: 0.0.5
 
 ## Description
 
-Compact pipelined BF16/FP32 arithmetic library (Verilog)  
-BF16 multiplier, BF16×BF16→F32 multiplier, FP32 adders and FP16 adders; RTZ/RNE, no DSP required.  
+Compact pipelined BF16/FP32 arithmetic library (Verilog)<br>
+BF16 multiplier, BF16×BF16→F32 multiplier, BF16 adders, FP32 adders and FP16 adders; RTZ/RNE, no DSP required.
 
 `vhfastmulb16_mul_bf16_bf16_bf16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
@@ -34,6 +34,8 @@ The following top-level modules are the primary entry points of the library:
 | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | `src/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | FP32 + FP32 adder | F32 | 4 clk | RNE (IEEE-754) |
 | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | `src/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RTZ (truncation) |
 | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | `src/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | FP16 + FP16 adder | F16 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | `src/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | BF16 + BF16 adder | BF16 | 4 clk | RTZ (truncation) |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | `src/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | BF16 + BF16 adder | BF16 | 4 clk | RNE (IEEE-754) |
 
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
@@ -96,15 +98,17 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The F32-output top-level module `vhfastmulb16_mul_bf16_bf16_fp32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
 - The FP32-adder top-level modules `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
 - The FP16-adder top-level modules `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
+- The BF16-adder top-level modules `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` and `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` are available (latency 4): BF16 + BF16 -> BF16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero, NaN results are canonical `0x7FC0`, and RTZ overflow saturates to max finite `0x7F7F`.
 - **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp32_fp32_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
 - **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp16_fp16_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
+- **Verification status (BF16 adders):** the directed tests (`tests/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
 - The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
 - The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul_u8_u8_u16_lat2` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
 
 ## Source Files
 
-The `src/` directory contains **18** Verilog source files:
+The `src/` directory contains **20** Verilog source files:
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -126,6 +130,8 @@ The `src/` directory contains **18** Verilog source files:
 | 16 | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
 | 17 | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
 | 18 | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
+| 19 | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
+| 20 | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
 
 ## Module Dependencies
 
@@ -149,6 +155,18 @@ vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
 
 vhfastmulb16_add_fp32_fp32_fp32_rne_lat4
   (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_fp16_fp16_fp16_rne_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
 ```
 
 ### Versions with Different Latency
@@ -162,6 +180,7 @@ vhfastmulb16_add_fp32_fp32_fp32_rne_lat4
 | Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
 | Top-level (FP32 add) | - | - | - | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | - | - | - | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4`, `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` |
+| Top-level (BF16 add) | - | - | - | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4`, `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` |
 
 ## Testbenches
 
@@ -197,6 +216,10 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (directed + en=0 gaps, LAT=4) |
 | `tests/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` (random/directed regression, LAT=4) |
 | `tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (random/directed regression, LAT=4) |
+| `tests/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (random/directed regression, LAT=4) |
+| `tests/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (random/directed regression, LAT=4) |
 
 Most testbenches have a dedicated run script. In particular, several
 `*_chk_tb.v` benches are also runnable directly:
@@ -242,6 +265,10 @@ Run the simulation with:
 ./scripts/run_test_add_fp16_fp16_fp16_rne_lat4.sh sim
 ./scripts/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh sim
 ./scripts/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh sim
+./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4.sh sim
+./scripts/run_test_add_bf16_bf16_bf16_rne_lat4.sh sim
+./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh sim
+./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/run_test_mul4x4.sh wave
@@ -252,6 +279,8 @@ Run the simulation with:
 ./scripts/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh wave
 ./scripts/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh wave
 ./scripts/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh wave
+./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
+./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
 
 # Clean up build artifacts
 ./scripts/run_all.sh clean
@@ -280,7 +309,9 @@ The main machine-readable `.json` files are validated by `scripts/check_test_val
 `scripts/checkvectors_add_fp16_fp16_fp16.py` (FP16 add, RNE/RTZ) and
 `scripts/checkvectors_mul_bf16_bf16_fp32.py` (BF16 x BF16 -> F32); the FP16
 tables are generated from the directed testbench vectors by
-`scripts/gen_fp16_vectors.py`.
+`scripts/gen_fp16_vectors.py`. The BF16 adders use the exact integer model in
+`scripts/gen_bf16_vectors.py` for random/directed regression; the 32 JSON
+vectors remain unchanged.
 
 
 ## FPGA Resource Estimates

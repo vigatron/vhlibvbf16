@@ -1,6 +1,6 @@
 # DUT Source Files List (src/*.v)
 
-Total modules: **18**
+Total modules: **20**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -22,6 +22,8 @@ Total modules: **18**
 | 16 | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
 | 17 | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
 | 18 | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
+| 19 | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
+| 20 | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
 
 ---
 
@@ -53,6 +55,12 @@ vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4
 
 vhfastmulb16_add_fp16_fp16_fp16_rne_lat4
   (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
+
+vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
+  (autonomous, no dependencies on other vhfastmulb16_* modules)
 ```
 
 ---
@@ -68,6 +76,7 @@ vhfastmulb16_add_fp16_fp16_fp16_rne_lat4
 | Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
 | Top-level (FP32 add) | - | - | - | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | - | - | - | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` |
+| Top-level (BF16 add) | - | - | - | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` |
 
 Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0).
 
@@ -75,9 +84,11 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 18 Verilog source files:
+The `src/` directory contains the following 20 Verilog source files:
 
 - `vhfastmulb16_add8x8_lat2.v`
+- `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v`
+- `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v`
 - `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v`
 - `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v`
 - `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v`
