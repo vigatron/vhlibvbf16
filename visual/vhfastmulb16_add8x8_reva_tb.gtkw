@@ -1,0 +1,35 @@
+[*] 
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[dumpfile] "../build/vhfastmulb16_add8x8_reva.vcd"
+[savefile] "vhfastmulb16_add8x8_reva_tb.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] -27 -24
+*-16.200001 50000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_add8x8_tb.
+[sst_width] 290
+[signals_width] 290
+[sst_expanded] 1
+[sst_vpaned_height] 264
+@28
+vhfastmulb16_add8x8_tb.clk
+vhfastmulb16_add8x8_tb.reset
+@420
+vhfastmulb16_add8x8_tb.checked
+vhfastmulb16_add8x8_tb.errors
+@28
+vhfastmulb16_add8x8_tb.en
+@23
+[color] 3
+vhfastmulb16_add8x8_tb.a[7:0]
+[color] 3
+vhfastmulb16_add8x8_tb.b[7:0]
+@22
+vhfastmulb16_add8x8_tb.c[8:0]
+@22
+vhfastmulb16_add8x8_tb.exp_p1[8:0]
+vhfastmulb16_add8x8_tb.exp_p2[8:0]
+vhfastmulb16_add8x8_tb.held[8:0]
+[pattern_trace] 1
+[pattern_trace] 0

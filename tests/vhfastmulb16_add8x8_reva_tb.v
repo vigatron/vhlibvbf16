@@ -89,7 +89,7 @@ module vhfastmulb16_add8x8_tb;
 
     // ---------------- Основной сценарий ----------------
     initial begin
-        $dumpfile("build/vhfastmulb16_add8x8.vcd");
+        $dumpfile("build/vhfastmulb16_add8x8_reva.vcd");
         $dumpvars(0, vhfastmulb16_add8x8_tb);
 
         checked = 0;
@@ -122,6 +122,7 @@ module vhfastmulb16_add8x8_tb;
         // ---- Тест 3: en=0 -> выход держится ----
         step(8'h12, 8'h34, 1'b0);
         step(8'h00, 8'h00, 1'b0);
+        en = 1'b0;        // отключить enable до следующего posedge, чтобы c держало значение
         @(negedge clk);
         held = c;
         a  = 8'hAA;
