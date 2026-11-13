@@ -1,0 +1,173 @@
+{
+  "$schema": "bf16xbf16+f32 -> f32 fused multiply-add RNE test vectors",
+  "format": {
+    "input_a": "BF16 VALA (1s/8e/7m)",
+    "input_b": "BF16 VALB (1s/8e/7m)",
+    "input_s": "FP32 SUMM (1s/8e/23m)",
+    "output_c": "FP32 RESULT = SUMM + (VALA × VALB), RNE rounding",
+    "special_cases": "NaN in -> qNaN 0x7FC00000; Inf*finite ± Inf -> qNaN; zero*finite + finite -> finite; exact cancellation -> +0",
+    "note": "BF16 subnormal operands are NOT flushed to zero (no FTZ). F32 subnormal results use RNE rounding."
+  },
+  "test_vectors": [
+    {
+      "no": 1,
+      "operation": "1.0 + (1.0 × 1.0) = 2.0",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x40000000", "value": "2.0" }
+    },
+    {
+      "no": 2,
+      "operation": "0.0 + (2.0 × 3.0) = 6.0",
+      "input_a": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_b": { "hex": "0x4040", "bf16": "16'h4040" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x40C00000", "value": "6.0" }
+    },
+    {
+      "no": 3,
+      "operation": "5.0 + (0.5 × 0.25) = 5.125",
+      "input_a": { "hex": "0x3F00", "bf16": "16'h3F00" },
+      "input_b": { "hex": "0x3E80", "bf16": "16'h3E80" },
+      "input_s": { "hex": "0x40A00000" },
+      "output_c": { "hex": "0x40A40000", "value": "5.125" }
+    },
+    {
+      "no": 4,
+      "operation": "0.0 + (-1.5 × 4.0) = -6.0",
+      "input_a": { "hex": "0xBFC0", "bf16": "16'hBFC0" },
+      "input_b": { "hex": "0x4080", "bf16": "16'h4080" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0xC0C00000", "value": "-6.0" }
+    },
+    {
+      "no": 5,
+      "operation": "10.0 + (0.0 × 3.0) = 10.0",
+      "input_a": { "hex": "0x0000", "bf16": "16'h0000" },
+      "input_b": { "hex": "0x4040", "bf16": "16'h4040" },
+      "input_s": { "hex": "0x41200000" },
+      "output_c": { "hex": "0x41200000", "value": "10.0" }
+    },
+    {
+      "no": 6,
+      "operation": "0.0 + (+Inf × 2.0) = +Inf",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7F800000", "value": "+Inf" }
+    },
+    {
+      "no": 7,
+      "operation": "0.0 + (+Inf × 0.0) = qNaN",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x0000", "bf16": "16'h0000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 8,
+      "operation": "NaN + (1.0 × 1.0) = qNaN",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x7FC00000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 9,
+      "operation": "-Inf + (+Inf × 1.0) = qNaN (Inf − Inf)",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0xFF800000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 10,
+      "operation": "+Inf + (+Inf × −1.0) = qNaN (Inf − Inf)",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0xBF80", "bf16": "16'hBF80" },
+      "input_s": { "hex": "0x7F800000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 11,
+      "operation": "0.0 + (max_BF16 × 2.0) = +Inf (product overflow)",
+      "input_a": { "hex": "0x7F7F", "bf16": "16'h7F7F" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7F800000", "value": "+Inf" }
+    },
+    {
+      "no": 12,
+      "operation": "0.0 + (min_sub_BF16 × 1.0) = F32 subnormal 0x00010000",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x00010000", "value": "2^-133 (subnormal)" }
+    },
+    {
+      "no": 13,
+      "operation": "2^-133 + (min_sub_BF16 × 1.0) = 2^-132",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00010000" },
+      "output_c": { "hex": "0x00020000", "value": "2^-132" }
+    },
+    {
+      "no": 14,
+      "operation": "1.0 + (1.0 × −1.0) = +0 (exact cancellation)",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0xBF80", "bf16": "16'hBF80" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 15,
+      "operation": "-1.0 + (1.0 × 1.0) = +0 (exact cancellation)",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0xBF800000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 16,
+      "operation": "-0.0 + (-0.0 × 1.0) = -0",
+      "input_a": { "hex": "0x8000", "bf16": "16'h8000" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x80000000" },
+      "output_c": { "hex": "0x80000000", "value": "-0" }
+    },
+    {
+      "no": 17,
+      "operation": "0.0 + (-Inf × 1.0) = -Inf",
+      "input_a": { "hex": "0xFF80", "bf16": "16'hFF80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0xFF800000", "value": "-Inf" }
+    },
+    {
+      "no": 18,
+      "operation": "0.0 + (NaN × 1.0) = qNaN",
+      "input_a": { "hex": "0x7FC0", "bf16": "16'h7FC0" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 19,
+      "operation": "0.0 + (1.0 × NaN) = qNaN",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x7FC0", "bf16": "16'h7FC0" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 20,
+      "operation": "0.5 + (1.0 × 1.0) = 1.5",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x3F000000" },
+      "output_c": { "hex": "0x3FC00000", "value": "1.5" }
+    }
+  ]
+}
