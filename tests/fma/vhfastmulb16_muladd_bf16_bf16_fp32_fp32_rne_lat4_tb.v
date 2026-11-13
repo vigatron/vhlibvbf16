@@ -106,7 +106,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
         // 31: 2^-252 + 2^-149 — deep underflow, sticky
         va[30] = 16'h0080; vb[30] = 16'h0080; vs[30] = 32'h00000001; ve[30] = 32'h00000001;
         // 32: −Inf + (max×2): fused → −Inf, unfused → qNaN
-        va[31] = 16'h7F7F; vb[31] = 16'h4000; vs[31] = 32'hFF800000; ve[31] = 32'h7FC00000;
+        va[31] = 16'h7F7F; vb[31] = 16'h4000; vs[31] = 32'hFF800000; ve[31] = 32'hFF800000;
         // 33: FP32_max + 2^103 — overflow boundary → +Inf
         va[32] = 16'h7300; vb[32] = 16'h3F80; vs[32] = 32'h7F7FFFFF; ve[32] = 32'h7F800000;
         // 34: FP32_max + 2^102 — below boundary → max
@@ -235,7 +235,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
         end
 
         // ---- en=1: новый вектор должен пройти через конвейер ----
-        // Вектор #6 (+Inf * 0.0 -> qNaN 7FC00000)
+        // Вектор #7 (+Inf * 0.0 -> qNaN 7FC00000)
         en  = 1'b1;
         inbf16a = 16'h7F80;
         inbf16b = 16'h0000;
@@ -243,10 +243,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
         if (EXP_CHECK) begin
             repeat (LAT) @(posedge clk); #1;
             checked = checked + 1;
-            if (outfp32s !== ve[5]) begin
+            if (outfp32s !== ve[6]) begin
                 errors = errors + 1;
                 $display("[ERROR] t=%0t | en=1 resume | exp: outfp32s=%h got: outfp32s=%h",
-                $time, ve[5], outfp32s);
+                $time, ve[6], outfp32s);
             end
         end
 

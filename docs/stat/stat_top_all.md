@@ -3,6 +3,9 @@
 Источник данных: `docs/stat/stat_top_spartan6.md`, `docs/stat/stat_top_spartan7.md`, `docs/stat/stat_top_artix7.md`.
 Все цифры — оценки на основе ручного подсчёта по RTL-коду (погрешность ±20–25%).
 
+Модуль `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` пока не включён в таблицы:
+для него ещё нет ручной оценки ресурсов.
+
 ---
 
 ## Ресурсы целевых FPGA

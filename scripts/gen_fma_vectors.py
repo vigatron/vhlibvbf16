@@ -29,6 +29,7 @@ import json
 import os
 import random
 import sys
+from fractions import Fraction
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTVALUES_JSON = os.path.join(
@@ -191,165 +192,136 @@ def f32_to_man_exp(u32):
 def f32_add_rne(a, b):
     """@brief Return bit-exact F32 sum of two FP32 words with RNE rounding.
 
-    Implements IEEE-754 binary32 addition with round-to-nearest-even.
-    Subnormal inputs are not flushed to zero.
+    Uses exact rational arithmetic and a single RNE rounding, so subnormal
+    inputs and exact halfway cases are handled without intermediate loss.
     NaN -> canonical quiet NaN 0x7FC00000.
     """
-    a_sign, a_exp, a_frac = f32_unpack(a)
-    b_sign, b_exp, b_frac = f32_unpack(b)
+    ka, sa, va = _f32_fraction(a)
+    kb, sb, vb = _f32_fraction(b)
 
-    a_zero = f32_is_zero(a)
-    b_zero = f32_is_zero(b)
-    a_inf = f32_is_inf(a)
-    b_inf = f32_is_inf(b)
-    a_nan = f32_is_nan(a)
-    b_nan = f32_is_nan(b)
-
-    # NaN priority
-    if a_nan or b_nan:
+    if ka == "nan" or kb == "nan":
         return QNAN_F32
-    if a_inf and b_inf and a_sign != b_sign:
-        return QNAN_F32  # Inf - Inf = NaN
-    if a_inf or b_inf:
-        inf_sign = a_sign if a_inf else b_sign
-        return (inf_sign << 31) | INF_F32
+    if ka == "inf" and kb == "inf":
+        return QNAN_F32 if sa != sb else (sa << 31) | INF_F32
+    if ka == "inf":
+        return (sa << 31) | INF_F32
+    if kb == "inf":
+        return (sb << 31) | INF_F32
+    if va == 0 and vb == 0:
+        return 0x80000000 if (sa and sb) else 0
 
-    # Both zero
-    if a_zero and b_zero:
-        if a_sign and b_sign:
-            return 0x80000000  # -0 + -0 = -0
-        return 0x00000000  # +0 + -0 = +0, +0 + +0 = +0
-
-    # Effective mantissa and exponent (no FTZ)
-    a_man, a_exp_eff = f32_to_man_exp(a)
-    b_man, b_exp_eff = f32_to_man_exp(b)
-
-    # Internal scale: value = man24 * 2^(exp_eff - 150)
-    # Use 27-bit extended mantissa (24 + 3 GRS bits) like the DUT
-    a_ext = a_man << 3  # 27 bits
-    b_ext = b_man << 3
-
-    # Align exponents: larger exponent stays, smaller is right-shifted
-    if a_exp_eff > b_exp_eff:
-        shift = a_exp_eff - b_exp_eff
-        large_ext, large_sign = a_ext, a_sign
-        small_ext, small_sign = b_ext, b_sign
-        large_exp = a_exp_eff
-    elif b_exp_eff > a_exp_eff:
-        shift = b_exp_eff - a_exp_eff
-        large_ext, large_sign = b_ext, b_sign
-        small_ext, small_sign = a_ext, a_sign
-        large_exp = b_exp_eff
-    else:
-        shift = 0
-        # Equal exponents: compare mantissas
-        if a_man >= b_man:
-            large_ext, large_sign = a_ext, a_sign
-            small_ext, small_sign = b_ext, b_sign
-        else:
-            large_ext, large_sign = b_ext, b_sign
-            small_ext, small_sign = a_ext, a_sign
-        large_exp = a_exp_eff
-
-    # Right-shift small operand with sticky bit
-    if shift >= 27:
-        small_al = 1 if small_ext != 0 else 0  # all bits lost -> sticky only
-    else:
-        # sticky = OR of bits shifted out
-        sticky = small_ext & ((1 << shift) - 1)
-        small_al = (small_ext >> shift) | (1 if sticky else 0)
-
-    # Add or subtract magnitudes
-    op_add = (large_sign == small_sign)
-    if op_add:
-        man_raw = large_ext + small_al  # 27 bits + possible carry -> 28
-    else:
-        man_raw = large_ext - small_al  # large >= small in magnitude
-
-    # Normalize
-    if man_raw == 0:
-        # Exact cancellation: result is +0 (IEEE-754: +0 for x + (-x))
-        return 0x00000000
-
-    # Find leading one position in man_raw (up to bit 27, since ext27 max is 2^27-1 + 2^27-1 = 2^28-2)
-    if man_raw & 0x08000000:  # bit 27 set (carry from addition)
-        man_norm = man_raw >> 1
-        exp_adj = large_exp + 1
-    else:
-        # Count leading zeros down to bit 26
-        lz = 0
-        tmp = man_raw
-        while tmp and not (tmp & 0x04000000):  # bit 26
-            tmp <<= 1
-            lz += 1
-        man_norm = man_raw << lz
-        exp_adj = large_exp - lz
-
-    # man_norm now has leading bit at position 26 (27-bit value).
-    # Internal scale: value = man_norm * 2^(exp_adj - 153) (since ext27 = man<<3).
-    # FP32: value = kept * 2^(exp_biased - 150), where kept = man_norm >> 3.
-    # So exp_biased - 150 = exp_adj - 153 + 3 = exp_adj - 150.
-    # Therefore exp_biased = exp_adj.
-    exp_biased = exp_adj
-
-    # Extract G/R/S from man_norm[2:0]
-    kept = (man_norm >> 3) & 0xFFFFFF  # 24-bit significand (bits 26:3)
-    g = (man_norm >> 2) & 1
-    r = (man_norm >> 1) & 1
-    s = man_norm & 1
-
-    # RNE rounding
-    round_up = g and (r or s or (kept & 1))
-    if round_up:
-        kept += 1
-        if kept & 0x1000000:  # overflow from 24 to 25 bits
-            kept >>= 1
-            exp_biased += 1
-
-    # Check overflow / subnormal
-    if exp_biased >= 0xFF:
-        # Overflow -> Inf
-        inf_sign = large_sign
-        return (inf_sign << 31) | INF_F32
-
-    if exp_biased <= 0:
-        # Subnormal result
-        shift_sub = 1 - exp_biased  # how many to right-shift kept
-        if shift_sub >= 24:
-            return large_sign << 31  # underflow to zero
-        # Shift kept right with sticky for final RNE on subnormal
-        frac_bits = kept
-        sticky_sub = frac_bits & ((1 << shift_sub) - 1)
-        frac_sub = frac_bits >> shift_sub
-        g_sub = (frac_bits >> (shift_sub - 1)) & 1 if shift_sub >= 1 else 0
-        r_sub = 0  # after shift, remaining bits below are sticky
-        s_sub = sticky_sub
-        # Final RNE on subnormal fraction
-        round_sub = g_sub and (r_sub or s_sub or (frac_sub & 1))
-        if round_sub:
-            frac_sub += 1
-            if frac_sub & 0x800000:  # overflow to normal
-                exp_biased = 1
-                frac_sub = 0
-        return (large_sign << 31) | frac_sub
-
-    # Normal result
-    frac_final = kept & 0x7FFFFF
-    return (large_sign << 31) | (exp_biased << 23) | frac_final
+    total = (-va if sa else va) + (-vb if sb else vb)
+    if total == 0:
+        return 0
+    return _round_f32_fraction(total, 1 if total < 0 else 0)
 
 
 # =============================================================================
 # FMA: SUMM + (VALA x VALB)
 # =============================================================================
 
+def _floor_log2(x):
+    """@brief Return floor(log2(x)) for a positive Fraction."""
+    e = x.numerator.bit_length() - x.denominator.bit_length()
+    if Fraction(2) ** e > x:
+        e -= 1
+    while Fraction(2) ** (e + 1) <= x:
+        e += 1
+    return e
+
+
+def _round_f32_fraction(x, sign_hint):
+    """@brief Round an exact Fraction to binary32 using RNE."""
+    if x == 0:
+        return sign_hint << 31
+    sign = 1 if x < 0 else 0
+    a = -x if x < 0 else x
+    e = _floor_log2(a)
+
+    if e < -126:
+        q = Fraction(1, 1 << 149)
+        n = a // q
+        rem = a - n * q
+        if rem * 2 > q or (rem * 2 == q and (n & 1)):
+            n += 1
+        if n == 0:
+            return sign << 31
+        if n >= (1 << 23):
+            return (sign << 31) | (1 << 23)
+        return (sign << 31) | int(n)
+
+    q = Fraction(2) ** (e - 23)
+    n = a // q
+    rem = a - n * q
+    if rem * 2 > q or (rem * 2 == q and (n & 1)):
+        n += 1
+    if n >= (1 << 24):
+        n >>= 1
+        e += 1
+    if e > 127:
+        return (sign << 31) | INF_F32
+    return (sign << 31) | ((e + 127) << 23) | int(n - (1 << 23))
+
+
+def _bf16_fraction(u16):
+    """@brief Return (kind, sign, exact value) for a BF16 word."""
+    s, e, f = bf16_unpack(u16)
+    if e == 0xFF:
+        return ("nan" if f else "inf"), s, None
+    if e == 0:
+        if f == 0:
+            return "zero", s, Fraction(0)
+        return "num", s, Fraction(f) * Fraction(2) ** -133
+    return "num", s, Fraction(0x80 | f) * Fraction(2) ** (e - 134)
+
+
+def _f32_fraction(u32):
+    """@brief Return (kind, sign, exact value) for an FP32 word."""
+    s, e, f = f32_unpack(u32)
+    if e == 0xFF:
+        return ("nan" if f else "inf"), s, None
+    if e == 0:
+        if f == 0:
+            return "zero", s, Fraction(0)
+        return "num", s, Fraction(f) * Fraction(2) ** -149
+    return "num", s, Fraction(0x800000 | f) * Fraction(2) ** (e - 150)
+
+
 def fma_rne(a_bf16, b_bf16, s_f32):
     """@brief Return bit-exact FMA result: SUMM + (VALA x VALB), RNE rounding.
 
-    Product computed exactly (no intermediate rounding), then single RNE
-    addition with SUMM.
+    The product is represented as an exact Fraction (no intermediate FP32
+    rounding), then added to SUMM exactly and rounded once with RNE.
     """
-    prod_f32 = bf16_mul_f32(a_bf16, b_bf16)
-    return f32_add_rne(s_f32, prod_f32)
+    ka, sa, va = _bf16_fraction(a_bf16)
+    kb, sb, vb = _bf16_fraction(b_bf16)
+    ks, ss, vs = _f32_fraction(s_f32)
+
+    if ka == "nan" or kb == "nan" or ks == "nan":
+        return QNAN_F32
+    if (ka == "inf" and kb == "zero") or (kb == "inf" and ka == "zero"):
+        return QNAN_F32
+
+    prod_sign = sa ^ sb
+    if ka == "inf" or kb == "inf":
+        if ks == "inf" and ss != prod_sign:
+            return QNAN_F32
+        return (prod_sign << 31) | INF_F32
+    if ks == "inf":
+        return (ss << 31) | INF_F32
+
+    prod = Fraction(0) if (ka == "zero" or kb == "zero") else va * vb
+    if prod == 0:
+        if vs == 0:
+            return 0x80000000 if (prod_sign and ss) else 0
+        return _round_f32_fraction(-vs if ss else vs, ss)
+    if vs == 0:
+        return _round_f32_fraction(-prod if prod_sign else prod, prod_sign)
+
+    total = (-prod if prod_sign else prod) + (-vs if ss else vs)
+    if total == 0:
+        return 0
+    return _round_f32_fraction(total, 1 if total < 0 else 0)
 
 
 # =============================================================================

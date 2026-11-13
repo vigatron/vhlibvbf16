@@ -112,11 +112,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire prod_inf  = !prod_nan && (a_inf || b_inf);
     wire prod_zero = !prod_nan && !prod_inf && (a_zero || b_zero);
 
-    // Product overflow to F32 Inf (detected early from exponent sum).
-    // exp_unb = S_raw + k + 6 (internal scale), overflow when >= 396.
-    // Conservative early estimate: S_raw >= 381 can overflow with k>=15.
-    wire prod_ovf_c  = !prod_nan && !prod_zero && (exp_sum_raw >= 9'd381);
-
     // ---------------------------------------------------
     // FMA exception classification (priority: NaN > Inf > Zero)
     // ---------------------------------------------------
@@ -146,6 +141,43 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     // ---------------------------------------------------
     wire [7:0] s_exp_eff = s_exp_z ? 8'd1 : s_exp;
     wire [23:0] s_man = s_exp_z ? {1'b0, s_frac} : {1'b1, s_frac};
+
+    // Normalize the FP32 addend significand.  For a subnormal SUMM the leading
+    // one is not at bit 23, so normalize it and compensate the exponent.  This
+    // keeps the exponent compare and mantissa alignment exact for subnormals.
+    function [4:0] clz24;
+        input [23:0] v;
+        begin
+            if      (v[23]) clz24 = 5'd0;
+            else if (v[22]) clz24 = 5'd1;
+            else if (v[21]) clz24 = 5'd2;
+            else if (v[20]) clz24 = 5'd3;
+            else if (v[19]) clz24 = 5'd4;
+            else if (v[18]) clz24 = 5'd5;
+            else if (v[17]) clz24 = 5'd6;
+            else if (v[16]) clz24 = 5'd7;
+            else if (v[15]) clz24 = 5'd8;
+            else if (v[14]) clz24 = 5'd9;
+            else if (v[13]) clz24 = 5'd10;
+            else if (v[12]) clz24 = 5'd11;
+            else if (v[11]) clz24 = 5'd12;
+            else if (v[10]) clz24 = 5'd13;
+            else if (v[9])  clz24 = 5'd14;
+            else if (v[8])  clz24 = 5'd15;
+            else if (v[7])  clz24 = 5'd16;
+            else if (v[6])  clz24 = 5'd17;
+            else if (v[5])  clz24 = 5'd18;
+            else if (v[4])  clz24 = 5'd19;
+            else if (v[3])  clz24 = 5'd20;
+            else if (v[2])  clz24 = 5'd21;
+            else if (v[1])  clz24 = 5'd22;
+            else if (v[0])  clz24 = 5'd23;
+            else            clz24 = 5'd24;
+        end
+    endfunction
+
+    wire [4:0]  s_lz    = clz24(s_man);
+    wire [23:0] s_man_n = s_man << s_lz;
 
     // ---------------------------------------------------
     // Pipeline enable: 4 stages + output register.
@@ -181,13 +213,13 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg [8:0] exp_sum_d1;
     reg [23:0] s_man_d1;
     reg [7:0]  s_exp_d1;
+    reg [4:0]  s_lz_d1;
     reg        prod_sign_d1;
     reg        s_sign_d1;
     reg [2:0]  prod_flags_d1;   // {nan, inf, zero}
     reg [2:0]  s_flags_d1;      // {nan, inf, zero}
     reg        nan_sign_d1;
     reg [22:0] nan_frac_d1;
-    reg        prod_ovf_d1;
     reg        s_inf_d1;
 
     // Combinational partial products (during cycle N)
@@ -231,13 +263,13 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             exp_sum_d1  <= 9'd0;
             s_man_d1    <= 24'd0;
             s_exp_d1    <= 8'd0;
+            s_lz_d1     <= 5'd0;
             prod_sign_d1 <= 1'b0;
             s_sign_d1    <= 1'b0;
             prod_flags_d1 <= 3'b000;
             s_flags_d1    <= 3'b000;
             nan_sign_d1   <= 1'b0;
             nan_frac_d1   <= 23'd0;
-            prod_ovf_d1   <= 1'b0;
             s_inf_d1      <= 1'b0;
         end else if (en_pipe) begin
             p_hh_d1     <= p_hh_calc;
@@ -245,15 +277,15 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             p_lh_d1     <= p_lh_calc;
             p_ll_d1     <= p_ll_calc;
             exp_sum_d1  <= exp_sum_raw;
-            s_man_d1    <= s_man;
+            s_man_d1    <= s_man_n;
             s_exp_d1    <= s_exp_eff;
+            s_lz_d1     <= s_lz;
             prod_sign_d1 <= prod_sign;
             s_sign_d1    <= s_sign;
             prod_flags_d1 <= {prod_nan, prod_inf, prod_zero};
             s_flags_d1    <= {s_nan, s_inf, s_zero};
             nan_sign_d1   <= nan_sign_c;
             nan_frac_d1   <= nan_frac_c;
-            prod_ovf_d1   <= prod_ovf_c;
             s_inf_d1      <= s_inf;
         end
     end
@@ -323,7 +355,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     //   ext27 = {s_man, 3'b000} = s_man << 3
     //   value_s = ext27 * 2^(s_exp_eff - 153)
     //   exp_s - 150 = s_exp_eff - 153  =>  exp_s = s_exp_eff - 3
-    wire [9:0] exp_s_calc = {2'b00, s_exp_d1} - 10'd3;
+    wire [9:0] exp_s_calc = {2'b00, s_exp_d1} - 10'd3 - {5'd0, s_lz_d1};
 
     // Zero-operand handling for comparison: zero mantissa -> very negative exponent
     wire prod_man_zero = prod_flags_d1[0];   // prod_zero
@@ -358,7 +390,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire        small_sign = large_is_prod ? s_sign_d1 : prod_sign_d1;
 
     // Shift amount: |large_exp - small_exp| (capped at 32 for sticky flush)
-    wire [11:0] shift_diff = large_exp - small_exp;
+    // Both exponents are signed 11-bit values; sign-extend them to 12 bits
+    // before subtraction so negative exponents do not wrap around.
+    wire [11:0] shift_diff = {large_exp[10], large_exp} -
+                             {small_exp[10], small_exp};
     wire        shift_neg  = shift_diff[11];
     wire [11:0] shift_abs  = shift_neg ? (~shift_diff + 12'd1) : shift_diff;
     wire [4:0]  shift_amt  = shift_abs[4:0];
@@ -399,10 +434,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg        s_sign_d2;
     reg [2:0]  flags_d1;        // flags from S1 (captured at N+1)
     reg [2:0]  flags_d2;        // flags from S2 (captured at N+2)
-    reg        is_bz_d1;        // both inputs zero
     reg        nan_sign_d2;
     reg [22:0] nan_frac_d2;
-    reg        prod_ovf_d2;
     reg        s_inf_d2;
 
     always @(posedge clk) begin
@@ -414,10 +447,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             op_add_d1    <= 1'b0;
             flags_d1     <= 3'b000;
             flags_d2     <= 3'b000;
-            is_bz_d1     <= 1'b0;
             nan_sign_d2  <= 1'b0;
             nan_frac_d2  <= 23'd0;
-            prod_ovf_d2  <= 1'b0;
             s_inf_d2     <= 1'b0;
             prod_sign_d2 <= 1'b0;
             s_sign_d2    <= 1'b0;
@@ -429,10 +460,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             op_add_d1    <= op_add;
             flags_d1     <= {res_nan, res_inf, res_zero};
             flags_d2     <= flags_d1;
-            is_bz_d1     <= res_zero;
             nan_sign_d2  <= nan_sign_d1;
             nan_frac_d2  <= nan_frac_d1;
-            prod_ovf_d2  <= prod_ovf_d1;
             s_inf_d2     <= s_inf_d1;
             prod_sign_d2 <= prod_sign_d1;
             s_sign_d2    <= s_sign_d1;
@@ -489,8 +518,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [4:0]  grs_shift_c = neg_exp_pre[4:0];
     wire        grs_shift_ovf = |neg_exp_pre[10:5];  // true shift > 31 -> result 0
 
-    // Exact cancellation detection (result zero but not both inputs zero)
-    wire is_zero_c = (man_raw_c == 28'd0) && !is_bz_d1;
+    // Exact cancellation detection (result zero but not both inputs zero).
+    // flags_d2 is aligned with man_raw_c.
+    wire is_zero_c = (man_raw_c == 28'd0) && !flags_d2[0];
 
     // ============================================================
     // STAGE S3 registers (capture at N+3 edge)
@@ -504,7 +534,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg        is_zero_d3;
     reg        nan_sign_d3;
     reg [22:0] nan_frac_d3;
-    reg        prod_ovf_d3;
     reg        s_sign_d3;
     reg        s_inf_d3;
     reg        prod_sign_d3;
@@ -520,7 +549,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_zero_d3        <= 1'b0;
             nan_sign_d3       <= 1'b0;
             nan_frac_d3       <= 23'd0;
-            prod_ovf_d3       <= 1'b0;
             s_sign_d3         <= 1'b0;
             s_inf_d3          <= 1'b0;
             prod_sign_d3      <= 1'b0;
@@ -534,7 +562,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_zero_d3        <= is_zero_c;
             nan_sign_d3       <= nan_sign_d2;
             nan_frac_d3       <= nan_frac_d2;
-            prod_ovf_d3       <= prod_ovf_d2;
             s_sign_d3         <= s_sign_d2;
             s_inf_d3          <= s_inf_d2;
             prod_sign_d3      <= prod_sign_d2;
@@ -560,15 +587,17 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     // Subnormal path: shift by grs_shift
     wire [26:0] man_grs   = man_norm_d1 >> grs_shift_d1;
     wire        g_sub     = man_grs[0];
-    wire        r_sub     = man_grs[1];
-    // Sticky bit: OR of all bits below R (bits 26:2 of man_grs), excluding G(bit0) and R(bit1)
-    wire        s_sub     = |man_grs[26:2];
+    // Sticky: all bits of man_norm shifted out below the guard bit.
+    // Do not OR the kept fraction bits (bits above R) into sticky.
+    wire [26:0] sub_mask  = (27'd1 << grs_shift_d1) - 27'd1;
+    wire        s_sub     = |(man_norm_d1 & sub_mask);
     wire [22:0] frac_raw  = man_grs[23:1];
-    wire        rup_sub   = g_sub && (r_sub | s_sub | frac_raw[0]);
+    wire        rup_sub   = g_sub && (s_sub | frac_raw[0]);
 
     wire [23:0] frac_inc = {1'b0, frac_raw} + {23'd0, rup_sub};
-    wire        ovf_sub  = frac_inc[23];
-    wire [22:0] frac_sub = frac_inc[22:0];
+    // True shift > 31: the value is far below 0.5 ulp, so round to signed zero.
+    wire        ovf_sub  = grs_shift_ovf_d1 ? 1'b0 : frac_inc[23];
+    wire [22:0] frac_sub = grs_shift_ovf_d1 ? 23'd0 : frac_inc[22:0];
 
     // FP32 biased exponent: E = exp_pre + 3 (internal scale -> FP32 biased)
     wire [10:0] exp_f32_biased = exp_pre_d1 + 11'd3;
@@ -588,7 +617,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
 
     // Output selection: NaN > Inf/overflow > zero > normal/subnormal
     wire [31:0] v_nan  = {nan_sign_d3, 8'hFF, nan_frac_d3};
-    wire [31:0] v_inf  = {sign_res_d3, 8'hFF, 23'h000000};
+    // Inf sign comes from the infinite operand (product or SUMM), not from
+    // the larger aligned operand (which may be finite).
+    wire [31:0] v_inf  = {(s_inf_d3 ? s_sign_d3 : prod_sign_d3), 8'hFF, 23'h000000};
     // Знак нуля: при точном вычитании (x + (-x) = +0) результат +0.
     // Если оба операнда нули — знак = sign_a & sign_b (IEEE: -0 + +0 = +0, -0 + -0 = -0).
     wire both_zero = flags_d3[0] && !is_zero_d3;  // both operands zero, not exact cancellation
@@ -601,11 +632,12 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire man_norm_zero = (man_norm_d1 == 27'd0);
     wire zero_detected = is_zero_d3 | flags_d3[0] | man_norm_zero;
 
-    // Product overflow to Inf + SUMM Inf with opposite sign → qNaN (Inf − Inf)
-    wire prod_inf_and_s_inf_opp = prod_ovf_d3 && s_inf_d3 && (sign_res_d3 != s_sign_d3);
-
-    wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf | prod_inf_and_s_inf_opp;
-    wire        kind_lo = flags_d3[2] | prod_inf_and_s_inf_opp |
+    // No product-overflow hack: a finite product that exceeds the FP32 range
+    // is still an exact intermediate in a fused FMA.  Only an actual Inf
+    // operand participates in the Inf/NaN classification; final overflow is
+    // handled by exp_ovf after the addition.
+    wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf;
+    wire        kind_lo = flags_d3[2] |
                           ((zero_detected) & ~(flags_d3[1] | exp_ovf));
     wire [31:0] c_hi   = kind_lo ? v_nan : v_inf;
     wire [31:0] c_lo   = kind_lo ? v_zero : v_norm;

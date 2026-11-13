@@ -50,8 +50,8 @@
 | 28 | 0001 | 3700 | 00000003 | 00000004 | 3 ulp + 0.5 ulp → 4 ulp **fused≠unfused** |
 | 29 | 0003 | 3700 | 00000000 | 00000002 | 1.5 ulp sub — tie → 2 ulp (no FTZ) |
 | 30 | 0001 | 3700 | 80000001 | 80000000 | −2^-149 + 2^-150 → **−0** **fused≠unfused** |
-| 31 | 0080 | 3F80 | 00000001 | 00000001 | 2^-252 + 2^-149 — deep underflow, sticky |
-| 32 | 7F7F | 4000 | FF800000 | 7FC00000 | −Inf + (max×2): fused → qNaN (Inf − Inf) |
+| 31 | 0080 | 0080 | 00000001 | 00000001 | 2^-252 + 2^-149 — deep underflow, sticky |
+| 32 | 7F7F | 4000 | FF800000 | FF800000 | −Inf + (max×2) = −Inf (finite exact product, single final rounding) |
 | 33 | 7300 | 3F80 | 7F7FFFFF | 7F800000 | FP32_max + 2^103 — overflow boundary → +Inf |
 | 34 | 7280 | 3F80 | 7F7FFFFF | 7F7FFFFF | FP32_max + 2^102 — below boundary → max |
 | 35 | F300 | 3F80 | FF7FFFFF | FF800000 | −FP32_max − 2^103 → −Inf |

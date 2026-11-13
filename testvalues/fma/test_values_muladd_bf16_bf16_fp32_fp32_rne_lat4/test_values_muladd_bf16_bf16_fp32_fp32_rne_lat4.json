@@ -5,9 +5,9 @@
     "input_b": "BF16 VALB (1s/8e/7m)",
     "input_s": "FP32 SUMM (1s/8e/23m)",
     "output_c": "FP32 RESULT = SUMM + (VALA × VALB), RNE rounding",
-    "special_cases": "NaN in -> qNaN 0x7FC00000; Inf*finite ± Inf -> qNaN; zero*finite + finite -> finite; exact cancellation -> +0; -0 + +0 = +0; exact cancellation = +0; rounding toward zero preserves sign",
+    "special_cases": "NaN in -> qNaN 0x7FC00000; Inf*finite + same-sign Inf -> Inf; Inf*finite + opposite-sign Inf -> qNaN; zero*finite + finite -> finite; exact cancellation x + (-x) -> +0; -0 + -0 = -0; -0 + +0 = +0",
     "note": "BF16 subnormal operands are NOT flushed to zero (no FTZ). F32 subnormal results use RNE rounding. All hex values are exact, no trailing whitespace.",
-    "zero_sign_rules": "RNE: -0 + +0 = +0; exact cancellation x + (-x) = +0; rounding toward zero preserves the sign of the rounded value"
+    "zero_sign_rules": "RNE: -0 + -0 = -0; -0 + +0 = +0; exact cancellation x + (-x) = +0; underflow to zero preserves the sign of the exact result"
   },
   "test_vectors": [
     {
@@ -254,17 +254,17 @@
       "no": 31,
       "operation": "2^-252 + 2^-149 — deep underflow, sticky",
       "input_a": { "hex": "0x0080", "bf16": "16'h0080" },
-      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x0080", "bf16": "16'h0080" },
       "input_s": { "hex": "0x00000001" },
       "output_c": { "hex": "0x00000001", "value": "2^-149" }
     },
     {
       "no": 32,
-      "operation": "−Inf + (max×2): fused → qNaN (Inf − Inf)",
+      "operation": "−Inf + (max×2) = −Inf (finite exact product, single final rounding)",
       "input_a": { "hex": "0x7F7F", "bf16": "16'h7F7F" },
       "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
       "input_s": { "hex": "0xFF800000" },
-      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+      "output_c": { "hex": "0xFF800000", "value": "-Inf" }
     },
     {
       "no": 33,
@@ -296,7 +296,7 @@
       "input_a": { "hex": "0xBFFF", "bf16": "16'hBFFF" },
       "input_b": { "hex": "0x4B00", "bf16": "16'h4B00" },
       "input_s": { "hex": "0x4B7FFFFF" },
-      "output_c": { "hex": "0x477FFF00", "value": "2^24-2^16" }
+      "output_c": { "hex": "0x477FFF00", "value": "2^16-1" }
     },
     {
       "no": 37,
