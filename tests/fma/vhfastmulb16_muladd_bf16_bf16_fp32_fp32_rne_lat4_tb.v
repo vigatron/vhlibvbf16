@@ -9,7 +9,7 @@
 
 module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
 
-    localparam integer N         = 20;  // число тестовых троек
+    localparam integer N         = 44;  // число тестовых троек
     localparam integer LAT       = 4;   // latency DUT, тактов
     localparam integer MAX_PRINT = 10;  // сколько ошибок печатать подробно
     localparam integer EXP_CHECK = 1;   // 1 = проверять функцию
@@ -83,6 +83,54 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
         va[18] = 16'h3F80; vb[18] = 16'h7FC0; vs[18] = 32'h00000000; ve[18] = 32'h7FC00000;
         // 20: 0.5 + (1.0 * 1.0) = 1.5
         va[19] = 16'h3F80; vb[19] = 16'h3F80; vs[19] = 32'h3F000000; ve[19] = 32'h3FC00000;
+        // 21: 1.0 + 2^-24 — tie-to-even, round down to even
+        va[20] = 16'h3F80; vb[20] = 16'h3380; vs[20] = 32'h3F800000; ve[20] = 32'h3F800000;
+        // 22: (1+2^-23) + 2^-24 — tie-to-even, round up to even
+        va[21] = 16'h3F80; vb[21] = 16'h3380; vs[21] = 32'h3F800001; ve[21] = 32'h3F800002;
+        // 23: 1.0 + (2^-24 + 2^-31) — above tie, sticky=1
+        va[22] = 16'h3F80; vb[22] = 16'h3381; vs[22] = 32'h3F800000; ve[22] = 32'h3F800001;
+        // 24: 1.0 + (2^-25 + 2^-32) — below tie
+        va[23] = 16'h3F80; vb[23] = 16'h3301; vs[23] = 32'h3F800000; ve[23] = 32'h3F800000;
+        // 25: 1.0 − 3·2^-25 — tie at subtraction → even
+        va[24] = 16'h3F80; vb[24] = 16'hB3C0; vs[24] = 32'h3F800000; ve[24] = 32'h3F7FFFFE;
+        // 26: 2^-150 = 0.5 ulp sub — tie → +0
+        va[25] = 16'h0001; vb[25] = 16'h3700; vs[25] = 32'h00000000; ve[25] = 32'h00000000;
+        // 27: 2^-149 + 2^-150 → 2 ulp — fused≠unfused
+        va[26] = 16'h0001; vb[26] = 16'h3700; vs[26] = 32'h00000001; ve[26] = 32'h00000002;
+        // 28: 3 ulp + 0.5 ulp → 4 ulp — fused≠unfused
+        va[27] = 16'h0001; vb[27] = 16'h3700; vs[27] = 32'h00000003; ve[27] = 32'h00000004;
+        // 29: 1.5 ulp sub — tie → 2 ulp (no FTZ)
+        va[28] = 16'h0003; vb[28] = 16'h3700; vs[28] = 32'h00000000; ve[28] = 32'h00000002;
+        // 30: −2^-149 + 2^-150 → −0 — fused≠unfused
+        va[29] = 16'h0001; vb[29] = 16'h3700; vs[29] = 32'h80000001; ve[29] = 32'h80000000;
+        // 31: 2^-252 + 2^-149 — deep underflow, sticky
+        va[30] = 16'h0080; vb[30] = 16'h0080; vs[30] = 32'h00000001; ve[30] = 32'h00000001;
+        // 32: −Inf + (max×2): fused → −Inf, unfused → qNaN
+        va[31] = 16'h7F7F; vb[31] = 16'h4000; vs[31] = 32'hFF800000; ve[31] = 32'h7FC00000;
+        // 33: FP32_max + 2^103 — overflow boundary → +Inf
+        va[32] = 16'h7300; vb[32] = 16'h3F80; vs[32] = 32'h7F7FFFFF; ve[32] = 32'h7F800000;
+        // 34: FP32_max + 2^102 — below boundary → max
+        va[33] = 16'h7280; vb[33] = 16'h3F80; vs[33] = 32'h7F7FFFFF; ve[33] = 32'h7F7FFFFF;
+        // 35: −FP32_max − 2^103 → −Inf
+        va[34] = 16'hF300; vb[34] = 16'h3F80; vs[34] = 32'hFF7FFFFF; ve[34] = 32'hFF800000;
+        // 36: (2^24−1) − (2^24−2^16) — 24-bit normalization
+        va[35] = 16'hBFFF; vb[35] = 16'h4B00; vs[35] = 32'h4B7FFFFF; ve[35] = 32'h477FFF00;
+        // 37: 2^-126 − (1−2^-8)·2^-126 = 2^-134 (subnormal)
+        va[36] = 16'hBF7F; vb[36] = 16'h0080; vs[36] = 32'h00800000; ve[36] = 32'h00008000;
+        // 38: sNaN(BF16) → canonical qNaN
+        va[37] = 16'h7F81; vb[37] = 16'h3F80; vs[37] = 32'h00000000; ve[37] = 32'h7FC00000;
+        // 39: two NaN with payload → canonical qNaN
+        va[38] = 16'h7FC1; vb[38] = 16'h3F80; vs[38] = 32'h7FA00000; ve[38] = 32'h7FC00000;
+        // 40: NaN-addend priority over Inf-product
+        va[39] = 16'h7F80; vb[39] = 16'h4000; vs[39] = 32'h7FC00000; ve[39] = 32'h7FC00000;
+        // 41: −Inf × 0 → qNaN
+        va[40] = 16'hFF80; vb[40] = 16'h0000; vs[40] = 32'h00000000; ve[40] = 32'h7FC00000;
+        // 42: −0 + (−0 × −1) = −0 + +0 → +0
+        va[41] = 16'h8000; vb[41] = 16'hBF80; vs[41] = 32'h80000000; ve[41] = 32'h00000000;
+        // 43: +0 + (−0 × 1) → +0
+        va[42] = 16'h8000; vb[42] = 16'h3F80; vs[42] = 32'h00000000; ve[42] = 32'h00000000;
+        // 44: tie across binade boundary → 1.0
+        va[43] = 16'h3300; vb[43] = 16'h3F80; vs[43] = 32'h3F7FFFFF; ve[43] = 32'h3F800000;
     end
 
     integer k;
@@ -157,6 +205,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb;
                 inbf16b = vb[k];
                 infp32s = vs[k];
                 en  = 1'b1;
+            end else begin
+                en  = 1'b0;  // Drain: explicitly deassert en after last vector
             end
 
             if (k >= LAT) begin

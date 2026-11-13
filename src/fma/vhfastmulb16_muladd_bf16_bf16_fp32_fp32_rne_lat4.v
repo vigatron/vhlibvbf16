@@ -112,6 +112,11 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire prod_inf  = !prod_nan && (a_inf || b_inf);
     wire prod_zero = !prod_nan && !prod_inf && (a_zero || b_zero);
 
+    // Product overflow to F32 Inf (detected early from exponent sum).
+    // exp_unb = S_raw + k + 6 (internal scale), overflow when >= 396.
+    // Conservative early estimate: S_raw >= 381 can overflow with k>=15.
+    wire prod_ovf_c  = !prod_nan && !prod_zero && (exp_sum_raw >= 9'd381);
+
     // ---------------------------------------------------
     // FMA exception classification (priority: NaN > Inf > Zero)
     // ---------------------------------------------------
@@ -182,6 +187,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg [2:0]  s_flags_d1;      // {nan, inf, zero}
     reg        nan_sign_d1;
     reg [22:0] nan_frac_d1;
+    reg        prod_ovf_d1;
+    reg        s_inf_d1;
 
     // Combinational partial products (during cycle N)
     wire [3:0] a_high = a_man[7:4];
@@ -230,6 +237,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             s_flags_d1    <= 3'b000;
             nan_sign_d1   <= 1'b0;
             nan_frac_d1   <= 23'd0;
+            prod_ovf_d1   <= 1'b0;
+            s_inf_d1      <= 1'b0;
         end else if (en_pipe) begin
             p_hh_d1     <= p_hh_calc;
             p_hl_d1     <= p_hl_calc;
@@ -244,6 +253,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             s_flags_d1    <= {s_nan, s_inf, s_zero};
             nan_sign_d1   <= nan_sign_c;
             nan_frac_d1   <= nan_frac_c;
+            prod_ovf_d1   <= prod_ovf_c;
+            s_inf_d1      <= s_inf;
         end
     end
 
@@ -384,11 +395,15 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg [10:0] exp_large_d1;
     reg        sign_res_d1;
     reg        op_add_d1;
+    reg        prod_sign_d2;
+    reg        s_sign_d2;
     reg [2:0]  flags_d1;        // flags from S1 (captured at N+1)
     reg [2:0]  flags_d2;        // flags from S2 (captured at N+2)
     reg        is_bz_d1;        // both inputs zero
     reg        nan_sign_d2;
     reg [22:0] nan_frac_d2;
+    reg        prod_ovf_d2;
+    reg        s_inf_d2;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -402,6 +417,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_bz_d1     <= 1'b0;
             nan_sign_d2  <= 1'b0;
             nan_frac_d2  <= 23'd0;
+            prod_ovf_d2  <= 1'b0;
+            s_inf_d2     <= 1'b0;
+            prod_sign_d2 <= 1'b0;
+            s_sign_d2    <= 1'b0;
         end else if (en_pipe) begin
             man_hi_al_d1 <= large_ext;
             man_lo_al_d1 <= small_al;
@@ -413,6 +432,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_bz_d1     <= res_zero;
             nan_sign_d2  <= nan_sign_d1;
             nan_frac_d2  <= nan_frac_d1;
+            prod_ovf_d2  <= prod_ovf_d1;
+            s_inf_d2     <= s_inf_d1;
+            prod_sign_d2 <= prod_sign_d1;
+            s_sign_d2    <= s_sign_d1;
         end
     end
 
@@ -481,6 +504,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg        is_zero_d3;
     reg        nan_sign_d3;
     reg [22:0] nan_frac_d3;
+    reg        prod_ovf_d3;
+    reg        s_sign_d3;
+    reg        s_inf_d3;
+    reg        prod_sign_d3;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -493,6 +520,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_zero_d3        <= 1'b0;
             nan_sign_d3       <= 1'b0;
             nan_frac_d3       <= 23'd0;
+            prod_ovf_d3       <= 1'b0;
+            s_sign_d3         <= 1'b0;
+            s_inf_d3          <= 1'b0;
+            prod_sign_d3      <= 1'b0;
         end else if (en_pipe) begin
             man_norm_d1       <= man_norm_c;
             exp_pre_d1        <= exp_pre_c;
@@ -503,6 +534,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             is_zero_d3        <= is_zero_c;
             nan_sign_d3       <= nan_sign_d2;
             nan_frac_d3       <= nan_frac_d2;
+            prod_ovf_d3       <= prod_ovf_d2;
+            s_sign_d3         <= s_sign_d2;
+            s_inf_d3          <= s_inf_d2;
+            prod_sign_d3      <= prod_sign_d2;
         end
     end
 
@@ -526,7 +561,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [26:0] man_grs   = man_norm_d1 >> grs_shift_d1;
     wire        g_sub     = man_grs[0];
     wire        r_sub     = man_grs[1];
-    wire        s_sub     = |man_grs[2:0];
+    // Sticky bit: OR of all bits below R (bits 26:2 of man_grs), excluding G(bit0) and R(bit1)
+    wire        s_sub     = |man_grs[26:2];
     wire [22:0] frac_raw  = man_grs[23:1];
     wire        rup_sub   = g_sub && (r_sub | s_sub | frac_raw[0]);
 
@@ -554,8 +590,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [31:0] v_nan  = {nan_sign_d3, 8'hFF, nan_frac_d3};
     wire [31:0] v_inf  = {sign_res_d3, 8'hFF, 23'h000000};
     // Знак нуля: при точном вычитании (x + (-x) = +0) результат +0.
-    // Если оба операнда нули — знак по правилам сумматора (a_sign & b_sign).
-    wire zero_sign = flags_d3[0] & sign_res_d3;
+    // Если оба операнда нули — знак = sign_a & sign_b (IEEE: -0 + +0 = +0, -0 + -0 = -0).
+    wire both_zero = flags_d3[0] && !is_zero_d3;  // both operands zero, not exact cancellation
+    wire zero_sign = both_zero ? (prod_sign_d3 & s_sign_d3) : (is_zero_d3 ? 1'b0 : (flags_d3[0] & sign_res_d3));
     wire [31:0] v_zero = {zero_sign, 31'h00000000};
     wire [31:0] v_norm = {sign_res_d3, exp_final, frac_final};
 
@@ -564,8 +601,11 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire man_norm_zero = (man_norm_d1 == 27'd0);
     wire zero_detected = is_zero_d3 | flags_d3[0] | man_norm_zero;
 
-    wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf;
-    wire        kind_lo = flags_d3[2] |
+    // Product overflow to Inf + SUMM Inf with opposite sign → qNaN (Inf − Inf)
+    wire prod_inf_and_s_inf_opp = prod_ovf_d3 && s_inf_d3 && (sign_res_d3 != s_sign_d3);
+
+    wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf | prod_inf_and_s_inf_opp;
+    wire        kind_lo = flags_d3[2] | prod_inf_and_s_inf_opp |
                           ((zero_detected) & ~(flags_d3[1] | exp_ovf));
     wire [31:0] c_hi   = kind_lo ? v_nan : v_inf;
     wire [31:0] c_lo   = kind_lo ? v_zero : v_norm;
