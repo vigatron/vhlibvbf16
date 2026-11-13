@@ -553,12 +553,20 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     // Output selection: NaN > Inf/overflow > zero > normal/subnormal
     wire [31:0] v_nan  = {nan_sign_d3, 8'hFF, nan_frac_d3};
     wire [31:0] v_inf  = {sign_res_d3, 8'hFF, 23'h000000};
-    wire [31:0] v_zero = {flags_d3[0] & sign_res_d3, 31'h00000000};
+    // Знак нуля: при точном вычитании (x + (-x) = +0) результат +0.
+    // Если оба операнда нули — знак по правилам сумматора (a_sign & b_sign).
+    wire zero_sign = flags_d3[0] & sign_res_d3;
+    wire [31:0] v_zero = {zero_sign, 31'h00000000};
     wire [31:0] v_norm = {sign_res_d3, exp_final, frac_final};
+
+    // Additional zero detection: if normalized mantissa is exactly zero,
+    // force result to zero regardless of pipeline flag alignment.
+    wire man_norm_zero = (man_norm_d1 == 27'd0);
+    wire zero_detected = is_zero_d3 | flags_d3[0] | man_norm_zero;
 
     wire        kind_hi = flags_d3[2] | flags_d3[1] | exp_ovf;
     wire        kind_lo = flags_d3[2] |
-                          ((flags_d3[0] | is_zero_d3) & ~(flags_d3[1] | exp_ovf));
+                          ((zero_detected) & ~(flags_d3[1] | exp_ovf));
     wire [31:0] c_hi   = kind_lo ? v_nan : v_inf;
     wire [31:0] c_lo   = kind_lo ? v_zero : v_norm;
 

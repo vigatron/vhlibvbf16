@@ -2,7 +2,9 @@
 // =============================================================
 // Случайный тестбенч для vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 //   RESULT = SUMM + (VALA_BF16 × VALB_BF16), FP32 output, RNE
-//   Случайные тестовые векторы, проверка в потоке с LAT = 4
+//   Тестовые векторы из файла .hex (сгенерированного gen_fma_vectors.py)
+//   Формат строки: VALA(16) VALB(16) SUMM(32) EXPECTED(32) = 96 бит
+//   Проверка в потоке с LAT = 4 тактами
 // =============================================================
 
 module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb;
@@ -31,34 +33,27 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb;
         .outfp32s (outfp32s)
     );
 
-    // ---------------- Генератор случайных чисел (LCG) ----------------
-    reg  [31:0] rng_state;
-    wire [31:0] rng_next;
-
-    assign rng_next = rng_state * 32'h19660D + 32'h3C6EF35F;
-
-    // ---------------- Тестовые векторы ----------------
-    reg  [15:0] va_arr [0:N-1];
-    reg  [15:0] vb_arr [0:N-1];
-    reg  [31:0] vs_arr [0:N-1];
-    reg  [31:0] ve_arr [0:N-1];
+    // ---------------- Тестовые векторы из .hex файла ----------------
+    // Формат строки: VALA(16) VALB(16) SUMM(32) EXPECTED(32) = 96 бит
+    reg [95:0] hex_vec [0:N-1];
+    reg [15:0] va_arr [0:N-1];
+    reg [15:0] vb_arr [0:N-1];
+    reg [31:0] vs_arr [0:N-1];
+    reg [31:0] ve_arr [0:N-1];
 
     integer i, k;
     integer checked, errors;
     reg [31:0] hold_val;
 
     initial begin
-        // Генерируем тестовые векторы
-        rng_state = 32'h12345678;
+        // Загружаем hex-файл с эталонными векторами
+        $readmemh("build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.hex", hex_vec);
+
         for (i = 0; i < N; i = i + 1) begin
-            rng_state = rng_next;
-            va_arr[i] = {rng_state[31], rng_state[30:24], rng_state[23:17]};
-            rng_state = rng_next;
-            vb_arr[i] = {rng_state[31], rng_state[30:24], rng_state[23:17]};
-            rng_state = rng_next;
-            vs_arr[i] = {rng_state[31], rng_state[30:23], rng_state[22:0]};
-            // Ожидаемый результат вычисляется отдельно (Python-модель)
-            ve_arr[i] = vs_arr[i]; // заглушка - заменяется при верификации
+            va_arr[i] = hex_vec[i][95:80];
+            vb_arr[i] = hex_vec[i][79:64];
+            vs_arr[i] = hex_vec[i][63:32];
+            ve_arr[i] = hex_vec[i][31:0];
         end
     end
 
@@ -101,14 +96,15 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb;
             end
 
             if (k >= LAT) begin
-                // Проверка: результат должен быть конечным, если операнды конечные
+                // Проверка: результат должен совпадать с эталоном
                 if (uut.en_pipe) begin
                     checked = checked + 1;
-                    if (!is_finite(outfp32s) && is_finite_val(va_arr[k-LAT], vb_arr[k-LAT], vs_arr[k-LAT])) begin
+                    if (outfp32s !== ve_arr[k-LAT]) begin
                         errors = errors + 1;
                         if (errors <= MAX_PRINT) begin
-                            $display("[ERROR] t=%0t | triple %0d | a=%h b=%h s=%h -> out=%h (не конечное)",
-                                $time, k-LAT, va_arr[k-LAT], vb_arr[k-LAT], vs_arr[k-LAT], outfp32s);
+                            $display("[ERROR] t=%0t | triple %0d | a=%h b=%h s=%h -> out=%h exp=%h",
+                                $time, k-LAT, va_arr[k-LAT], vb_arr[k-LAT], vs_arr[k-LAT],
+                                outfp32s, ve_arr[k-LAT]);
                         end
                     end
                 end
@@ -140,25 +136,11 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb;
         $finish;
     end
 
-    // Вспомогательные функции
-    function is_finite;
-        input [31:0] val;
-        reg [7:0] e;
-        begin
-            e = val[30:23];
-            is_finite = (e != 8'hFF); // не Inf/NaN
-        end
-    endfunction
-
-    function is_finite_val;
-        input [15:0] a;
-        input [15:0] b;
-        input [31:0] s;
-        begin
-            is_finite_val = (a[14:7] != 8'hFF || a[6:0] == 0) &&
-                            (b[14:7] != 8'hFF || b[6:0] == 0) &&
-                            (s[30:23] != 8'hFF || s[22:0] == 0);
-        end
-    endfunction
+    // Watchdog
+    initial begin
+        #5000000;
+        $display("[ERROR] Testbench timeout!");
+        $finish;
+    end
 
 endmodule
