@@ -122,16 +122,16 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire res_zero = !res_nan && !res_inf && (prod_zero && s_zero);
 
     // NaN result: canonical quiet NaN (no payload preservation for speed)
-    wire        nan_sign_c = 1'b0;
-    wire [22:0] nan_frac_c = 23'h400000;
 
     // ---------------------------------------------------
     // Effective BF16 exponent and mantissa (no FTZ)
+    // exp_eff = exp | exp_z  (exp==0 -> 1 для субнормала, иначе exp без изменений)
+    // man     = {~exp_z, frac} (скрытый бит = 0 для субнормала, 1 для нормала)
     // ---------------------------------------------------
-    wire [7:0] a_exp_eff = a_exp_z ? 8'd1 : a_exp;
-    wire [7:0] b_exp_eff = b_exp_z ? 8'd1 : b_exp;
-    wire [7:0] a_man = a_exp_z ? {1'b0, a_frac} : {1'b1, a_frac};
-    wire [7:0] b_man = b_exp_z ? {1'b0, b_frac} : {1'b1, b_frac};
+    wire [7:0] a_exp_eff = a_exp | {7'd0, a_exp_z};
+    wire [7:0] b_exp_eff = b_exp | {7'd0, b_exp_z};
+    wire [7:0] a_man     = {~a_exp_z, a_frac};
+    wire [7:0] b_man     = {~b_exp_z, b_frac};
 
     // Raw exponent sum S = a_exp_eff + b_exp_eff (9-bit, 2..508)
     wire [8:0] exp_sum_raw = {1'b0, a_exp_eff} + {1'b0, b_exp_eff};
@@ -139,8 +139,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     // ---------------------------------------------------
     // Effective FP32 exponent and mantissa (no FTZ)
     // ---------------------------------------------------
-    wire [7:0] s_exp_eff = s_exp_z ? 8'd1 : s_exp;
-    wire [23:0] s_man = s_exp_z ? {1'b0, s_frac} : {1'b1, s_frac};
+    wire [7:0] s_exp_eff = s_exp | {7'd0, s_exp_z};
+    wire [23:0] s_man    = {~s_exp_z, s_frac};
 
     // Normalize the FP32 addend significand.  For a subnormal SUMM the leading
     // one is not at bit 23, so normalize it and compensate the exponent.  This
@@ -216,10 +216,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg [4:0]  s_lz_d1;
     reg        prod_sign_d1;
     reg        s_sign_d1;
-    reg [2:0]  prod_flags_d1;   // {nan, inf, zero}
-    reg [2:0]  s_flags_d1;      // {nan, inf, zero}
-    reg        nan_sign_d1;
-    reg [22:0] nan_frac_d1;
+    reg        prod_zero_d1;
+    reg        s_zero_d1;
     reg        s_inf_d1;
 
     // Combinational partial products (during cycle N)
@@ -266,10 +264,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             s_lz_d1     <= 5'd0;
             prod_sign_d1 <= 1'b0;
             s_sign_d1    <= 1'b0;
-            prod_flags_d1 <= 3'b000;
-            s_flags_d1    <= 3'b000;
-            nan_sign_d1   <= 1'b0;
-            nan_frac_d1   <= 23'd0;
+            prod_zero_d1 <= 1'b0;
+            s_zero_d1    <= 1'b0;
             s_inf_d1      <= 1'b0;
         end else if (en_pipe) begin
             p_hh_d1     <= p_hh_calc;
@@ -282,10 +278,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             s_lz_d1     <= s_lz;
             prod_sign_d1 <= prod_sign;
             s_sign_d1    <= s_sign;
-            prod_flags_d1 <= {prod_nan, prod_inf, prod_zero};
-            s_flags_d1    <= {s_nan, s_inf, s_zero};
-            nan_sign_d1   <= nan_sign_c;
-            nan_frac_d1   <= nan_frac_c;
+            prod_zero_d1 <= prod_zero;
+            s_zero_d1    <= s_zero;
             s_inf_d1      <= s_inf;
         end
     end
@@ -358,8 +352,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [9:0] exp_s_calc = {2'b00, s_exp_d1} - 10'd3 - {5'd0, s_lz_d1};
 
     // Zero-operand handling for comparison: zero mantissa -> very negative exponent
-    wire prod_man_zero = prod_flags_d1[0];   // prod_zero
-    wire s_man_zero    = s_flags_d1[0];      // s_zero
+    wire prod_man_zero = prod_zero_d1;   // prod_zero
+    wire s_man_zero    = s_zero_d1;      // s_zero
 
     // Sign-extend to 11-bit for signed comparison
     wire [10:0] exp_p_sext = {exp_p_calc[9], exp_p_calc};
@@ -434,8 +428,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg        s_sign_d2;
     reg [2:0]  flags_d1;        // flags from S1 (captured at N+1)
     reg [2:0]  flags_d2;        // flags from S2 (captured at N+2)
-    reg        nan_sign_d2;
-    reg [22:0] nan_frac_d2;
     reg        s_inf_d2;
 
     always @(posedge clk) begin
@@ -447,8 +439,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             op_add_d1    <= 1'b0;
             flags_d1     <= 3'b000;
             flags_d2     <= 3'b000;
-            nan_sign_d2  <= 1'b0;
-            nan_frac_d2  <= 23'd0;
             s_inf_d2     <= 1'b0;
             prod_sign_d2 <= 1'b0;
             s_sign_d2    <= 1'b0;
@@ -460,8 +450,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             op_add_d1    <= op_add;
             flags_d1     <= {res_nan, res_inf, res_zero};
             flags_d2     <= flags_d1;
-            nan_sign_d2  <= nan_sign_d1;
-            nan_frac_d2  <= nan_frac_d1;
             s_inf_d2     <= s_inf_d1;
             prod_sign_d2 <= prod_sign_d1;
             s_sign_d2    <= s_sign_d1;
@@ -532,8 +520,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     reg        sign_res_d3;
     reg [2:0]  flags_d3;        // flags from S2, aligned with data
     reg        is_zero_d3;
-    reg        nan_sign_d3;
-    reg [22:0] nan_frac_d3;
     reg        s_sign_d3;
     reg        s_inf_d3;
     reg        prod_sign_d3;
@@ -547,8 +533,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             sign_res_d3       <= 1'b0;
             flags_d3          <= 3'b000;
             is_zero_d3        <= 1'b0;
-            nan_sign_d3       <= 1'b0;
-            nan_frac_d3       <= 23'd0;
             s_sign_d3         <= 1'b0;
             s_inf_d3          <= 1'b0;
             prod_sign_d3      <= 1'b0;
@@ -560,8 +544,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
             sign_res_d3       <= sign_res_d1;
             flags_d3          <= flags_d2;
             is_zero_d3        <= is_zero_c;
-            nan_sign_d3       <= nan_sign_d2;
-            nan_frac_d3       <= nan_frac_d2;
             s_sign_d3         <= s_sign_d2;
             s_inf_d3          <= s_inf_d2;
             prod_sign_d3      <= prod_sign_d2;
@@ -616,7 +598,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
                                     : kept_r[22:0];
 
     // Output selection: NaN > Inf/overflow > zero > normal/subnormal
-    wire [31:0] v_nan  = {nan_sign_d3, 8'hFF, nan_frac_d3};
+    wire [31:0] v_nan  = {1'b0, 8'hFF, 23'h400000};
     // Inf sign comes from the infinite operand (product or SUMM), not from
     // the larger aligned operand (which may be finite).
     wire [31:0] v_inf  = {(s_inf_d3 ? s_sign_d3 : prod_sign_d3), 8'hFF, 23'h000000};
