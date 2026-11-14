@@ -3,7 +3,7 @@
 # checkvectors_add_fp16_fp16_fp16.py
 # Проверка тестовых векторов сложения FP16 (A + B = C)
 # Сравнивает вычисленные результаты RNE/RTZ с данными из
-# testvalues/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json
+# testvalues/add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json
 # =============================================================================
 
 import sys
@@ -378,7 +378,7 @@ def main():
     default_json = os.path.join(
         project_root,
         'testvalues',
-        'test_values_add_fp16_fp16_fp16',
+        'add', 'test_values_add_fp16_fp16_fp16',
         'test_values_add_fp16_fp16_fp16.json'
     )
     json_path = args.json if args.json else default_json

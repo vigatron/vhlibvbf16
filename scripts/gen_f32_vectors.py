@@ -33,7 +33,7 @@ import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTVALUES_JSON = os.path.join(
-    BASE, "testvalues", "test_values_mul_bf16_bf16_fp32",
+    BASE, "testvalues", "mul", "test_values_mul_bf16_bf16_fp32",
     "test_values_mul_bf16_bf16_fp32.json")
 
 QNAN_F32 = 0x7FC00000
@@ -109,7 +109,7 @@ def bf16_product_f32(a, b):
 def directed_cases():
     """@brief Return directed edge cases as (a, b, expected, label) tuples."""
     cases = [
-        # Main and extended vectors from testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
+        # Main and extended vectors from testvalues/mul/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
         (0x3F80, 0x3F80, "1.0 * 1.0"),
         (0x4000, 0x4060, "2.0 * 3.5"),
         (0xBFC0, 0x4080, "-1.5 * 4.0"),

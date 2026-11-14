@@ -9,7 +9,7 @@
 
 
 Author: V01G04A81  
-Rev: 0.0.8  
+Rev: 0.0.9  
 
 
 ## Description
@@ -56,7 +56,7 @@ The following top-level modules are the primary entry points of the library:
 Helper modules used internally by the top-level DUTs.
 
 
-The corresponding files are located in the `src` folder (the FMA module is in `src/fma/`).
+The corresponding files are located in the `src` folder (the multiplication top DUTs are in `src/mul/`, the addition top DUTs are in `src/add/`, the FMA module is in `src/fma/`, the auxiliary submodules are in `src/aux/`).
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
 constructs in `src/`); the testbenches in `tests/` are **SystemVerilog**
@@ -134,13 +134,13 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` is available (latency 8): same fused FMA functionality with an 8-stage balanced pipeline optimized for maximum Fmax. Key optimizations: rebalanced 8 stages (S1: decode + 4×mul4x4 + exp_p0/exp_s0 + clz24; S2: 2-level CSA + SUMM normalization; S3: CPA → man_prod + LOD k; S4: p24, exp_p + k, direct exp_p − exp_s; S5: sticky + alignment; S6: add/sub + carry fix-up + LZD; S7: normalization + parallel CARRY4 subtractors for exp_pre/grs_shift; S8: RNE + pack), direct shift_diff without mux on shift-amount path, parallel CARRY4 subtractors replacing prefix network, per-stage clock enable (en_d1..en_d7) with true CE on FDRE (no bubble insertion on en=0).
 - **Verification status (FMA lat4):** the directed testbench (44 vectors) and random regression (2048 vectors per seed, seeds 1–5 and 12345) pass with **0 errors**; an additional exact-Fraction regression of 6 × 4096 vectors (uniform random, FP32-subnormal `SUMM`, tiny BF16 products, specials and exact-cancellation cases) also reports **0 errors**. The reference model `scripts/gen_fma_vectors.py` uses exact `Fraction` arithmetic and is self-checked against all 44 directed JSON vectors.
 - **Verification status (FMA lat8):** directed testbench (45 vectors) — **0 errors**; random regression (2048 vectors) — **0 errors**; extended 100k continuous stream — **0 errors**; extended 20k random `en` (~50% gaps) — **0 errors** (specifically validates mid-stream `en=0` handling without spurious bubbles). Extended tests live in `tmp/opencode/` (local only, not tracked by git).
-- **Full regression:** `./scripts/run_all.sh sim` runs all 32 test scripts (including `scripts/fma/`) with **PASSED=32, FAILED=0**.
+- **Full regression:** `./scripts/run_all.sh sim` runs all 32 test scripts (including `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/`) with **PASSED=32, FAILED=0**.
 - The FP32-adder top-level modules `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
 - The FP16-adder top-level modules `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
 - The BF16-adder top-level modules `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` and `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` are available (latency 4): BF16 + BF16 -> BF16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero, NaN results are canonical `0x7FC0`, and RTZ overflow saturates to max finite `0x7F7F`.
-- **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp32_fp32_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
-- **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/vhfastmulb16_add_fp16_fp16_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
-- **Verification status (BF16 adders):** the directed tests (`tests/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
+- **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/add/vhfastmulb16_add_fp32_fp32_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
+- **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/add/vhfastmulb16_add_fp16_fp16_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
+- **Verification status (BF16 adders):** the directed tests (`tests/add/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
 - The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
 - The modules are implemented in pure logic without the multiplication operator `*`. **Use of DSP blocks (DSP48A1, DSP48E1, etc.) is categorically prohibited** for all modules to ensure portability across FPGA families. See `rules/dsp_prohibition.md`.
@@ -153,26 +153,26 @@ The `src/` directory contains **22** Verilog source files:
 
 | File | Module | Description | Latency |
 |------|--------|-------------|---------|
-| `vhfastmulb16_mul4x4.v` | `vhfastmulb16_mul4x4` | 4x4-bit multiplication without the `*` operator (CSA tree) | 1 clk |
-| `vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
-| `vhfastmulb16_mul4x4_comb.v` | `vhfastmulb16_mul4x4_comb` | 4x4-bit combinational multiplication (CSA tree, no output register) | 0 clk |
-| `vhfastmulb16_mul_u8_u8_u16_lat2.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
-| `vhfastmulb16_mul_u8_u8_u16_lat3.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
+| `aux/vhfastmulb16_mul4x4.v` | `vhfastmulb16_mul4x4` | 4x4-bit multiplication without the `*` operator (CSA tree) | 1 clk |
+| `aux/vhfastmulb16_mul4x4_lat2.v` | `vhfastmulb16_mul4x4_lat2` | 4x4-bit multiplication (CSA tree), 2-stage pipeline | 2 clk |
+| `aux/vhfastmulb16_mul4x4_comb.v` | `vhfastmulb16_mul4x4_comb` | 4x4-bit combinational multiplication (CSA tree, no output register) | 0 clk |
+| `aux/vhfastmulb16_mul_u8_u8_u16_lat2.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` | 8x8-bit multiplication via 4 instances of `mul4x4` | 2 clk |
+| `aux/vhfastmulb16_mul_u8_u8_u16_lat3.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` | 8x8-bit multiplication via 4 instances of `mul4x4_lat2` | 3 clk |
+| `mul/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | Top-level BF16 multiplier with **RTZ** rounding (truncation) | 3 clk |
+| `mul/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | Top-level BF16 multiplier with **RNE** rounding (IEEE 754) | 3 clk |
+| `mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | Top-level BF16 x BF16 -> **F32** exact multiplier, no rounding | 4 clk |
 
 ### Addition Modules
 
 | File | Module | Description | Latency |
 |------|--------|-------------|---------|
-| `vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
+| `aux/vhfastmulb16_add8x8_lat2.v` | `vhfastmulb16_add8x8_lat2` | Addition of two 8-bit numbers and subtraction of 127 (bias) | 2 clk |
+| `add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RTZ** rounding | 4 clk |
+| `add/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | Top-level FP32 + FP32 -> **F32** adder with **RNE** rounding | 4 clk |
+| `add/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RTZ** rounding | 4 clk |
+| `add/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
+| `add/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
+| `add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
 
 ### Combined Modules
 
@@ -185,11 +185,11 @@ The `src/` directory contains **22** Verilog source files:
 
 | File | Module | Description | Latency |
 |------|--------|-------------|---------|
-| `vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
-| `vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
-| `vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
-| `vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
-| `vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
+| `aux/vhfastmulb16_sign.v` | `vhfastmulb16_sign` | Sign cascade (XOR) with 3 outputs | 1/2/3 clk |
+| `aux/vhfastmulb16_flags_lat1.v` | `vhfastmulb16_flags_lat1` | Exponent/mantissa flags (zero/subnormal/normal/inf/nan) | 1 clk |
+| `aux/vhfastmulb16_flags_lat2.v` | `vhfastmulb16_flags_lat2` | Exponent/mantissa flags (2-stage pipeline) | 2 clk |
+| `aux/vhfastmulb16_except_lat2.v` | `vhfastmulb16_except_lat2` | Exception handling (NaN/Inf/Zero) for latency-2 pipeline | 2 clk |
+| `aux/vhfastmulb16_except_lat3.v` | `vhfastmulb16_except_lat3` | Exception handling (NaN/Inf/Zero) for latency-3 pipeline | 3 clk |
 
 ## Module Dependencies
 
@@ -255,37 +255,37 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 
 | Testbench | Module under test |
 |-----------|-------------------|
-| `tests/vhfastmulb16_mul4x4_tb.v` | `vhfastmulb16_mul4x4` |
-| `tests/vhfastmulb16_mul4x4_chk_tb.v` | `vhfastmulb16_mul4x4` (check/debug) |
-| `tests/vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` |
-| `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
-| `tests/vhfastmulb16_mul_u8_u8_u16_lat2_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` |
-| `tests/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` (check/debug) |
-| `tests/vhfastmulb16_mul_u8_u8_u16_lat3_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` |
-| `tests/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` (check/debug) |
-| `tests/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` |
-| `tests/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` |
-| `tests/vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (directed, LAT=4) |
-| `tests/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (random regression, LAT=4) |
+| `tests/aux/vhfastmulb16_mul4x4_tb.v` | `vhfastmulb16_mul4x4` |
+| `tests/aux/vhfastmulb16_mul4x4_chk_tb.v` | `vhfastmulb16_mul4x4` (check/debug) |
+| `tests/aux/vhfastmulb16_mul4x4_lat2_tb.v` | `vhfastmulb16_mul4x4_lat2` |
+| `tests/aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `vhfastmulb16_mul4x4_lat2` (check/debug) |
+| `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat2_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` |
+| `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat2` (check/debug) |
+| `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat3_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` |
+| `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `vhfastmulb16_mul_u8_u8_u16_lat3` (check/debug) |
+| `tests/mul/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` |
+| `tests/mul/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3_tb.v` | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` |
+| `tests/mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (directed, LAT=4) |
+| `tests/mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4_rand_tb.v` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` (random regression, LAT=4) |
 
 ### Addition Modules
 
 | Testbench | Module under test |
 |-----------|-------------------|
-| `tests/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
-| `tests/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
-| `tests/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` (random/directed regression, LAT=4) |
-| `tests/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` (random/directed regression, LAT=4) |
-| `tests/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` (random/directed regression, LAT=4) |
-| `tests/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (random/directed regression, LAT=4) |
-| `tests/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (directed + en=0 gaps, LAT=4) |
-| `tests/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (random/directed regression, LAT=4) |
-| `tests/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (random/directed regression, LAT=4) |
+| `tests/aux/vhfastmulb16_add8x8_tb.v` | `vhfastmulb16_add8x8_lat2` |
+| `tests/aux/vhfastmulb16_add8x8_reva_tb.v` | `vhfastmulb16_add8x8_lat2` (exhaustive, 256×256) |
+| `tests/add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` (random/directed regression, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` (random/directed regression, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` (random/directed regression, LAT=4) |
+| `tests/add/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` (random/directed regression, LAT=4) |
+| `tests/add/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (directed + en=0 gaps, LAT=4) |
+| `tests/add/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` (random/directed regression, LAT=4) |
+| `tests/add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` (random/directed regression, LAT=4) |
 
 ### Combined Modules
 
@@ -300,25 +300,25 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 
 | Testbench | Module under test |
 |-----------|-------------------|
-| `tests/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
-| `tests/vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` |
-| `tests/vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` |
-| `tests/vhfastmulb16_flags_lat2_chk_tb.v` | `vhfastmulb16_flags_lat2` (check/debug) |
-| `tests/vhfastmulb16_except_lat2_tb.v` | `vhfastmulb16_except_lat2` |
-| `tests/vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` |
+| `tests/aux/vhfastmulb16_sign_tb.v` | `vhfastmulb16_sign` |
+| `tests/aux/vhfastmulb16_flags_lat1_tb.v` | `vhfastmulb16_flags_lat1` |
+| `tests/aux/vhfastmulb16_flags_lat2_tb.v` | `vhfastmulb16_flags_lat2` |
+| `tests/aux/vhfastmulb16_flags_lat2_chk_tb.v` | `vhfastmulb16_flags_lat2` (check/debug) |
+| `tests/aux/vhfastmulb16_except_lat2_tb.v` | `vhfastmulb16_except_lat2` |
+| `tests/aux/vhfastmulb16_except_lat3_tb.v` | `vhfastmulb16_except_lat3` |
 
 Most testbenches have a dedicated run script. In particular, several
 `*_chk_tb.v` benches are also runnable directly:
 
 | Script | Testbench |
 |--------|-----------|
-| `scripts/run_test_add8x8_lat2.sh` | `tests/vhfastmulb16_add8x8_tb.v` |
-| `scripts/run_test_flags_lat2.sh` | `tests/vhfastmulb16_flags_lat2_chk_tb.v` |
-| `scripts/run_test_mul4x4_lat2.sh` | `tests/vhfastmulb16_mul4x4_lat2_chk_tb.v` |
-| `scripts/run_test_mul_u8_u8_u16_lat3.sh` | `tests/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` |
-| `scripts/run_test_mul_u8_u8_u16_lat2_chk.sh` | `tests/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` |
+| `scripts/aux/run_test_add8x8_lat2.sh` | `tests/aux/vhfastmulb16_add8x8_tb.v` |
+| `scripts/aux/run_test_flags_lat2.sh` | `tests/aux/vhfastmulb16_flags_lat2_chk_tb.v` |
+| `scripts/aux/run_test_mul4x4_lat2.sh` | `tests/aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` |
+| `scripts/aux/run_test_mul_u8_u8_u16_lat3.sh` | `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` |
+| `scripts/aux/run_test_mul_u8_u8_u16_lat2_chk.sh` | `tests/aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` |
 
-See `scripts/run_test_*.sh` for the complete mapping.
+See `scripts/run_test_*.sh` and the component subdirectories `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/` for the complete mapping.
 
 Run the simulation with:
 
@@ -327,50 +327,50 @@ Run the simulation with:
 ./scripts/run_all.sh sim
 
 # Individual tests
-./scripts/run_test_mul4x4.sh sim
-./scripts/run_test_mul4x4_lat2.sh sim
-./scripts/run_test_mul_u8_u8_u16_lat2.sh sim
-./scripts/run_test_mul_u8_u8_u16_lat2_chk.sh sim
-./scripts/run_test_mul_u8_u8_u16_lat3.sh sim
-./scripts/run_test_add8x8_lat2.sh sim
-./scripts/run_test_add8x8_reva.sh sim
-./scripts/run_test_sign.sh sim
-./scripts/run_test_flags_lat1.sh sim
-./scripts/run_test_flags_lat2.sh sim
-./scripts/run_test_except_lat2.sh sim
-./scripts/run_test_except_lat3.sh sim
-./scripts/run_test_mul_bf16_bf16_bf16_rtz_lat3.sh sim
-./scripts/run_test_mul_bf16_bf16_bf16_rne_lat3.sh sim
-./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh sim
-./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
-./scripts/run_test_add_fp32_fp32_fp32_rtz_lat4.sh sim
-./scripts/run_test_add_fp32_fp32_fp32_rne_lat4.sh sim
-./scripts/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh sim
-./scripts/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh sim
-./scripts/run_test_add_fp16_fp16_fp16_rtz_lat4.sh sim
-./scripts/run_test_add_fp16_fp16_fp16_rne_lat4.sh sim
-./scripts/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh sim
-./scripts/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh sim
-./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4.sh sim
-./scripts/run_test_add_bf16_bf16_bf16_rne_lat4.sh sim
-./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh sim
-./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
+./scripts/aux/run_test_mul4x4.sh sim
+./scripts/aux/run_test_mul4x4_lat2.sh sim
+./scripts/aux/run_test_mul_u8_u8_u16_lat2.sh sim
+./scripts/aux/run_test_mul_u8_u8_u16_lat2_chk.sh sim
+./scripts/aux/run_test_mul_u8_u8_u16_lat3.sh sim
+./scripts/aux/run_test_add8x8_lat2.sh sim
+./scripts/aux/run_test_add8x8_reva.sh sim
+./scripts/aux/run_test_sign.sh sim
+./scripts/aux/run_test_flags_lat1.sh sim
+./scripts/aux/run_test_flags_lat2.sh sim
+./scripts/aux/run_test_except_lat2.sh sim
+./scripts/aux/run_test_except_lat3.sh sim
+./scripts/mul/run_test_mul_bf16_bf16_bf16_rtz_lat3.sh sim
+./scripts/mul/run_test_mul_bf16_bf16_bf16_rne_lat3.sh sim
+./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh sim
+./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
+./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4.sh sim
+./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4.sh sim
+./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh sim
+./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh sim
+./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4.sh sim
+./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4.sh sim
+./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh sim
+./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh sim
+./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4.sh sim
+./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4.sh sim
+./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh sim
+./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
 
 # Visualization (gtkwave)
-./scripts/run_test_mul4x4.sh wave
-./scripts/run_test_mul_u8_u8_u16_lat2.sh wave
-./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh wave
-./scripts/run_test_mul_bf16_bf16_fp32_lat4_rand.sh wave
-./scripts/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh wave
-./scripts/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh wave
-./scripts/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh wave
-./scripts/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh wave
-./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
-./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
+./scripts/aux/run_test_mul4x4.sh wave
+./scripts/aux/run_test_mul_u8_u8_u16_lat2.sh wave
+./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh wave
+./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4_rand.sh wave
+./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh wave
+./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh wave
+./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh wave
+./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh wave
+./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
+./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
@@ -380,7 +380,7 @@ Run the simulation with:
 ```
 
 `run_all.sh` runs every `run_test_*.sh` script, including component
-subdirectories such as `scripts/fma/`; the benches without a dedicated script
+subdirectories such as `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/`; the benches without a dedicated script
 (`vhfastmulb16_flags_lat2_tb.v`, `vhfastmulb16_mul4x4_chk_tb.v`,
 `vhfastmulb16_mul4x4_lat2_tb.v`, `vhfastmulb16_mul_u8_u8_u16_lat3_tb.v`) are not included.
 See the [docs/testbenches_list.md](docs/testbenches_list.md) file for more details.
@@ -392,12 +392,12 @@ subdirectory per operation):
 
 | Directory | Contents |
 |-----------|----------|
-| `testvalues/test_values_mul_bf16_bf16_bf16/` | BF16 × BF16 → BF16 vectors (main 16 + RNE/RTZ tables) |
-| `testvalues/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
+| `testvalues/mul/test_values_mul_bf16_bf16_bf16/` | BF16 × BF16 → BF16 vectors (main 16 + RNE/RTZ tables) |
+| `testvalues/mul/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
 | `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`); reused by lat8 variant |
-| `testvalues/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
-| `testvalues/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
-| `testvalues/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
+| `testvalues/add/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
+| `testvalues/add/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
+| `testvalues/add/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
 
 The main machine-readable `.json` files are validated by `scripts/check_test_values.py`
 (BF16 x BF16 -> F32), `scripts/checkvectors_add_bf16_bf16_bf16.py` (BF16 add),

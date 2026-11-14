@@ -419,7 +419,7 @@ def _load_json_vectors():
     @return List of vector dictionaries.
     """
     path = os.path.join(
-        BASE, "testvalues", "test_values_add_bf16_bf16_bf16",
+        BASE, "testvalues", "add", "test_values_add_bf16_bf16_bf16",
         "test_values_add_bf16_bf16_bf16.json"
     )
     with open(path, "r", encoding="utf-8") as f:
