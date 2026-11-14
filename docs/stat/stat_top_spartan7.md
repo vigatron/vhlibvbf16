@@ -437,13 +437,25 @@ p_*_d1 → CSA-дерево → 16-битный CPA → k_calc → exp_p_calc
 
 ## Сравнение top-level модулей (XC7S15)
 
+### Модули умножения (Multiplication)
+
 | Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ -1, MHz | Fmax typ -2, MHz |
 |--------|------|-----|---------|----------|-------------------|------------------|------------------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~4.9%** | ~205 | ~225 |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~5.3%** | ~180 | ~200 |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~3.9%** | ~165 | ~180 |
+
+### Комбинированные модули (Combined / FMA)
+
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ -1, MHz | Fmax typ -2, MHz |
+|--------|------|-----|---------|----------|-------------------|------------------|------------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~750 | ~246 | 4 | fused BF16×BF16+FP32, single IEEE 754 RNE | **~9.4%** | ~125 | ~140 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~820 | ~580 | 8 | fused BF16×BF16+FP32, single IEEE 754 RNE, 8-stage pipeline for max Fmax | **~10.3%** | ~175 | ~200 |
+
+### Модули сложения (Addition)
+
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ -1, MHz | Fmax typ -2, MHz |
+|--------|------|-----|---------|----------|-------------------|------------------|------------------|
 | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~3.6%** | ~140 | ~150 |
 | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~4.3%** | ~130 | ~140 |
 | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~2.0%** | ~170 | ~190 |

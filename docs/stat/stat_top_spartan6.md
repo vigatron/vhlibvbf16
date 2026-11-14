@@ -232,13 +232,25 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm shifter
 
 ## Сравнение top-level модулей (XC6SLX9)
 
+### Модули умножения (Multiplication)
+
 | Модуль | LUTs | FF | Latency | Точность | % LUTs (от 5,720) | Fmax typ, MHz |
 |--------|------|-----|---------|----------|-------------------|---------------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~392 | ~151 | 3 | truncation (RTZ) | **~6.9%** | ~175 |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~427 | ~151 | 3 | IEEE 754 RNE | **~7.5%** | ~155 |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~179 | 4 | exact BF16 product; RTZ for F32 subnormal | **~5.4%** | ~145 |
+
+### Комбинированные модули (Combined / FMA)
+
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 5,720) | Fmax typ, MHz |
+|--------|------|-----|---------|----------|-------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~750 | ~246 | 4 | fused BF16×BF16+FP32, single IEEE 754 RNE | **~13.1%** | ~100 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~820 | ~580 | 8 | fused BF16×BF16+FP32, single IEEE 754 RNE, 8-stage pipeline for max Fmax | **~14.3%** | ~160 |
+
+### Модули сложения (Addition)
+
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 5,720) | Fmax typ, MHz |
+|--------|------|-----|---------|----------|-------------------|---------------|
 | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~290 | ~263 | 4 | FP32+FP32→FP32, RTZ truncation | **~5.1%** | ~120 |
 | `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~340 | ~263 | 4 | FP32+FP32→FP32, IEEE 754 RNE | **~5.9%** | ~110 |
 | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~160 | ~151 | 4 | FP16+FP16→FP16, RTZ truncation | **~2.8%** | ~140 |
