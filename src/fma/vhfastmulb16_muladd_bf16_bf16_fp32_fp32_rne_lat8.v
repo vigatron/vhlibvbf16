@@ -8,7 +8,7 @@
 // Module: vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 // RESULT = SUMM + (VALA_BF16 × VALB_BF16), FP32 output, RNE rounding
 // Latency 8 clk, fully pipelined, optimized for max Fmax.
-// Pipeline balanced 8 stages:
+// Pipeline 8 stages (retiming S7→S8: right barrel-shift + sticky moved from S8 to S7):
 //   S1: operand decode, classification, mul4x4_comb partial products,
 //       exponent bases exp_p/exp_s, SUMM leading-zero count (encoder only)
 //   S2: CSA-tree (2 levels) + SUMM normalization shifter
@@ -18,9 +18,9 @@
 //   S5: sticky-bit tree; alignment shift of small mantissa; op_add/sign
 //   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
 //   S7: LZD normalization; exp_pre and grs_shift from two parallel
-//       CARRY4 subtractors; exact-cancellation zero detect
-//   S8: RNE rounding (G/R/S + tie-to-even); subnormal shift;
-//       NaN/Inf/Zero/Normal/Subnormal select; F32 pack -> output register
+//       CARRY4 subtractors; **right barrel-shift + sticky precompute for subnormal path**
+//   S8: RNE rounding (G/R/S + tie-to-even) with precomputed g_sub/s_sub;
+//       subnormal shift; NaN/Inf/Zero/Normal/Subnormal select; F32 pack -> output register
 // BF16 subnormal inputs are treated as finite values (no FTZ).
 // NaN -> canonical quiet NaN 0x7FC00000
 // en=0: HOLD (drain accepted data, keep last value)
@@ -40,7 +40,7 @@
  * 27-bit extended mantissa (24-bit significand + 3 GRS bits).  This matches
  * the FP32 adder convention (biased exponent - 150 = unbiased - 23).
  *
- * Pipeline is balanced 8 stages for maximum Fmax:
+ * Pipeline is 8 stages for maximum Fmax (retiming S7→S8):
  *   S1: operand decode, classification, mul4x4_comb partial products,
  *       exponent bases, SUMM leading-zero count (encoder only)
  *   S2: CSA-tree 2 levels + SUMM normalization shifter
@@ -50,8 +50,9 @@
  *   S5: sticky-bit tree; alignment shift; op_add / sign
  *   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
  *   S7: LZD normalization; exp_pre / grs_shift (parallel CARRY4);
- *       exact-cancellation zero detect
- *   S8: RNE rounding; subnormal shift; special-case select; F32 pack; output reg
+ *       **right barrel-shift + sticky precompute for subnormal path**
+ *   S8: RNE rounding; subnormal shift with precomputed g_sub/s_sub;
+ *       special-case select; F32 pack; output reg
  *
  * Every pipeline stage uses its own valid bit as a flip-flop clock enable
  * (per-stage CE): no new sample is accepted while en=0, accepted samples
@@ -699,6 +700,13 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     wire [4:0] grs_shift_c = grs_neg_c[4:0];
     wire       grs_shift_ovf_c = |grs_neg_c[10:5];  // true shift > 31 -> result 0
 
+    // Precompute subnormal path in S7 (retiming from S8):
+    // right barrel-shift + sticky, so S8 only does RNE + pack.
+    wire [26:0] man_grs_c   = man_norm_c >> grs_shift_c;
+    wire        g_sub_c     = man_grs_c[0];
+    wire [26:0] sub_mask_c  = (27'd1 << grs_shift_c) - 27'd1;
+    wire        s_sub_c     = |(man_norm_c & sub_mask_c);
+
     // ============================================================
     // STAGE S7 registers (capture at N+7 edge, CE = en_d6)
     // ============================================================
@@ -706,6 +714,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     reg [10:0] exp_pre_d7;
     reg [4:0]  grs_shift_d7;
     reg        grs_shift_ovf_d7;
+    reg [26:0] man_grs_d7;
+    reg        g_sub_d7;
+    reg        s_sub_d7;
     reg        is_zero_d7;
     reg        sign_res_d7;
     reg [2:0]  flags_d7;
@@ -719,6 +730,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             exp_pre_d7        <= 11'd0;
             grs_shift_d7      <= 5'd0;
             grs_shift_ovf_d7  <= 1'b0;
+            man_grs_d7        <= 27'd0;
+            g_sub_d7          <= 1'b0;
+            s_sub_d7          <= 1'b0;
             is_zero_d7        <= 1'b0;
             sign_res_d7       <= 1'b0;
             flags_d7          <= 3'b000;
@@ -730,6 +744,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             exp_pre_d7        <= exp_pre_c;
             grs_shift_d7      <= grs_shift_c;
             grs_shift_ovf_d7  <= grs_shift_ovf_c;
+            man_grs_d7        <= man_grs_c;
+            g_sub_d7          <= g_sub_c;
+            s_sub_d7          <= s_sub_c;
             is_zero_d7        <= is_zero_d6;
             sign_res_d7       <= sign_res_d6;
             flags_d7          <= flags_d6;
@@ -755,13 +772,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     wire        ovf_norm = kept_inc[24];
     wire [23:0] kept_r   = ovf_norm ? 24'h800000 : kept_inc[23:0];
 
-    // Subnormal path: shift by grs_shift
-    wire [26:0] man_grs   = man_norm_d7 >> grs_shift_d7;
-    wire        g_sub     = man_grs[0];
-    // Sticky: all bits of man_norm shifted out below the guard bit.
-    // Do not OR the kept fraction bits (bits above R) into sticky.
-    wire [26:0] sub_mask  = (27'd1 << grs_shift_d7) - 27'd1;
-    wire        s_sub     = |(man_norm_d7 & sub_mask);
+    // Subnormal path: use precomputed values from S7
+    wire [26:0] man_grs   = man_grs_d7;
+    wire        g_sub     = g_sub_d7;
+    wire        s_sub     = s_sub_d7;
     wire [22:0] frac_raw  = man_grs[23:1];
     wire        rup_sub   = g_sub && (s_sub | frac_raw[0]);
 
