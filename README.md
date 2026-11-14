@@ -9,7 +9,7 @@
 
 
 Author: V01G04A81  
-Rev: 0.0.7  
+Rev: 0.0.8  
 
 
 ## Description
@@ -143,7 +143,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - **Verification status (BF16 adders):** the directed tests (`tests/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
 - The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
-- The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul_u8_u8_u16_lat2` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
+- The modules are implemented in pure logic without the multiplication operator `*`. **Use of DSP blocks (DSP48A1, DSP48E1, etc.) is categorically prohibited** for all modules to ensure portability across FPGA families. See `rules/dsp_prohibition.md`.
 
 ## Source Files
 
