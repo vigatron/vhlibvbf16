@@ -8,17 +8,17 @@
 // Module: vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 // RESULT = SUMM + (VALA_BF16 × VALB_BF16), FP32 output, RNE rounding
 // Latency 8 clk, fully pipelined, optimized for max Fmax.
-// Pipeline 8 stages (retiming S7→S8: right barrel-shift + sticky moved from S8 to S7):
+// Pipeline 8 stages (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare):
 //   S1: operand decode, classification, mul4x4_comb partial products,
-//       exponent bases exp_p/exp_s, SUMM leading-zero count (encoder only)
-//   S2: CSA-tree (2 levels) + SUMM normalization shifter
+//       exponent bases exp_p/exp_s
+//   S2: CSA-tree (2 levels) + SUMM clz24 + normalization shifter + exp_s adjust
 //   S3: CPA -> 16-bit mantissa product; LOD k
 //   S4: product normalization p24; exp_p + k; direct |exp_p - exp_s|;
-//       large/small select
+//       large/small select (**deferred mantissa compare**: only when exp_p == exp_s)
 //   S5: sticky-bit tree; alignment shift of small mantissa; op_add/sign
 //   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
-//   S7: LZD normalization; exp_pre and grs_shift from two parallel
-//       CARRY4 subtractors; **right barrel-shift + sticky precompute for subnormal path**
+//   S7: LZD normalization; exp_pre / grs_shift (parallel CARRY4);
+//       right barrel-shift + sticky precompute for subnormal path
 //   S8: RNE rounding (G/R/S + tie-to-even) with precomputed g_sub/s_sub;
 //       subnormal shift; NaN/Inf/Zero/Normal/Subnormal select; F32 pack -> output register
 // BF16 subnormal inputs are treated as finite values (no FTZ).
@@ -40,17 +40,17 @@
  * 27-bit extended mantissa (24-bit significand + 3 GRS bits).  This matches
  * the FP32 adder convention (biased exponent - 150 = unbiased - 23).
  *
- * Pipeline is 8 stages for maximum Fmax (retiming S7→S8):
+ * Pipeline is 8 stages for maximum Fmax (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare):
  *   S1: operand decode, classification, mul4x4_comb partial products,
- *       exponent bases, SUMM leading-zero count (encoder only)
- *   S2: CSA-tree 2 levels + SUMM normalization shifter
+ *       exponent bases
+ *   S2: CSA-tree 2 levels + SUMM clz24 + normalization shifter + exp_s adjust
  *   S3: CPA -> man_prod; LOD k
  *   S4: product normalization p24; exp_p + k; direct |exp_p - exp_s|;
- *       large/small select
+ *       large/small select (**deferred mantissa compare**: only when exp_p == exp_s)
  *   S5: sticky-bit tree; alignment shift; op_add / sign
  *   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
  *   S7: LZD normalization; exp_pre / grs_shift (parallel CARRY4);
- *       **right barrel-shift + sticky precompute for subnormal path**
+ *       right barrel-shift + sticky precompute for subnormal path
  *   S8: RNE rounding; subnormal shift with precomputed g_sub/s_sub;
  *       special-case select; F32 pack; output reg
  *
@@ -493,8 +493,10 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
 
     wire exp_p_eq_exp_s = (exp_diff == 12'd0);
 
-    // When exponents equal, compare mantissas (P24 vs s_man_d3)
-    wire p24_ge_sman = (p24 >= s_man_d3);
+    // When exponents equal, compare mantissas (P24 vs s_man_d3).
+    // Deferred comparison: only computed when exponents are equal,
+    // saving ~2-3 LUT levels in S4 critical path.
+    wire p24_ge_sman = exp_p_eq_exp_s ? (p24 >= s_man_d3) : 1'b0;
 
     // Large/small selection
     wire large_is_prod = !exp_diff_neg && (!exp_p_eq_exp_s || p24_ge_sman);
