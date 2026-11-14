@@ -5,11 +5,14 @@ Generate statistics documentation (Markdown) from collected JSON data.
 Reads build/stat/<module>_<family>.json files and generates:
 - docs/stat/stat_top_<family>.md for each family
 - docs/stat/stat_top_all.md combined comparison
+
+Default behaviour is a dry-run (nothing is written); pass --write to overwrite docs/stat/*.md.
 """
 
 import sys
 import json
 import os
+import argparse
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
@@ -17,7 +20,7 @@ from typing import Dict, List, Any, Optional
 ROOT = Path(__file__).parent.parent
 BUILD_STAT_DIR = ROOT / "build" / "stat"
 DOCS_STAT_DIR = ROOT / "docs" / "stat"
-DOCS_STAT_DIR.mkdir(parents=True, exist_ok=True)
+# mkdir выполняется только в --write (см. main) — импорт модуля не трогает ФС.
 
 # family id -> output file name (see project AGENTS.md: Statistic & Benchmark)
 FAMILY_DOC_NAMES = {
@@ -501,6 +504,13 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Generate statistics documentation (Markdown) from build/stat/*.json. "
+                    "Without --write this is a dry-run: only prints what would be written.")
+    parser.add_argument("--write", action="store_true",
+                        help="actually overwrite docs/stat/*.md (default: dry-run, nothing is written)")
+    args = parser.parse_args()
+
     print("Loading collected statistics...")
     all_results = load_all_results()
 
@@ -512,6 +522,18 @@ def main():
         sys.exit(1)
 
     print(f"Found data for {total_files} module/family combinations")
+
+    families_with_data = [f for f in FAMILIES.keys() if all_results.get(f)]
+    planned = [FAMILY_DOC_NAMES[f] for f in families_with_data] + ["stat_top_all.md"]
+    print("Planned output files:")
+    for name in planned:
+        print(f"  docs/stat/{name}")
+
+    if not args.write:
+        print("\nDry-run: no files were written. Re-run with --write to apply.")
+        return
+
+    DOCS_STAT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Generate per-family docs
     for family in FAMILIES.keys():

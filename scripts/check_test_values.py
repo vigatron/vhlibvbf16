@@ -243,7 +243,12 @@ def main():
             print("  - " + e)
         return 1
     if "--quiet" not in sys.argv:
-        print("OK: %d vectors checked (%s, %s)" % (len(vectors), JSON_PATH, MD_PATH))
+        def _rel(p):
+            try:
+                return os.path.relpath(p, BASE)
+            except ValueError:
+                return p
+        print("OK: %d vectors checked (%s, %s)" % (len(vectors), _rel(JSON_PATH), _rel(MD_PATH)))
     return 0
 
 

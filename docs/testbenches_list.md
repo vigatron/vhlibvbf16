@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/**/*.v)
 
-Всего файлов: **34**
+Всего файлов: **36**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -35,16 +35,18 @@
 | 27 | `add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Random/directed regression (Python BF16 model), `LAT=4` | 4096 |
 | 28 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Directed + streaming + hold/reset, `LAT=4` | 44 |
 | 29 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Random/directed regression (exact Python FMA model), `LAT=4` | 2048 |
+| 30 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Directed + streaming + hold/reset, `LAT=8` | 45 |
+| 31 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Random/directed regression (exact Python FMA model), `LAT=8` | 2048 |
 
 ## Визуализационные / вспомогательные тестбенчи
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
-| 30 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
-| 31 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
-| 32 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 33 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
-| 34 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
+| 32 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
+| 33 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
+| 34 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 35 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
+| 36 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
 
 ---
 

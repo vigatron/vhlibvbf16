@@ -202,7 +202,7 @@ def fp16_add(a16, b16):
     """
     @brief Выполняет сложение двух FP16 чисел A + B.
 
-    Соглашения DUT (см. testvalues/.../test_values_add_fp16_fp16_fp16.json):
+    Соглашения DUT (см. testvalues/add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json):
       * NaN на входе -> qNaN с знаком и полезной нагрузкой из операнда-НаN,
         quiet bit принудительно = 1;
       * Inf + (-Inf) -> qNaN со знаком и полезной нагрузкой из операнда B;

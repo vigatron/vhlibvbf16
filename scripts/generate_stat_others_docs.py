@@ -8,10 +8,13 @@ Reads build/stat_others/<module>_<family>.json files (produced by
 - docs/stat/stat_others_spartan7.md
 - docs/stat/stat_others_artix7.md
 - docs/stat/stat_others_all.md (cross-family comparison)
+
+Default behaviour is a dry-run (nothing is written); pass --write to overwrite docs/stat/*.md.
 """
 
 import sys
 import json
+import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
@@ -31,6 +34,13 @@ from generate_stat_docs import (
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Generate submodule statistics documentation (Markdown) from build/stat_others/*.json. "
+                    "Without --write this is a dry-run: only prints what would be written.")
+    parser.add_argument("--write", action="store_true",
+                        help="actually overwrite docs/stat/stat_others_*.md (default: dry-run, nothing is written)")
+    args = parser.parse_args()
+
     print("Loading collected submodule statistics...")
     all_results = load_all_results(BUILD_STAT_OTHERS_DIR)
 
@@ -41,6 +51,18 @@ def main():
         sys.exit(1)
 
     print(f"Found data for {total_files} module/family combinations")
+
+    families_with_data = [f for f in FAMILIES.keys() if all_results.get(f)]
+    planned = [FAMILY_DOC_NAMES_OTHERS[f] for f in families_with_data] + ["stat_others_all.md"]
+    print("Planned output files:")
+    for name in planned:
+        print(f"  docs/stat/{name}")
+
+    if not args.write:
+        print("\nDry-run: no files were written. Re-run with --write to apply.")
+        return
+
+    DOCS_STAT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Generate per-family docs
     for family in FAMILIES.keys():

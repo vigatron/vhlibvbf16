@@ -1,6 +1,6 @@
 # DUT Source Files List (src/)
 
-Total modules: **21**
+Total modules: **22**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -25,6 +25,7 @@ Total modules: **21**
 | 19 | `add/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
 | 20 | `add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
 | 21 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding | 4 clk |
+| 22 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
 
 ---
 
@@ -46,6 +47,9 @@ vhfastmulb16_mul_bf16_bf16_fp32_lat4
 └── vhfastmulb16_sign
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
@@ -89,7 +93,7 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 21 Verilog source files:
+The `src/` directory contains the following 22 Verilog source files:
 
 - `aux/vhfastmulb16_add8x8_lat2.v`
 - `add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v`
@@ -99,6 +103,7 @@ The `src/` directory contains the following 21 Verilog source files:
 - `add/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v`
 - `add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v`
+- `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v`
 - `aux/vhfastmulb16_except_lat2.v`
 - `aux/vhfastmulb16_except_lat3.v`
 - `mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v`
