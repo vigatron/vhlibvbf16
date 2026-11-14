@@ -9,7 +9,7 @@
 
 
 Author: V01G04A81  
-Rev: 0.0.6  
+Rev: 0.0.7  
 
 
 ## Description
@@ -49,6 +49,11 @@ The following top-level modules are the primary entry points of the library:
 | Module | Function | Output Format | Latency | Rounding |
 |---------|----------|---------------|---------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | BF16 × BF16 + FP32 fused multiply-add | F32 | 4 clk | RNE (IEEE-754) |
+
+### Auxiliary Modules
+
+Helper modules used internally by the top-level DUTs.
+
 
 The corresponding files are located in the `src` folder (the FMA module is in `src/fma/`).
 
