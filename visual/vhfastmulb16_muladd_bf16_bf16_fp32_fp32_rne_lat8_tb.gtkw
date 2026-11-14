@@ -1,0 +1,50 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[dumpfile] "../build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.vcd"
+[savefile] "visual/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.gtkw"
+[treeopen] vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.
+[sst_width] 269
+[sst_width] 211
+[sst_expanded] 1
+[sst_vpaned_height] 371
+@420
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.EXP_CHECK
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.LAT
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.MAX_PRINT
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.N
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.checked
+@28
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.clk
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.en
+@420
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.errors
+@23
+[color] 3
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.inbf16a[15:0]
+[color] 3
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.inbf16b[15:0]
+[color] 3
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.infp32s[31:0]
+@22
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.hold_val[31:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.outfp32s[31:0]
+@420
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.k
+@28
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.reset
+@28
+[treeopen] vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.man_prod_d3[15:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.exp_sum_d1[8:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.exp_p_calc[9:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.exp_s_calc[9:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.large_is_prod
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.op_add_d4
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.man_raw_c[27:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.man_norm_d7[26:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.exp_pre_d7[10:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.flags_d7[2:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.sign_res_d7
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.c_next[31:0]
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.uut.en_pipe
