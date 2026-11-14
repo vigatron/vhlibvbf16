@@ -8,7 +8,7 @@
 // Module: vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 // RESULT = SUMM + (VALA_BF16 × VALB_BF16), FP32 output, RNE rounding
 // Latency 8 clk, fully pipelined, optimized for max Fmax.
-// Pipeline 8 stages (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare):
+// Pipeline 8 stages (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare + S6/S7 LZD split):
 //   S1: operand decode, classification, mul4x4_comb partial products,
 //       exponent bases exp_p/exp_s
 //   S2: CSA-tree (2 levels) + SUMM clz24 + normalization shifter + exp_s adjust
@@ -16,8 +16,9 @@
 //   S4: product normalization p24; exp_p + k; direct |exp_p - exp_s|;
 //       large/small select (**deferred mantissa compare**: only when exp_p == exp_s)
 //   S5: sticky-bit tree; alignment shift of small mantissa; op_add/sign
-//   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
-//   S7: LZD normalization; exp_pre / grs_shift (parallel CARRY4);
+//   S6: mantissa add/sub (28-bit raw); carry fix-up; **LZD partial (lz1-lz4)**
+//   S7: **LZD completion (lz8, lz16, lz_oh, decode)**; LZD normalization;
+//       exp_pre / grs_shift (parallel CARRY4);
 //       right barrel-shift + sticky precompute for subnormal path
 //   S8: RNE rounding (G/R/S + tie-to-even) with precomputed g_sub/s_sub;
 //       subnormal shift; NaN/Inf/Zero/Normal/Subnormal select; F32 pack -> output register
@@ -40,7 +41,7 @@
  * 27-bit extended mantissa (24-bit significand + 3 GRS bits).  This matches
  * the FP32 adder convention (biased exponent - 150 = unbiased - 23).
  *
- * Pipeline is 8 stages for maximum Fmax (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare):
+ * Pipeline is 8 stages for maximum Fmax (retiming S7→S8 + rebalance S1→S2 + S4 deferred compare + S6/S7 LZD split):
  *   S1: operand decode, classification, mul4x4_comb partial products,
  *       exponent bases
  *   S2: CSA-tree 2 levels + SUMM clz24 + normalization shifter + exp_s adjust
@@ -48,8 +49,9 @@
  *   S4: product normalization p24; exp_p + k; direct |exp_p - exp_s|;
  *       large/small select (**deferred mantissa compare**: only when exp_p == exp_s)
  *   S5: sticky-bit tree; alignment shift; op_add / sign
- *   S6: mantissa add/sub (28-bit raw); carry fix-up; LZD precompute
- *   S7: LZD normalization; exp_pre / grs_shift (parallel CARRY4);
+ *   S6: mantissa add/sub (28-bit raw); carry fix-up; **LZD partial (lz1-lz4)**
+ *   S7: **LZD completion (lz8, lz16, lz_oh, decode)**; LZD normalization;
+ *       exp_pre / grs_shift (parallel CARRY4);
  *       right barrel-shift + sticky precompute for subnormal path
  *   S8: RNE rounding; subnormal shift with precomputed g_sub/s_sub;
  *       special-case select; F32 pack; output reg
@@ -617,7 +619,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     end
 
     // ============================================================
-    // STAGE S6: mantissa add/sub + carry fix-up + LZD precompute
+    // STAGE S6: mantissa add/sub + carry fix-up + LZD partial (lz1-lz4)
     //   Combinational during cycle N+5, captured at N+6 edge (CE = en_d5)
     // ============================================================
 
@@ -632,20 +634,11 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
                             man_raw_c[26:0];
     wire [10:0] exp_adj   = exp_large_d5 + {9'd0, man_carry};
 
-    // Leading-zero detect over 28-bit raw result
-    wire [27:0] lz1   = man_raw_c | (man_raw_c >> 1);
-    wire [27:0] lz2   = lz1 | (lz1 >> 2);
-    wire [27:0] lz4   = lz2 | (lz2 >> 4);
-    wire [27:0] lz8   = lz4 | (lz4 >> 8);
-    wire [27:0] lz16  = lz8 | (lz8 >> 16);
-    wire [27:0] lz_oh = lz16 & ~{1'b0, lz16[27:1]};
-
-    wire [4:0] lzd_c;
-    assign lzd_c[0] = |(lz_oh & 28'b0010101010101010101010101010);
-    assign lzd_c[1] = |(lz_oh & 28'b0001100110011001100110011001);
-    assign lzd_c[2] = |(lz_oh & 28'b0000011110000111100001111000);
-    assign lzd_c[3] = |(lz_oh & 28'b0000000001111111100000000111);
-    assign lzd_c[4] = |(lz_oh & 28'b0000000000000000011111111111);
+    // Leading-zero detect over 28-bit raw result - PARTIAL in S6 (lz1-lz4)
+    // Remaining levels (lz8, lz16, lz_oh) moved to S7 for better balance
+    wire [27:0] lz1_c   = man_raw_c | (man_raw_c >> 1);
+    wire [27:0] lz2_c   = lz1_c | (lz1_c >> 2);
+    wire [27:0] lz4_c   = lz2_c | (lz2_c >> 4);
 
     // Exact cancellation detection (result zero but not both inputs zero).
     // flags_d5 is aligned with man_raw_c.
@@ -656,7 +649,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     // ============================================================
     reg [26:0] man_norm0_d6;
     reg [10:0] exp_adj_d6;
-    reg [4:0]  lzd_d6;
+    reg [27:0] lz1_d6;
+    reg [27:0] lz2_d6;
+    reg [27:0] lz4_d6;
     reg        is_zero_d6;
     reg        sign_res_d6;
     reg [2:0]  flags_d6;
@@ -668,7 +663,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
         if (reset) begin
             man_norm0_d6 <= 27'd0;
             exp_adj_d6   <= 11'd0;
-            lzd_d6       <= 5'd0;
+            lz1_d6       <= 28'd0;
+            lz2_d6       <= 28'd0;
+            lz4_d6       <= 28'd0;
             is_zero_d6   <= 1'b0;
             sign_res_d6  <= 1'b0;
             flags_d6     <= 3'b000;
@@ -678,7 +675,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
         end else if (en_d5) begin
             man_norm0_d6 <= man_norm0;
             exp_adj_d6   <= exp_adj;
-            lzd_d6       <= lzd_c;
+            lz1_d6       <= lz1_c;
+            lz2_d6       <= lz2_c;
+            lz4_d6       <= lz4_c;
             is_zero_d6   <= is_zero_c;
             sign_res_d6  <= sign_res_d5;
             flags_d6     <= flags_d5;
@@ -689,18 +688,32 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     end
 
     // ============================================================
-    // STAGE S7: LZD normalization; exp_pre and grs_shift in parallel
+    // STAGE S7: LZD completion (lz8, lz16, lz_oh, decode); LZD normalization;
+    //           exp_pre and grs_shift in parallel
     //   Combinational during cycle N+6, captured at N+7 edge (CE = en_d6)
     // ============================================================
 
-    wire [26:0] man_norm_c = man_norm0_d6 << lzd_d6;
+    // Complete LZD from registered partial results (lz1-lz4 from S6)
+    wire [27:0] lz8_c   = lz4_d6 | (lz4_d6 >> 8);
+    wire [27:0] lz16_c  = lz8_c | (lz8_c >> 16);
+    wire [27:0] lz_oh_c = lz16_c & ~{1'b0, lz16_c[27:1]};
+
+    wire [4:0] lzd_c;
+    assign lzd_c[0] = |(lz_oh_c & 28'b0010101010101010101010101010);
+    assign lzd_c[1] = |(lz_oh_c & 28'b0001100110011001100110011001);
+    assign lzd_c[2] = |(lz_oh_c & 28'b0000011110000111100001111000);
+    assign lzd_c[3] = |(lz_oh_c & 28'b0000000001111111100000000111);
+    assign lzd_c[4] = |(lz_oh_c & 28'b0000000000000000011111111111);
+
+    // LZD normalization
+    wire [26:0] man_norm_c = man_norm0_d6 << lzd_c;
 
     // exp_pre     = exp_adj - lzd (11-bit signed, internal scale)
     // grs_shift   = -exp_pre = lzd - exp_adj
     // Both are computed by independent CARRY4 subtractors (no serial
     // negate stage).
-    wire [10:0] exp_pre_c = exp_adj_d6 - {6'd0, lzd_d6};
-    wire [10:0] grs_neg_c = {6'd0, lzd_d6} - exp_adj_d6;
+    wire [10:0] exp_pre_c = exp_adj_d6 - {6'd0, lzd_c};
+    wire [10:0] grs_neg_c = {6'd0, lzd_c} - exp_adj_d6;
 
     wire [4:0] grs_shift_c = grs_neg_c[4:0];
     wire       grs_shift_ovf_c = |grs_neg_c[10:5];  // true shift > 31 -> result 0
