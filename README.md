@@ -3,7 +3,7 @@
 ![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
 ![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Date](https://img.shields.io/badge/date-2026--11--12-informational)
+![Date](https://img.shields.io/badge/date-2026--11--14-informational)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Build](https://img.shields.io/badge/build-verified-brightgreen)
 
@@ -49,6 +49,7 @@ The following top-level modules are the primary entry points of the library:
 | Module | Function | Output Format | Latency | Rounding |
 |---------|----------|---------------|---------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | BF16 × BF16 + FP32 fused multiply-add | F32 | 4 clk | RNE (IEEE-754) |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax) | F32 | 8 clk | RNE (IEEE-754) |
 
 ### Auxiliary Modules
 
@@ -130,7 +131,9 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The BF16-output top-level modules `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` and `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` are available (latency 3).
 - The F32-output top-level module `vhfastmulb16_mul_bf16_bf16_fp32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
 - The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` is available (latency 4): fused `SUMM + VALA × VALB` with a single RNE rounding, exact BF16 product, BF16 and FP32 subnormals are not flushed, and an exact intermediate product is not rounded to Inf before the final addition.
-- **Verification status (FMA):** the directed testbench (44 vectors) and random regression (2048 vectors per seed, seeds 1–5 and 12345) pass with **0 errors**; an additional exact-Fraction regression of 6 × 4096 vectors (uniform random, FP32-subnormal `SUMM`, tiny BF16 products, specials and exact-cancellation cases) also reports **0 errors**. The reference model `scripts/gen_fma_vectors.py` uses exact `Fraction` arithmetic and is self-checked against all 44 directed JSON vectors.
+- The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` is available (latency 8): same fused FMA functionality with an 8-stage balanced pipeline optimized for maximum Fmax. Key optimizations: rebalanced 8 stages (S1: decode + 4×mul4x4 + exp_p0/exp_s0 + clz24; S2: 2-level CSA + SUMM normalization; S3: CPA → man_prod + LOD k; S4: p24, exp_p + k, direct exp_p − exp_s; S5: sticky + alignment; S6: add/sub + carry fix-up + LZD; S7: normalization + parallel CARRY4 subtractors for exp_pre/grs_shift; S8: RNE + pack), direct shift_diff without mux on shift-amount path, parallel CARRY4 subtractors replacing prefix network, per-stage clock enable (en_d1..en_d7) with true CE on FDRE (no bubble insertion on en=0).
+- **Verification status (FMA lat4):** the directed testbench (44 vectors) and random regression (2048 vectors per seed, seeds 1–5 and 12345) pass with **0 errors**; an additional exact-Fraction regression of 6 × 4096 vectors (uniform random, FP32-subnormal `SUMM`, tiny BF16 products, specials and exact-cancellation cases) also reports **0 errors**. The reference model `scripts/gen_fma_vectors.py` uses exact `Fraction` arithmetic and is self-checked against all 44 directed JSON vectors.
+- **Verification status (FMA lat8):** directed testbench (45 vectors) — **0 errors**; random regression (2048 vectors) — **0 errors**; extended 100k continuous stream — **0 errors**; extended 20k random `en` (~50% gaps) — **0 errors** (specifically validates mid-stream `en=0` handling without spurious bubbles). Extended tests in `tmp/opencode/`.
 - **Full regression:** `./scripts/run_all.sh sim` runs all 30 test scripts (including `scripts/fma/`) with **PASSED=30, FAILED=0**.
 - The FP32-adder top-level modules `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
 - The FP16-adder top-level modules `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
@@ -144,7 +147,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 
 ## Source Files
 
-The `src/` directory contains **21** Verilog source files:
+The `src/` directory contains **22** Verilog source files:
 
 ### Multiplication Modules
 
@@ -176,6 +179,7 @@ The `src/` directory contains **21** Verilog source files:
 | File | Module | Description | Latency |
 |------|--------|-------------|---------|
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding | 4 clk |
+| `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
 
 ### Auxiliary Modules
 
@@ -205,6 +209,9 @@ vhfastmulb16_mul_bf16_bf16_fp32_lat4
 └── vhfastmulb16_sign
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
@@ -238,7 +245,7 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 | Top-level (FP32 add) | - | - | - | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | - | - | - | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4`, `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` |
 | Top-level (BF16 add) | - | - | - | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4`, `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` |
-| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4`, `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` |
 
 ## Testbenches
 
@@ -286,6 +293,8 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 |-----------|-------------------|
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` (directed + hold/reset, LAT=4) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` (random regression, LAT=4) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (directed + hold/reset, LAT=8) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (random regression, LAT=8) |
 
 ### Auxiliary Modules
 
@@ -348,6 +357,8 @@ Run the simulation with:
 ./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/run_test_mul4x4.sh wave
@@ -361,6 +372,8 @@ Run the simulation with:
 ./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
 ./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
 
 # Clean up build artifacts
 ./scripts/run_all.sh clean
@@ -381,7 +394,7 @@ subdirectory per operation):
 |-----------|----------|
 | `testvalues/test_values_mul_bf16_bf16_bf16/` | BF16 × BF16 → BF16 vectors (main 16 + RNE/RTZ tables) |
 | `testvalues/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
-| `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`) |
+| `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`); reused by lat8 variant |
 | `testvalues/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
 | `testvalues/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
 | `testvalues/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
