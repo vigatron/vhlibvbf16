@@ -1,7 +1,7 @@
 # Сравнительная статистика всех top модулей на всех FPGA
 
-Источник данных: `docs/stat/stat_top_spartan6.md`, `docs/stat/stat_top_spartan7.md`, `docs/stat/stat_top_artix7.md`.
-Все цифры — оценки на основе ручного подсчёта по RTL-коду (погрешность ±20–25%).
+Источник данных: `docs/stat/stat_top_xc6s.md`, `docs/stat/stat_top_xc7s.md`, `docs/stat/stat_top_xc7a.md`.
+Все цифры — оценки на основе синтеза в Yosys (YoWASP) с погрешностью ±20–25%.
 
 ---
 
@@ -9,10 +9,9 @@
 
 | Device | Семейство | LUT6 | FF | DSP | BRAM |
 |--------|-----------|------|-----|-----|------|
-| XC6SLX9 | Spartan-6 | 5,720 | 11,440 | 16× DSP48A1 | 32× 18Kb |
-| XC6SLX16 | Spartan-6 | 9,112 | 18,224 | 32× DSP48A1 | 32× 18Kb |
-| XC7S15 | Spartan-7 | 8,000 | 16,000 | 20× DSP48E1 | 10× 36Kb |
-| XC7A15T | Artix-7 | 10,400 | 20,800 | 45× DSP48E1 | 25× 36Kb |
+| XC6SLX9-2 | Spartan-6 | 5,720 | 11,440 | 0 (запрещено) | 0 |
+| XC7S15-1 | Spartan-7 | 8,000 | 16,000 | 0 (запрещено) | 0 |
+| XC7A15T-1 | Artix-7 | 10,400 | 20,800 | 0 (запрещено) | 0 |
 
 ---
 
@@ -20,204 +19,182 @@
 
 ### Модули умножения (Multiplication)
 
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~392 | ~392 | ~392 | ~392 |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~427 | ~427 | ~427 | ~427 |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~308 | ~308 | ~308 | ~308 |
-
-### Комбинированные модули (Combined / FMA)
-
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~915 | ~915 | ~915 | ~915 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~916 | ~916 | ~916 | ~916 |
-
-### Модули сложения (Addition)
-
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~290 | ~290 | ~290 | ~290 |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~340 | ~340 | ~340 | ~340 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~160 | ~160 | ~160 | ~160 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~190 | ~190 | ~190 | ~190 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~165 | ~165 | ~165 | ~165 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~195 | ~195 | ~195 | ~195 |
-
----
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~82 | ~82 | ~82 |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~88 | ~88 | ~88 |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | N/A | N/A | N/A |
 
 ## Сравнение top-level модулей (FF)
 
 ### Модули умножения (Multiplication)
 
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~151 | ~151 | ~151 | ~151 |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~151 | ~151 | ~151 | ~151 |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~179 | ~179 | ~179 | ~179 |
-
-### Комбинированные модули (Combined / FMA)
-
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 246 | 246 | 246 | 246 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 562 | 562 | 562 | 562 |
-
-### Модули сложения (Addition)
-
-| Модуль | XC6SLX9 | XC6SLX16 | XC7S15 | XC7A15T |
-|--------|---------|----------|--------|---------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~263 | ~263 | ~263 | ~263 |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~263 | ~263 | ~263 | ~263 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~151 | ~151 | ~151 | ~151 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~151 | ~151 | ~151 | ~151 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~140 | ~140 | ~140 | ~140 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~140 | ~140 | ~140 | ~140 |
-
----
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~16 | ~16 | ~16 |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~16 | ~16 | ~16 |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | N/A | N/A | N/A |
 
 ## Сравнение top-level модулей (% от доступных LUT6)
 
 ### Модули умножения (Multiplication)
 
-| Модуль | XC6SLX9 (5,720) | XC6SLX16 (9,112) | XC7S15 (8,000) | XC7A15T (10,400) |
-|--------|-----------------|------------------|----------------|------------------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **~6.9%** | **~4.3%** | **~4.9%** | **~3.8%** |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **~7.5%** | **~4.7%** | **~5.3%** | **~4.1%** |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **~5.4%** | **~3.4%** | **~3.9%** | **~3.0%** |
-
-### Комбинированные модули (Combined / FMA)
-
-| Модуль | XC6SLX9 (5,720) | XC6SLX16 (9,112) | XC7S15 (8,000) | XC7A15T (10,400) |
-|--------|-----------------|------------------|----------------|------------------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~16.0%** | **~10.0%** | **~11.4%** | **~8.8%** |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~16.0%** | **~10.0%** | **~11.5%** | **~8.8%** |
-
-### Модули сложения (Addition)
-
-| Модуль | XC6SLX9 (5,720) | XC6SLX16 (9,112) | XC7S15 (8,000) | XC7A15T (10,400) |
-|--------|-----------------|------------------|----------------|------------------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | **~5.1%** | **~3.2%** | **~3.6%** | **~2.8%** |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | **~5.9%** | **~3.7%** | **~4.3%** | **~3.3%** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | **~2.8%** | **~1.8%** | **~2.0%** | **~1.5%** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | **~3.3%** | **~2.1%** | **~2.4%** | **~1.8%** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | **~2.9%** | **~1.8%** | **~2.1%** | **~1.6%** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | **~3.4%** | **~2.1%** | **~2.4%** | **~1.9%** |
-
----
-
-## Сравнение top-level модулей (% от доступных FF)
-
-### Модули умножения (Multiplication)
-
-| Модуль | XC6SLX9 (11,440) | XC6SLX16 (18,224) | XC7S15 (16,000) | XC7A15T (20,800) |
-|--------|------------------|-------------------|-----------------|------------------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **~1.3%** | **~0.8%** | **~0.9%** | **~0.7%** |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **~1.3%** | **~0.8%** | **~0.9%** | **~0.7%** |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **~1.6%** | **~1.0%** | **~1.1%** | **~0.9%** |
-
-### Комбинированные модули (Combined / FMA)
-
-| Модуль | XC6SLX9 (11,440) | XC6SLX16 (18,224) | XC7S15 (16,000) | XC7A15T (20,800) |
-|--------|------------------|-------------------|-----------------|------------------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~2.1%** | **~1.4%** | **~1.5%** | **~1.2%** |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~4.9%** | **~3.1%** | **~3.5%** | **~2.7%** |
-
-### Модули сложения (Addition)
-
-| Модуль | XC6SLX9 (11,440) | XC6SLX16 (18,224) | XC7S15 (16,000) | XC7A15T (20,800) |
-|--------|------------------|-------------------|-----------------|------------------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | **~2.3%** | **~1.4%** | **~1.6%** | **~1.3%** |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | **~2.3%** | **~1.4%** | **~1.6%** | **~1.3%** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | **~1.3%** | **~0.8%** | **~0.9%** | **~0.7%** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | **~1.3%** | **~0.8%** | **~0.9%** | **~0.7%** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | **~1.2%** | **~0.8%** | **~0.9%** | **~0.7%** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | **~1.2%** | **~0.8%** | **~0.9%** | **~0.7%** |
-
----
+| Модуль | XC6SLX9-2 (5,720) | XC7S15-1 (8,000) | XC7A15T-1 (10,400) |
+|--------|----------|----------|----------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **~1.4%** | **~1.0%** | **~0.8%** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **~1.5%** | **~1.1%** | **~0.8%** |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | N/A | N/A | N/A |
 
 ## Сравнение Latency и Fmax (оценка)
 
 ### Модули умножения (Multiplication)
 
-| Модуль | Latency | Fmax XC6SLX9 (-2) | Fmax XC6SLX16 (-2) | Fmax XC7S15-1 | Fmax XC7S15-2 | Fmax XC7A15T (-1) | Точность |
-|--------|---------|-------------------|--------------------|---------------|---------------|-------------------|----------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | 3 | ~160–175–200 MHz | ~160–175–200 MHz | ~180–205–240 MHz | ~200–225–260 MHz | ~200–230–260 MHz | truncation (RTZ) |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | 3 | ~140–155–180 MHz | ~140–155–180 MHz | ~160–180–210 MHz | ~180–200–230 MHz | ~180–210–240 MHz | IEEE 754 RNE |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | 4 | ~130–145–165 MHz | ~130–145–165 MHz | ~150–165–190 MHz | ~165–180–205 MHz | ~170–190–215 MHz | exact BF16→F32; RTZ for F32 subnormals |
+| Модуль | Latency | Fmax XC6SLX9-2 | Fmax XC7S15-1 | Fmax XC7A15T-1 | Точность |
+|----------|------------|------------|------------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | 3 | 131 MHz | 167 MHz | 167 MHz | truncation (RTZ); FTZ |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | 3 | 118 MHz | 150 MHz | 150 MHz | IEEE 754 RNE; FTZ |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | 4 | N/A MHz | N/A MHz | N/A MHz | exact; subnormals preserved |
+
+## Сравнение top-level модулей (LUTs)
 
 ### Комбинированные модули (Combined / FMA)
 
-| Модуль | Latency | Fmax XC6SLX9 (-2) | Fmax XC6SLX16 (-2) | Fmax XC7S15-1 | Fmax XC7S15-2 | Fmax XC7A15T (-1) | Точность |
-|--------|---------|-------------------|--------------------|---------------|---------------|-------------------|----------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 4 | ~75–100–130 MHz | ~75–100–130 MHz | ~95–125–155 MHz | ~110–140–175 MHz | ~115–145–180 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 8 | ~130–170–210 MHz | ~130–170–210 MHz | ~155–200–245 MHz | ~170–220–270 MHz | ~170–220–265 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN; 8-stage balanced pipeline (P1-P4 optimizations) |
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~942 | ~942 | ~942 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~944 | ~944 | ~944 |
+
+## Сравнение top-level модулей (FF)
+
+### Комбинированные модули (Combined / FMA)
+
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~243 | ~243 | ~243 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~555 | ~555 | ~555 |
+
+## Сравнение top-level модулей (% от доступных LUT6)
+
+### Комбинированные модули (Combined / FMA)
+
+| Модуль | XC6SLX9-2 (5,720) | XC7S15-1 (8,000) | XC7A15T-1 (10,400) |
+|--------|----------|----------|----------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~16.5%** | **~11.8%** | **~9.1%** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~16.5%** | **~11.8%** | **~9.1%** |
+
+## Сравнение Latency и Fmax (оценка)
+
+### Комбинированные модули (Combined / FMA)
+
+| Модуль | Latency | Fmax XC6SLX9-2 | Fmax XC7S15-1 | Fmax XC7A15T-1 | Точность |
+|----------|------------|------------|------------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 4 | 35 MHz | 45 MHz | 45 MHz | IEEE 754 RNE; subnormals preserved; fused BF16×BF16+FP32; single RNE |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 8 | 35 MHz | 45 MHz | 45 MHz | IEEE 754 RNE; subnormals preserved; fused BF16×BF16+FP32; single RNE |
+
+## Сравнение top-level модулей (LUTs)
 
 ### Модули сложения (Addition)
 
-| Модуль | Latency | Fmax XC6SLX9 (-2) | Fmax XC6SLX16 (-2) | Fmax XC7S15-1 | Fmax XC7S15-2 | Fmax XC7A15T (-1) | Точность |
-|--------|---------|-------------------|--------------------|---------------|---------------|-------------------|----------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | 4 | ~90–120–150 MHz | ~90–120–150 MHz | ~110–140–170 MHz | ~120–150–185 MHz | ~130–160–195 MHz | FP32+FP32→FP32; RTZ truncation; subnormals preserved |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | 4 | ~80–110–140 MHz | ~80–110–140 MHz | ~100–130–160 MHz | ~110–140–175 MHz | ~120–150–185 MHz | FP32+FP32→FP32; IEEE 754 RNE; subnormals preserved |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | 4 | ~110–140–180 MHz | ~110–140–180 MHz | ~135–170–220 MHz | ~150–190–240 MHz | ~160–200–250 MHz | FP16+FP16→FP16; RTZ truncation; subnormals preserved |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | 4 | ~100–130–165 MHz | ~100–130–165 MHz | ~125–155–205 MHz | ~140–175–220 MHz | ~150–185–230 MHz | FP16+FP16→FP16; IEEE 754 RNE; subnormals preserved |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | 4 | ~105–135–175 MHz | ~105–135–175 MHz | ~130–165–215 MHz | ~145–185–235 MHz | ~155–195–245 MHz | BF16+BF16→BF16; RTZ max finite; canonical NaN |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | 4 | ~95–125–160 MHz | ~95–125–160 MHz | ~120–150–200 MHz | ~135–170–215 MHz | ~145–180–225 MHz | BF16+BF16→BF16; IEEE 754 RNE; canonical NaN |
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~753 | ~753 | ~753 |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~788 | ~788 | ~788 |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~335 | ~335 | ~335 |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~357 | ~357 | ~357 |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~361 | ~361 | ~361 |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~404 | ~404 | ~404 |
 
----
+## Сравнение top-level модулей (FF)
+
+### Модули сложения (Addition)
+
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~257 | ~257 | ~257 |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~257 | ~257 | ~257 |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~141 | ~141 | ~141 |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~141 | ~141 | ~141 |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~114 | ~114 | ~114 |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~114 | ~114 | ~114 |
+
+## Сравнение top-level модулей (% от доступных LUT6)
+
+### Модули сложения (Addition)
+
+| Модуль | XC6SLX9-2 (5,720) | XC7S15-1 (8,000) | XC7A15T-1 (10,400) |
+|--------|----------|----------|----------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | **~13.2%** | **~9.4%** | **~7.2%** |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | **~13.8%** | **~9.8%** | **~7.6%** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | **~5.9%** | **~4.2%** | **~3.2%** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | **~6.2%** | **~4.5%** | **~3.4%** |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | **~6.3%** | **~4.5%** | **~3.5%** |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | **~7.1%** | **~5.1%** | **~3.9%** |
+
+## Сравнение Latency и Fmax (оценка)
+
+### Модули сложения (Addition)
+
+| Модуль | Latency | Fmax XC6SLX9-2 | Fmax XC7S15-1 | Fmax XC7A15T-1 | Точность |
+|----------|------------|------------|------------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | 4 | 74 MHz | 95 MHz | 95 MHz | truncation (RTZ); subnormals preserved |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | 4 | 57 MHz | 72 MHz | 72 MHz | IEEE 754 RNE; subnormals preserved |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | 4 | 79 MHz | 101 MHz | 101 MHz | truncation (RTZ); subnormals preserved |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | 4 | 70 MHz | 89 MHz | 89 MHz | IEEE 754 RNE; subnormals preserved |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | 4 | 79 MHz | 101 MHz | 101 MHz | truncation (RTZ); subnormals preserved |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | 4 | 70 MHz | 89 MHz | 89 MHz | IEEE 754 RNE; subnormals preserved |
 
 ## Рабочая частота Fmax (typ), MHz
 
 ### Модули умножения (Multiplication)
 
-| Модуль | XC6SLX9-2 | XC6SLX16-2 | XC7S15-1 | XC7S15-2 | XC7A15T-1 |
-|--------|-----------|------------|----------|----------|-----------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **~175** | **~175** | **~205** | **~225** | **~230** |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **~155** | **~155** | **~180** | **~200** | **~210** |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **~145** | **~145** | **~165** | **~180** | **~190** |
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **131** | **167** | **167** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **118** | **150** | **150** |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **N/A** | **N/A** | **N/A** |
 
 ### Комбинированные модули (Combined / FMA)
 
-| Модуль | XC6SLX9-2 | XC6SLX16-2 | XC7S15-1 | XC7S15-2 | XC7A15T-1 |
-|--------|-----------|------------|----------|----------|-----------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~100** | **~100** | **~125** | **~140** | **~145** |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~170** | **~170** | **~200** | **~220** | **~220** |
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **35** | **45** | **45** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **35** | **45** | **45** |
 
 ### Модули сложения (Addition)
 
-| Модуль | XC6SLX9-2 | XC6SLX16-2 | XC7S15-1 | XC7S15-2 | XC7A15T-1 |
-|--------|-----------|------------|----------|----------|-----------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | **~120** | **~120** | **~140** | **~150** | **~160** |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | **~110** | **~110** | **~130** | **~140** | **~150** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | **~140** | **~140** | **~170** | **~190** | **~200** |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | **~130** | **~130** | **~155** | **~175** | **~185** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | **~135** | **~135** | **~165** | **~185** | **~195** |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | **~125** | **~125** | **~150** | **~170** | **~180** |
+| Модуль | XC6SLX9-2 | XC7S15-1 | XC7A15T-1 |
+|--------|----------|----------|----------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | **74** | **95** | **95** |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | **57** | **72** | **72** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | **79** | **101** | **101** |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | **70** | **89** | **89** |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | **79** | **101** | **101** |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | **70** | **89** | **89** |
 
-> Значения `typ` — середины оценочных диапазонов из таблицы выше (ручная оценка ±20–25%, без реального синтеза).
+> Значения `typ` — середины оценочных диапазонов из синтеза Yosys (логическая глубина, ±25%).
+> Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.
 
 ---
 
 ## Краткие выводы
 
-1. **Все модули компактны, но FMA — самый крупный.** Наименьшее устройство (XC6SLX9): самый прожорливый модуль (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`) занимает **~16.0% LUT6 и ~4.9% FF** (Yosys: 916 LUT, 562 FF); lat4 вариант — **~16.0% LUT6 и ~2.1% FF** (915 LUT, 246 FF); остальные модули укладываются в ~2.8–7.5% LUT6 и ~1.2–2.3% FF.
+1. **Все модули компактны.** Наименьшее устройство (XC6SLX9): самый прожорливый модуль (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`) занимает **~16.5% LUT6** (944 LUT); остальные модули укладываются в ~2.8–16.5% LUT6.
 
-2. **RNE дороже RTZ на ~35 LUTs (~8%).** Это стоимость IEEE 754 округления "до ближайшего чётного" (G/R/S биты, инкремент мантиссы, корректировка экспоненты).
+2. **RNE дороже RTZ на ~30–50 LUTs (~8–17%).** Это стоимость IEEE 754 округления "до ближайшего чётного" (G/R/S биты, инкремент мантиссы, корректировка экспоненты).
 
-3. **F32-модуль эффективнее по LUT, но потребляет больше FF.** `vhfastmulb16_mul_bf16_bf16_fp32_lat4` использует комбинационный `mul4x4_comb` на первой стадии (экономия LUT) и глубокий 4-стадийный конвейер (больше FF). Latency = 4 такта вместо 3.
+3. **FP32-модуль эффективнее по LUT, но потребляет больше FF.** `vhfastmulb16_mul_bf16_bf16_fp32_lat4` использует комбинационный `mul4x4_comb` на первой стадии (экономия LUT) и глубокий 4-стадийный конвейер (больше FF). Latency = 4 такта вместо 3.
 
-4. **Ресурсы 7-й серии (Spartan-7, Artix-7) ниже, чем Spartan-6** в процентном соотношении: загрузка одинакова (~392 LUT), а устройства больше.
+4. **Ресурсы 7-й серии (Spartan-7, Artix-7) ниже в процентном соотношении:** загрузка по LUT одинакова, а устройства больше.
 
-5. **Маржа для роста.** На всех целевых FPGA остаётся не менее **~84% свободных LUT6** для остальной логики системы (худший случай — FMA lat8 на XC6SLX9: ~16.0%).
+5. **Маржа для роста.** На всех целевых FPGA остаётся не менее **~84% свободных LUT6** для остальной логики системы.
 
-6. **Fmax верифицирован через Yosys синтез.** Ценности Fmax основаны на синтезе в Yosys (abc9, synth_xilinx) с оценкой глубины логики. **Важно:** конвейер FMA lat8 **сбалансирован** после P1-P4 оптимизаций: все 8 стадий в диапазоне 7-11 LUT-уровней. Ожидаемый Fmax: **~170 MHz на XC6SLX9-2, ~200 MHz на XC7S15-1, ~220 MHz на XC7A15T-1**. Для lat4 (4 стадии) Fmax ниже: **~100 MHz на XC6SLX9-2** из-за тяжелой S2/S3. Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.
+6. **Fmax верифицирован через Yosys синтез.** Ценности Fmax основаны на синтезе в Yosys (abc9, synth_xilinx) с оценкой глубины логики. Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.
 
-7. **Категорический запрет на использование DSP блоков.** Все модули библиотеки реализованы **исключительно в чистой логике LUT/FF**. Использование DSP48A1, DSP48E1 или любых других DSP блоков **запрещено** для обеспечения переносимости между семействами FPGA (Spartan-6, Spartan-7, Artix-7 и др.), избежания привязки к конкретному производителю, единой методологии проектирования и прозрачности RTL-кода. Подробности см. в `rules/dsp_prohibition.md`.
+7. **Категорический запрет на использование DSP блоков.** Все модули библиотеки реализованы **исключительно в чистой логике LUT/FF**. Использование DSP48A1, DSP48E1 или любых других DSP блоков **запрещено**. Проверка: `dsp48 = 0` во всех отчётах. Подробности см. в `rules/dsp_prohibition.md`.
 
-8. **Новые FP32 аддеры (`add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4`) после рефакторинга.** Latency = 4 такта, полный конвейер, subnormal операнды не флашатся в ноль (нет FTZ). Архитектура унифицирована: hi/lo операнды выбираются на S1, вычитание без разворота операндов, sticky-бит складывается в LSB мантиссы на S1, 9-битная знаковая экспонента. RNE вариант тяжелее RTZ на ~+50 LUT (~+17%) только за счёт логики округления (G/R/S, инкремент significand, tie-to-even). FP32 сложение с выравниванием мантисс (баррел-шейфер 27 бит) и LZD требует больше LUT, чем BF16→F32 конвертация (`vhfastmulb16_mul_bf16_bf16_fp32_lat4`, ~308 LUT), но остаётся в рамках **~6% LUT6** даже на наименьшем устройстве (XC6SLX9).
+8. **Автоматизация:** Статистика собрана скриптом `scripts/collect_stats.py`, документация сгенерирована `scripts/generate_stat_docs.py`. Исходные данные в `build/stat/*.json`.
 
-9. **Новые FP16 аддеры (`add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4`).** Latency = 4 такта, полный конвейер, subnormal операнды не флашатся в ноль (нет FTZ). Архитектура аналогична FP32 вариантам, но с половинной разрядностью: 5-битная экспонента, 10-битная мантисса, 14-битная расширенная мантисса, 15-битный raw результат, 6-битная знаковая экспонента. RTZ вариант ~160 LUT / ~151 FF, RNE вариант ~190 LUT / ~151 FF (+30 LUT за логику округления). FP16 аддеры на ~40% компактнее FP32 (`add_fp32_fp32_fp32_rtz_lat4` ~290 LUT) и работают быстрее на ~20–25% за счёт сокращения цепочек переноса и LZD. Оба модуля занимают менее 3.5% LUT6 даже на XC6SLX9.
+---
 
-10. **Новые BF16 аддеры (`add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4`).** Latency = 4 такта, полный конвейер, subnormal операнды не флашатся в ноль. Архитектура унифицирована с FP16-вариантами: 14-битная расширенная мантисса, 15-битный raw результат, 4-битный LZD, но с 8-битной экспонентой и 9-битной знаковой экспонентой. RTZ-вариант ~165 LUT / ~140 FF, RNE-вариант ~195 LUT / ~140 FF (+30 LUT за RNE-округление). Canonical NaN `0x7FC0` и RTZ overflow в max finite `0x7F7F` уменьшают число регистров по сравнению с FP16/FP32-аддерами. Оценки ручные (±20–25%), требуют синтеза для точного Fmax.
-
-11. **FMA `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` — самый крупный модуль библиотеки.** Latency = 4 такта, fused-семантика: единственное RNE-округление применяется к `SUMM + VALA × VALB`, промежуточное произведение BF16 × BF16 точное (16 бит) и не округляется до Inf. **~915 LUT / 246 FF** (16.0% LUT6 и 2.1% FF на XC6SLX9; 8.8% и 1.2% на XC7A15T). Вариант с latency 8 (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`) использует **сбалансированный 8-стадийный конвейер** (P1-P4 оптимизации): **~916 LUT / 562 FF** (16.0% LUT6 и 4.9% FF на XC6SLX9), **Fmax typ ~170 MHz на Spartan-6 (-2), ~200 MHz на Spartan-7 (-1), ~220 MHz на Artix-7 (-1)**. Архитектура: CARRY4-вычитатели для exp_pre/grs_shift, per-stage CE, прямой exp_diff без mux, deferred mantissa compare, LZD split (S6/S7). DSP блоки не применяются, BRAM не используется. **Баг в exp_pre (префиксная сеть span=7 < 11 бит) исправлен в rev 0.0.7opt.**
+*Последнее обновление: 2026-11-14T07:12:42.362446Z*
+*Инструменты: Yosys/YoWASP, wasmtime*
