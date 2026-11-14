@@ -26,11 +26,15 @@ from typing import Dict, List, Optional, Any
 
 # Import module configuration
 sys.path.insert(0, str(Path(__file__).parent))
-from modules_config import MODULES, FAMILIES, TOOL_VERSIONS
+from modules_config import MODULES, SUBMODULES, FAMILIES, TOOL_VERSIONS
 
 ROOT = Path(__file__).parent.parent
 BUILD_STAT_DIR = ROOT / "build" / "stat"
 BUILD_STAT_DIR.mkdir(parents=True, exist_ok=True)
+BUILD_STAT_OTHERS_DIR = ROOT / "build" / "stat_others"
+
+# Set in main(); workers (forked) inherit it
+OUTPUT_DIR = BUILD_STAT_DIR
 
 # Single module synthesis script (run as subprocess)
 # NOTE: synthesis stops before ABC9 (map_ffs) because YoWASP WASM cannot run the
@@ -245,6 +249,22 @@ def get_critical_path_hint(module: Dict) -> str:
     """Return a hint about the critical path for the module."""
     name = module["name"]
 
+    exact_hints = {
+        "vhfastmulb16_mul4x4": "16 частичных произведений (AND) → CSA tree (2 уровня) → 8-битный CPA (CARRY4) → выходной регистр",
+        "vhfastmulb16_mul4x4_lat2": "CSA tree → 8-битный CPA (CARRY4) → выходной регистр (стадия 2)",
+        "vhfastmulb16_mul4x4_comb": "16 частичных произведений (AND) → CSA tree (2 уровня) → 8-битный CPA (CARRY4) → комбинационный выход",
+        "vhfastmulb16_mul_u8_u8_u16_lat2": "4× mul4x4 (CSA) → 2 уровня CSA → 16-битный CPA (CARRY4) → выходной регистр",
+        "vhfastmulb16_mul_u8_u8_u16_lat3": "4× mul4x4_lat2 (2 стадии) → CSA tree → 16-битный CPA → выходной регистр (стадия 3)",
+        "vhfastmulb16_add8x8_lat2": "9-битный сумматор + 9-битный вычитатель (константа 127) → CARRY4 → выходной регистр",
+        "vhfastmulb16_sign": "XOR (sign) → signc_lat1 → signc_lat2 → signc_lat3 (en, синхронный reset)",
+        "vhfastmulb16_flags_lat1": "NaN/Inf/Zero классификация → регистр (латентность 1)",
+        "vhfastmulb16_flags_lat2": "flags_lat1 → регистр (латентность 2)",
+        "vhfastmulb16_except_lat2": "flags_lat1 ×2 → классификация NaN/Inf/Zero → выбор NaN payload / флагов → выходной регистр (латентность 2)",
+        "vhfastmulb16_except_lat3": "flags_lat2 ×2 → классификация NaN/Inf/Zero → выбор NaN payload / флагов → выходной регистр (латентность 3)",
+    }
+    if name in exact_hints:
+        return exact_hints[name]
+
     if "muladd" in name and "lat4" in name:
         return "p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3"
     elif "muladd" in name and "lat8" in name:
@@ -287,7 +307,7 @@ def get_git_commit() -> str:
 
 def save_result(result: Dict, module_name: str, family: str):
     """Save result to JSON file."""
-    filename = BUILD_STAT_DIR / f"{module_name}_{family}.json"
+    filename = OUTPUT_DIR / f"{module_name}_{family}.json"
     with open(filename, "w") as f:
         json.dump(result, f, indent=2)
     return filename
@@ -306,49 +326,21 @@ def collect_one(args: tuple) -> Dict:
     return result
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Collect synthesis statistics for all modules")
-    parser.add_argument("--module", help="Collect only for specific module")
-    parser.add_argument("--family", help="Collect only for specific family (xc6s, xc7s, xc7a)")
-    parser.add_argument("--jobs", "-j", type=int, default=1, help="Parallel jobs (default: 1)")
-    parser.add_argument("--list", action="store_true", help="List modules and families")
-    args = parser.parse_args()
+def collect_group(modules: List[Dict], families: List[str], jobs: int, out_dir: Path, label: str):
+    """Collect statistics for one group of modules into out_dir."""
+    global OUTPUT_DIR
+    OUTPUT_DIR = out_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.list:
-        print("Modules:")
-        for m in MODULES:
-            print(f"  {m['name']} (category: {m['category']}, latency: {m['latency']}, rounding: {m['rounding']})")
-        print("\nFamilies:")
-        for fid, finfo in FAMILIES.items():
-            print(f"  {fid}: {finfo['device']} ({finfo['description']})")
-        return
-
-    # Filter modules/families
-    modules = MODULES
-    if args.module:
-        modules = [m for m in MODULES if m["name"] == args.module]
-        if not modules:
-            print(f"ERROR: Module '{args.module}' not found")
-            sys.exit(1)
-
-    families = list(FAMILIES.keys())
-    if args.family:
-        if args.family not in FAMILIES:
-            print(f"ERROR: Family '{args.family}' not found")
-            sys.exit(1)
-        families = [args.family]
-
-    # Prepare work items
     work_items = [(m, f) for m in modules for f in families]
-    print(f"Collecting statistics for {len(modules)} module(s) x {len(families)} family(ies) = {len(work_items)} runs")
-    print(f"Output directory: {BUILD_STAT_DIR}")
-    print(f"Parallel jobs: {args.jobs}")
+    print(f"[{label}] Collecting statistics for {len(modules)} module(s) x {len(families)} family(ies) = {len(work_items)} runs")
+    print(f"Output directory: {out_dir}")
+    print(f"Parallel jobs: {jobs}")
     print()
 
-    # Run collection
     results = []
-    if args.jobs > 1:
-        with ProcessPoolExecutor(max_workers=args.jobs) as executor:
+    if jobs > 1:
+        with ProcessPoolExecutor(max_workers=jobs) as executor:
             futures = {executor.submit(collect_one, item): item for item in work_items}
             for future in as_completed(futures):
                 results.append(future.result())
@@ -356,7 +348,6 @@ def main():
         for item in work_items:
             results.append(collect_one(item))
 
-    # Summary
     print("\n=== SUMMARY ===")
     ok = sum(1 for r in results if "error" not in r)
     failed = len(results) - ok
@@ -368,7 +359,62 @@ def main():
             if "error" in r:
                 print(f"  {r['module']} / {r['family']}: {r['error']}")
 
-    print(f"\nResults saved to: {BUILD_STAT_DIR}")
+    print(f"\nResults saved to: {out_dir}")
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Collect synthesis statistics for all modules")
+    parser.add_argument("--module", help="Collect only for specific module")
+    parser.add_argument("--family", help="Collect only for specific family (xc6s, xc7s, xc7a)")
+    parser.add_argument("--jobs", "-j", type=int, default=1, help="Parallel jobs (default: 1)")
+    parser.add_argument("--list", action="store_true", help="List modules and families")
+    parser.add_argument("--submodules", action="store_true", help="Collect bottom-up submodules (docs/stat/stat_others_*.md)")
+    parser.add_argument("--all", action="store_true", help="Collect both top-level modules and submodules")
+    args = parser.parse_args()
+
+    if args.list:
+        print("Top-level modules:")
+        for m in MODULES:
+            print(f"  {m['name']} (category: {m['category']}, latency: {m['latency']}, rounding: {m['rounding']})")
+        print("\nSubmodules:")
+        for m in SUBMODULES:
+            print(f"  {m['name']} (category: {m['category']}, latency: {m['latency']}, rounding: {m['rounding']})")
+        print("\nFamilies:")
+        for fid, finfo in FAMILIES.items():
+            print(f"  {fid}: {finfo['device']} ({finfo['description']})")
+        return
+
+    # Filter families
+    families = list(FAMILIES.keys())
+    if args.family:
+        if args.family not in FAMILIES:
+            print(f"ERROR: Family '{args.family}' not found")
+            sys.exit(1)
+        families = [args.family]
+
+    # Select groups to collect
+    if args.all:
+        groups = [("top", MODULES, BUILD_STAT_DIR),
+                  ("submodules", SUBMODULES, BUILD_STAT_OTHERS_DIR)]
+    elif args.submodules:
+        groups = [("submodules", SUBMODULES, BUILD_STAT_OTHERS_DIR)]
+    else:
+        groups = [("top", MODULES, BUILD_STAT_DIR)]
+
+    collected_any = False
+    for label, module_list, out_dir in groups:
+        modules = module_list
+        if args.module:
+            modules = [m for m in modules if m["name"] == args.module]
+        if not modules:
+            continue
+        collected_any = True
+        collect_group(modules, families, args.jobs, out_dir, label)
+
+    if not collected_any:
+        print(f"ERROR: Module '{args.module}' not found")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

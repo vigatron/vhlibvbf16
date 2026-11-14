@@ -516,5 +516,5 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 ---
 
-*Сгенерировано автоматически: 2026-11-14T07:41:44.719414Z*
+*Сгенерировано автоматически: 2026-11-14T07:55:40.230032Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
