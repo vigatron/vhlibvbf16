@@ -19,7 +19,7 @@ import subprocess
 import argparse
 import time
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional, Any
@@ -33,13 +33,19 @@ BUILD_STAT_DIR = ROOT / "build" / "stat"
 BUILD_STAT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Single module synthesis script (run as subprocess)
+# NOTE: synthesis stops before ABC9 (map_ffs) because YoWASP WASM cannot run the
+# external yosys-abc binary. ABC9 is what would map gates onto LUT1-6 cells, so
+# all LUT figures are estimates derived from the gate count (see lut6_est).
+# "flatten" is used so that counts cover the whole hierarchy (top + submodules).
+# "write_rtlil" on stdout is used instead of `stat` because `stat` crashes the
+# WASM runtime for some modules (e.g. vhfastmulb16_mul_bf16_bf16_fp32_lat4).
 SYNTH_SCRIPT = '''
 import sys
 sys.path.insert(0, "{pylibs}")
 from yowasp_yosys import run_yosys
 
 module_name = "{module_name}"
-family = "{family}"
+family = "{synth_family}"
 sources = {sources}
 
 read_verilog_cmds = "\\n".join(f"read_verilog {{src}}" for src in sources)
@@ -47,8 +53,9 @@ read_verilog_cmds = "\\n".join(f"read_verilog {{src}}" for src in sources)
 yosys_script = f"""
 {{read_verilog_cmds}}
 hierarchy -top {{module_name}}
+flatten
 synth_xilinx -family {{family}} -top {{module_name}} -run begin:map_ffs
-stat -top {{module_name}}
+write_rtlil
 """
 
 result = run_yosys(["-p", yosys_script])
@@ -56,30 +63,48 @@ sys.exit(result)
 '''
 
 
-def parse_stat_output(stdout: str, module_name: str) -> Dict[str, int]:
-    """Parse Yosys stat text output to extract cell counts."""
-    cell_counts = {}
+GATE_CELL_TYPES = [
+    "$_AND_", "$_ANDNOT_", "$_NAND_",
+    "$_OR_", "$_NOR_", "$_ORNOT_",
+    "$_XOR_", "$_XNOR_",
+    "$_NOT_",
+    "$_MUX_", "$_NMUX_",
+    "$_AOI_", "$_OAI_",
+]
 
-    lines = stdout.split('\n')
-    in_module = False
+FF_CELL_RE = re.compile(
+    r'^(\$_DFF|\$_SDFF|\$_DFFE|\$_SDFFE|\$sdff|\$sdffe'
+    r'|FDCE|FDRE|FDPE|FDSE|LDCE|LDPE)'
+)
 
-    for line in lines:
-        # Check for module header
-        if f"=== {module_name} ===" in line:
-            in_module = True
+
+def parse_rtlil_top_cells(stdout: str, top_name: str) -> Dict[str, int]:
+    """Parse Yosys RTLIL dump (stdout) and count cells in the top module.
+
+    After `flatten` the top module contains the whole design logic; library
+    primitive bodies (e.g. \\IBUF, \\CARRY4 with their $specify cells) live in
+    separate modules and are skipped.
+    """
+    cell_counts: Dict[str, int] = {}
+    in_top = False
+
+    for line in stdout.split('\n'):
+        module_match = re.match(r'^module\s+(\\?\S+)', line)
+        if module_match:
+            in_top = module_match.group(1).lstrip('\\') == top_name
             continue
 
-        # Check for next module header (end of our module section)
-        if in_module and line.startswith("==="):
+        if in_top and line.rstrip() == 'end':
             break
 
-        if in_module:
-            # Parse cell type lines: "       COUNT   CELL_TYPE"
-            match = re.match(r'^\s+(\d+)\s+(\S+)$', line)
-            if match:
-                count = int(match.group(1))
-                cell_type = match.group(2)
-                cell_counts[cell_type] = count
+        if in_top:
+            cell_match = re.match(r'^\s+cell\s+(\\?\S+)', line)
+            if cell_match:
+                cell_type = cell_match.group(1).lstrip('\\')
+                if cell_type == '$scopeinfo':
+                    # yosys annotation node, not a hardware cell
+                    continue
+                cell_counts[cell_type] = cell_counts.get(cell_type, 0) + 1
 
     return cell_counts
 
@@ -95,7 +120,7 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
     script = SYNTH_SCRIPT.format(
         pylibs=pylibs_path,
         module_name=module_name,
-        family=family,
+        synth_family=family_info.get("synth_family", family),
         sources=sources
     )
 
@@ -129,56 +154,37 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
 
     
 
-    # Parse stat text output
-    cell_counts = parse_stat_output(stdout, module_name)
+    # Parse RTLIL dump (whole design, top module after flatten)
+    cell_counts = parse_rtlil_top_cells(stdout, module_name)
 
     if not cell_counts:
         return {
             "module": module_name,
             "family": family,
-            "error": "Failed to parse stat output",
+            "error": "Failed to parse RTLIL output",
             "raw_output": stdout[-3000:],
             "stderr": stderr[-1000:],
             "returncode": returncode,
             "elapsed_sec": elapsed,
         }
 
-    # Calculate logic cells
-    logic_cell_types = [
-        "LUT1", "LUT2", "LUT3", "LUT4", "LUT5", "LUT6", "LUT6_2",
-        "MUXCY", "XORCY", "MUXF7", "MUXF8", "MUXF78",
-        "CARRY4", "CARRY8",
-        "$_AND_", "$_OR_", "$_XOR_", "$_NOT_", "$_NAND_", "$_NOR_", "$_XNOR_",
-        "$_MUX_", "$_NMUX_", "$_AOI_", "$_OAI_",
-        "FDRE", "FDSE", "FDCE", "FDPE", "LDCE", "LDPE",
-        "$_DFF_", "$_DFFE_", "$_SDFF_", "$_SDFFE_", "$_DFF_P_", "$_DFF_N_",
-        "RAM32M", "RAM64M", "RAM128X1D", "RAM256X1D",
-        "FIFO18E1", "FIFO36E1", "BRAM",
-        "$lut", "$mux", "$fa", "$alu", "$macc",
-        "$alu", "$macc_v2",
-        "$and", "$or", "$xor", "$not", "$eq", "$ne", "$logic_and", "$logic_or", "$logic_not",
-        "$reduce_and", "$reduce_or",
-        "$shl", "$shr", "$shiftx",
-        "$sdff", "$sdffe",
-    ]
-    logic_cells = sum(cell_counts.get(t, 0) for t in logic_cell_types)
+    logic_cells = sum(cell_counts.values())
 
-    # LUT6 estimation
-    lut6_est = logic_cells / 2.5
+    # Gates (logic cells that would be packed into LUTs); excludes CARRY4,
+    # flip-flops and IO buffers on purpose.
+    gates = sum(cell_counts.get(t, 0) for t in GATE_CELL_TYPES)
+
+    # LUT6 estimation (rough, pre-ABC9 gate count / 2.5)
+    lut6_est = gates / 2.5
 
     # Check for DSP usage
     dsp_count = cell_counts.get("DSP48A1", 0) + cell_counts.get("DSP48E1", 0) + \
                 cell_counts.get("DSP48E2", 0) + cell_counts.get("DSP58", 0) + \
                 cell_counts.get("$__MUL18X18", 0) + cell_counts.get("MUL18X18", 0)
 
-    # FF count
-    ff_count = cell_counts.get("FDRE", 0) + cell_counts.get("FDSE", 0) + \
-               cell_counts.get("FDCE", 0) + cell_counts.get("FDPE", 0) + \
-               cell_counts.get("$_DFFE_PP0P_", 0) + cell_counts.get("$_DFFE_NP0P_", 0) + \
-               cell_counts.get("$_DFFE_PP1P_", 0) + cell_counts.get("$_DFFE_NP1P_", 0) + \
-               cell_counts.get("$_SDFFE_PP0P_", 0) + cell_counts.get("$_SDFFE_NP0P_", 0) + \
-               cell_counts.get("$_SDFFE_PP1P_", 0) + cell_counts.get("$_SDFFE_NP1P_", 0) + \
-               cell_counts.get("$sdff", 0) + cell_counts.get("$sdffe", 0)
+    # FF count (all flip-flop cell variants, e.g. FDCE/FDRE, $_SDFFE_PP0P_, $_SDFF_PP0_)
+    ff_count = sum(count for cell_type, count in cell_counts.items()
+                   if FF_CELL_RE.match(cell_type))
 
     # CARRY4 count
     carry4 = cell_counts.get("CARRY4", 0)
@@ -193,20 +199,18 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
     iob = cell_counts.get("IBUF", 0) + cell_counts.get("OBUF", 0) + \
           cell_counts.get("IOBUF", 0) + cell_counts.get("OBUFT", 0)
 
-    # Estimate logic levels for Fmax
-    logic_levels_est = estimate_logic_levels(module, cell_counts)
-
-    # Fmax estimation based on logic levels
-    fmax_est = estimate_fmax(logic_levels_est, family)
+    # Fmax: hand-calibrated typical value (see modules_config.py)
+    fmax_est = module["fmax"][family]
 
     return {
         "module": module_name,
         "family": family,
         "device": family_info["device"],
         "tool": TOOL_VERSIONS,
-        "synth_options": f"synth_xilinx -family {family} -run begin:fine (pre-ABC9)",
+        "synth_options": f"synth_xilinx -family {family_info.get("synth_family", family)} -run begin:map_ffs; flatten; pre-ABC9 (YoWASP WASM cannot run yosys-abc)",
         "metrics": {
             "logic_cells": logic_cells,
+            "gates": gates,
             "lut6_est": round(lut6_est),
             "lut6_abc9": None,
             "ff": ff_count,
@@ -221,8 +225,8 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
         },
         "fmax": {
             "estimated_mhz": fmax_est,
-            "source": "logic_depth",
-            "logic_levels_max": logic_levels_est,
+            "source": "manual",
+            "logic_levels_max": None,
             "critical_path": get_critical_path_hint(module),
         },
         "latency": module["latency"],
@@ -230,54 +234,22 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
         "rounding": module["rounding"],
         "subnormal_handling": module["subnormal_handling"],
         "category": module["category"],
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "git_commit": get_git_commit(),
         "elapsed_sec": round(elapsed, 2),
     }
 
-
-def estimate_logic_levels(module: Dict, cell_counts: Dict) -> int:
-    """Rough estimation of max logic levels based on module category and cell counts."""
-    category = module["category"]
-    carry4 = cell_counts.get("CARRY4", 0)
-    lut6 = cell_counts.get("LUT6", 0) + cell_counts.get("LUT6_2", 0) * 2
-    muxf7 = cell_counts.get("MUXF7", 0)
-    muxf8 = cell_counts.get("MUXF8", 0)
-
-    if category == "multiplication":
-        base = 8 + (carry4 * 0.3) + (muxf7 * 0.45) + (muxf8 * 0.9)
-    elif category == "addition":
-        base = 10 + (carry4 * 0.3) + (lut6 * 0.02) + (muxf7 * 0.45)
-    elif category == "fma":
-        base = 12 + (carry4 * 0.3) + (lut6 * 0.015) + (muxf7 * 0.45) + (muxf8 * 0.9)
-    else:
-        base = 10
-
-    return max(5, int(base))
-
-
-def estimate_fmax(logic_levels: int, family: str) -> int:
-    """Estimate Fmax based on logic levels and FPGA family."""
-    timing = {
-        "xc6s": {"tcko": 0.57, "tlut": 0.35, "trouting_factor": 1.35, "tsetup": 0.46},
-        "xc7s": {"tcko": 0.45, "tlut": 0.28, "trouting_factor": 1.30, "tsetup": 0.38},
-        "xc7a": {"tcko": 0.42, "tlut": 0.25, "trouting_factor": 1.25, "tsetup": 0.35},
-    }
-    t = timing.get(family, timing["xc6s"])
-
-    t_logic = logic_levels * t["tlut"]
-    t_routing = t_logic * t["trouting_factor"]
-    t_clk = t["tcko"] + t_logic + t_routing + t["tsetup"]
-    fmax_mhz = 1000 / t_clk
-
-    return int(fmax_mhz)
 
 
 def get_critical_path_hint(module: Dict) -> str:
     """Return a hint about the critical path for the module."""
     name = module["name"]
 
-    if "mul_bf16_bf16_bf16" in name and "rtz" in name:
+    if "muladd" in name and "lat4" in name:
+        return "p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3"
+    elif "muladd" in name and "lat8" in name:
+        return "P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 subtractors, per-stage CE, deferred mantissa compare, LZD split S6/S7"
+    elif "mul_bf16_bf16_bf16" in name and "rtz" in name:
         return "mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux → output reg"
     elif "mul_bf16_bf16_bf16" in name and "rne" in name:
         return "mul4x4 (CSA) → CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp_norm (9-bit add) → c_next mux → output reg"
@@ -295,10 +267,6 @@ def get_critical_path_hint(module: Dict) -> str:
         return "barrel shifter alignment (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → carry fix-up → BF16 pack mux → output reg"
     elif "add_bf16" in name and "rne" in name:
         return "barrel shifter (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → normalization → RNE rounding → BF16 pack mux → output reg"
-    elif "muladd" in name and "lat4" in name:
-        return "p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3"
-    elif "muladd" in name and "lat8" in name:
-        return "P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 subtractors, per-stage CE, deferred mantissa compare, LZD split S6/S7"
     else:
         return "unknown"
 
