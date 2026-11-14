@@ -156,8 +156,13 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     wire [7:0] s_exp_eff = s_exp | {7'd0, s_exp_z};
     wire [23:0] s_man    = {~s_exp_z, s_frac};
 
-    // Leading-zero count of the SUMM significand (encoder only in S1;
-    // the normalization shift itself is placed in S2 to balance the stages).
+    // Product exponent base (k = 0): exp_p = S + k - 144 (internal scale).
+    // SUMM exponent base (before s_lz adjustment): exp_s = e_eff - 3 (internal scale).
+    wire [10:0] exp_p0 = {2'b00, exp_sum_raw} - 11'd144;
+    wire [10:0] exp_s0 = {3'b000, s_exp_eff} - 11'd3;
+
+    // Leading-zero count of the SUMM significand (encoder moved to S2
+    // to balance pipeline stages: S1 was ~10.5 levels, S2 was ~1.0).
     function [4:0] clz24;
         input [23:0] v;
         begin
@@ -188,13 +193,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             else            clz24 = 5'd24;
         end
     endfunction
-
-    wire [4:0]  s_lz = clz24(s_man);
-
-    // Product exponent base (k = 0): exp_p = S + k - 144 (internal scale).
-    // SUMM exponent: exp_s = e_eff - 3 - s_lz (internal scale).
-    wire [10:0] exp_p0 = {2'b00, exp_sum_raw} - 11'd144;
-    wire [10:0] exp_s0 = {3'b000, s_exp_eff} - 11'd3 - {6'd0, s_lz};
 
     // ---------------------------------------------------
     // Per-stage pipeline enable (clock enable of each stage)
@@ -274,7 +272,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     reg [10:0] exp_p_d1;
     reg [10:0] exp_s_d1;
     reg [23:0] s_man_d1;
-    reg [4:0]  s_lz_d1;
     reg        prod_sign_d1;
     reg        s_sign_d1;
     reg        prod_zero_d1;
@@ -291,7 +288,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             exp_p_d1    <= 11'd0;
             exp_s_d1    <= 11'd0;
             s_man_d1    <= 24'd0;
-            s_lz_d1     <= 5'd0;
             prod_sign_d1 <= 1'b0;
             s_sign_d1    <= 1'b0;
             prod_zero_d1 <= 1'b0;
@@ -306,7 +302,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             exp_p_d1    <= exp_p0;
             exp_s_d1    <= exp_s0;
             s_man_d1    <= s_man;
-            s_lz_d1     <= s_lz;
             prod_sign_d1 <= prod_sign;
             s_sign_d1    <= s_sign;
             prod_zero_d1 <= prod_zero;
@@ -317,7 +312,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     end
 
     // ============================================================
-    // STAGE S2: CSA-tree 2 levels + SUMM normalization shift
+    // STAGE S2: CSA-tree 2 levels + SUMM normalization shift + clz24
     //   Combinational during cycle N+1, captured at N+2 edge (CE = en_d1)
     // ============================================================
 
@@ -335,9 +330,14 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     wire [15:0] s2 = s1 ^ c1 ^ P3;
     wire [15:0] c2 = {g2[14:0], 1'b0};
 
-    // SUMM significand normalization (fast path is a plain bypass when
-    // the exponent is non-zero and s_lz = 0).
-    wire [23:0] s_man_n = s_man_d1 << s_lz_d1;
+    // SUMM leading-zero count (moved from S1 to balance pipeline)
+    wire [4:0]  s_lz = clz24(s_man_d1);
+
+    // SUMM significand normalization
+    wire [23:0] s_man_n = s_man_d1 << s_lz;
+
+    // SUMM exponent adjustment: exp_s = exp_s0 - s_lz
+    wire [10:0] exp_s_adj = exp_s_d1 - {6'd0, s_lz};
 
     // ============================================================
     // STAGE S2 registers (capture at N+2 edge, CE = en_d1)
@@ -347,6 +347,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
     reg [10:0] exp_p_d2;
     reg [10:0] exp_s_d2;
     reg [23:0] s_man_d2;
+    reg [4:0]  s_lz_d2;
     reg        prod_sign_d2;
     reg        s_sign_d2;
     reg        prod_zero_d2;
@@ -361,6 +362,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             exp_p_d2   <= 11'd0;
             exp_s_d2   <= 11'd0;
             s_man_d2   <= 24'd0;
+            s_lz_d2    <= 5'd0;
             prod_sign_d2 <= 1'b0;
             s_sign_d2    <= 1'b0;
             prod_zero_d2 <= 1'b0;
@@ -371,8 +373,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8 (
             s2_d2      <= s2;
             c2_d2      <= c2;
             exp_p_d2   <= exp_p_d1;
-            exp_s_d2   <= exp_s_d1;
+            exp_s_d2   <= exp_s_adj;
             s_man_d2   <= s_man_n;
+            s_lz_d2    <= s_lz;
             prod_sign_d2 <= prod_sign_d1;
             s_sign_d2    <= s_sign_d1;
             prod_zero_d2 <= prod_zero_d1;
