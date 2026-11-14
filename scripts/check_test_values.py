@@ -4,8 +4,8 @@
 @brief Validator for the BF16 x BF16 -> F32 test vector tables.
 
 Checks that the expected results stored in
-`testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json`
-and `testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md`
+`testvalues/mul/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json`
+and `testvalues/mul/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.md`
 match the value recomputed from the BF16 operands.
 
 Semantics being checked:
@@ -30,10 +30,10 @@ import sys
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TESTVALUES = os.path.join(BASE, "testvalues")
 JSON_PATH = os.path.join(
-    TESTVALUES, "test_values_mul_bf16_bf16_fp32",
+    TESTVALUES, "mul", "test_values_mul_bf16_bf16_fp32",
     "test_values_mul_bf16_bf16_fp32.json")
 MD_PATH = os.path.join(
-    TESTVALUES, "test_values_mul_bf16_bf16_fp32",
+    TESTVALUES, "mul", "test_values_mul_bf16_bf16_fp32",
     "test_values_mul_bf16_bf16_fp32.md")
 
 QNAN_BF16 = 0x7FC0
@@ -243,7 +243,12 @@ def main():
             print("  - " + e)
         return 1
     if "--quiet" not in sys.argv:
-        print("OK: %d vectors checked (%s, %s)" % (len(vectors), JSON_PATH, MD_PATH))
+        def _rel(p):
+            try:
+                return os.path.relpath(p, BASE)
+            except ValueError:
+                return p
+        print("OK: %d vectors checked (%s, %s)" % (len(vectors), _rel(JSON_PATH), _rel(MD_PATH)))
     return 0
 
 

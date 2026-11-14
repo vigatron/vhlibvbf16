@@ -3,7 +3,7 @@
 # checkvectors_add_fp16_fp16_fp16.py
 # Проверка тестовых векторов сложения FP16 (A + B = C)
 # Сравнивает вычисленные результаты RNE/RTZ с данными из
-# testvalues/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json
+# testvalues/add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json
 # =============================================================================
 
 import sys
@@ -202,7 +202,7 @@ def fp16_add(a16, b16):
     """
     @brief Выполняет сложение двух FP16 чисел A + B.
 
-    Соглашения DUT (см. testvalues/.../test_values_add_fp16_fp16_fp16.json):
+    Соглашения DUT (см. testvalues/add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json):
       * NaN на входе -> qNaN с знаком и полезной нагрузкой из операнда-НаN,
         quiet bit принудительно = 1;
       * Inf + (-Inf) -> qNaN со знаком и полезной нагрузкой из операнда B;
@@ -378,7 +378,7 @@ def main():
     default_json = os.path.join(
         project_root,
         'testvalues',
-        'test_values_add_fp16_fp16_fp16',
+        'add', 'test_values_add_fp16_fp16_fp16',
         'test_values_add_fp16_fp16_fp16.json'
     )
     json_path = args.json if args.json else default_json

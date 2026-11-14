@@ -3,7 +3,7 @@
 # checkvectors_mul_bf16_bf16_fp32.py
 # Проверка тестовых векторов умножения BF16 (A * B = F32)
 # Сравнивает вычисленные результаты (BF16 RNE + точный F32) с данными из
-# testvalues/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
+# testvalues/mul/test_values_mul_bf16_bf16_fp32/test_values_mul_bf16_bf16_fp32.json
 # =============================================================================
 
 import sys
@@ -358,7 +358,7 @@ def main():
     default_json = os.path.join(
         project_root,
         'testvalues',
-        'test_values_mul_bf16_bf16_fp32',
+        'mul', 'test_values_mul_bf16_bf16_fp32',
         'test_values_mul_bf16_bf16_fp32.json'
     )
     json_path = args.json if args.json else default_json

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Общий движок сборки и запуска тестбенчей (включая визуализацию в gtkwave).
-# Напрямую не запускается: подключается из tests/run_test_*.sh
+# Напрямую не запускается: подключается из scripts/*/run_test_*.sh
 #
 # Обёртка обязана задать до подключения:
 #   TB          - путь тестбенча относительно корня проекта
@@ -12,7 +12,9 @@
 #                 build/<NAME>.vvp, build/<NAME>.vcd, logs/<NAME>.log
 #                 по умолчанию - имя тестбенча без суффиксов .v и _tb
 #   GTKW_NAME   - базовое имя файла visual/<GTKW_NAME>.gtkw
-#                 по умолчанию - имя файла тестбенча без .v
+#                 по умолчанию - <категория>/<имя файла тестбенча без .v>,
+#                 категория выводится из подпапки TB (tests/add/... -> add);
+#                 для TB в корне tests/ - без префикса
 #   RESULT_MODE - критерий успеха (по умолчанию passed):
 #                   passed  - в логе должна быть строка "TEST PASSED"
 #                   no_fail - в логе должен быть "PASSED" и не быть "x FAILED"
@@ -34,7 +36,14 @@ if [ -z "${NAME:-}" ] && [ -n "${TB:-}" ]; then
     NAME="${NAME%_tb}"
 fi
 if [ -z "${GTKW_NAME:-}" ] && [ -n "${TB:-}" ]; then
-    GTKW_NAME="$(basename "$TB" .v)"
+    _tb_dir="$(dirname "$TB")"
+    _tb_cat="${_tb_dir#tests/}"   # tests/add/x -> add ; для корня tests/ вернёт как есть
+    if [ "$_tb_cat" != "$_tb_dir" ] && [ "$_tb_cat" != "." ]; then
+        GTKW_NAME="$_tb_cat/$(basename "$TB" .v)"
+    else
+        GTKW_NAME="$(basename "$TB" .v)"
+    fi
+    unset _tb_dir _tb_cat
 fi
 RESULT_MODE="${RESULT_MODE:-passed}"
 

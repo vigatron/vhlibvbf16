@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Тестбенч vhfastmulb16_except_lat3_tb
+# См. scripts/tb_lib.sh
+SRC=(
+    src/aux/vhfastmulb16_except_lat3.v
+    src/aux/vhfastmulb16_flags_lat2.v
+)
+TB=tests/aux/vhfastmulb16_except_lat3_tb.v
+
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/tb_lib.sh"
+tb_main "$@"

@@ -17,13 +17,13 @@ MODULES = [
     {
         "name": "vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3",
         "sources": [
-            "src/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v",
-            "src/vhfastmulb16_add8x8_lat2.v",
-            "src/vhfastmulb16_mul_u8_u8_u16_lat2.v",
-            "src/vhfastmulb16_mul4x4.v",
-            "src/vhfastmulb16_flags_lat1.v",
-            "src/vhfastmulb16_sign.v",
-            "src/vhfastmulb16_except_lat2.v",
+            "src/mul/vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3.v",
+            "src/aux/vhfastmulb16_add8x8_lat2.v",
+            "src/aux/vhfastmulb16_mul_u8_u8_u16_lat2.v",
+            "src/aux/vhfastmulb16_mul4x4.v",
+            "src/aux/vhfastmulb16_flags_lat1.v",
+            "src/aux/vhfastmulb16_sign.v",
+            "src/aux/vhfastmulb16_except_lat2.v",
         ],
         "latency": 3,
         "rounding": "RTZ",
@@ -34,13 +34,13 @@ MODULES = [
     {
         "name": "vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3",
         "sources": [
-            "src/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v",
-            "src/vhfastmulb16_add8x8_lat2.v",
-            "src/vhfastmulb16_mul_u8_u8_u16_lat2.v",
-            "src/vhfastmulb16_mul4x4.v",
-            "src/vhfastmulb16_flags_lat1.v",
-            "src/vhfastmulb16_sign.v",
-            "src/vhfastmulb16_except_lat2.v",
+            "src/mul/vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3.v",
+            "src/aux/vhfastmulb16_add8x8_lat2.v",
+            "src/aux/vhfastmulb16_mul_u8_u8_u16_lat2.v",
+            "src/aux/vhfastmulb16_mul4x4.v",
+            "src/aux/vhfastmulb16_flags_lat1.v",
+            "src/aux/vhfastmulb16_sign.v",
+            "src/aux/vhfastmulb16_except_lat2.v",
         ],
         "latency": 3,
         "rounding": "RNE",
@@ -51,9 +51,9 @@ MODULES = [
     {
         "name": "vhfastmulb16_mul_bf16_bf16_fp32_lat4",
         "sources": [
-            "src/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v",
-            "src/vhfastmulb16_mul4x4_comb.v",
-            "src/vhfastmulb16_sign.v",
+            "src/mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
+            "src/aux/vhfastmulb16_sign.v",
         ],
         "latency": 4,
         "rounding": "exact",
@@ -64,7 +64,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4",
         "sources": [
-            "src/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v",
+            "src/add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v",
         ],
         "latency": 4,
         "rounding": "RTZ",
@@ -75,7 +75,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_fp32_fp32_fp32_rne_lat4",
         "sources": [
-            "src/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v",
+            "src/add/vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v",
         ],
         "latency": 4,
         "rounding": "RNE",
@@ -86,7 +86,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4",
         "sources": [
-            "src/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v",
+            "src/add/vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v",
         ],
         "latency": 4,
         "rounding": "RTZ",
@@ -97,7 +97,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_fp16_fp16_fp16_rne_lat4",
         "sources": [
-            "src/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v",
+            "src/add/vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v",
         ],
         "latency": 4,
         "rounding": "RNE",
@@ -108,7 +108,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4",
         "sources": [
-            "src/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v",
+            "src/add/vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v",
         ],
         "latency": 4,
         "rounding": "RTZ",
@@ -119,7 +119,7 @@ MODULES = [
     {
         "name": "vhfastmulb16_add_bf16_bf16_bf16_rne_lat4",
         "sources": [
-            "src/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v",
+            "src/add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v",
         ],
         "latency": 4,
         "rounding": "RNE",
@@ -131,7 +131,7 @@ MODULES = [
         "name": "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4",
         "sources": [
             "src/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v",
-            "src/vhfastmulb16_mul4x4_comb.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
         ],
         "latency": 4,
         "rounding": "RNE",
@@ -143,7 +143,7 @@ MODULES = [
         "name": "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8",
         "sources": [
             "src/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v",
-            "src/vhfastmulb16_mul4x4_comb.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
         ],
         "latency": 8,
         "rounding": "RNE",
@@ -158,7 +158,7 @@ MODULES = [
 SUBMODULES = [
     {
         "name": "vhfastmulb16_mul4x4",
-        "sources": ["src/vhfastmulb16_mul4x4.v"],
+        "sources": ["src/aux/vhfastmulb16_mul4x4.v"],
         "latency": 1,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -167,7 +167,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_mul4x4_lat2",
-        "sources": ["src/vhfastmulb16_mul4x4_lat2.v"],
+        "sources": ["src/aux/vhfastmulb16_mul4x4_lat2.v"],
         "latency": 2,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -176,7 +176,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_mul4x4_comb",
-        "sources": ["src/vhfastmulb16_mul4x4_comb.v"],
+        "sources": ["src/aux/vhfastmulb16_mul4x4_comb.v"],
         "latency": 0,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -185,7 +185,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_mul_u8_u8_u16_lat2",
-        "sources": ["src/vhfastmulb16_mul_u8_u8_u16_lat2.v", "src/vhfastmulb16_mul4x4.v"],
+        "sources": ["src/aux/vhfastmulb16_mul_u8_u8_u16_lat2.v", "src/aux/vhfastmulb16_mul4x4.v"],
         "latency": 2,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -194,7 +194,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_mul_u8_u8_u16_lat3",
-        "sources": ["src/vhfastmulb16_mul_u8_u8_u16_lat3.v", "src/vhfastmulb16_mul4x4_lat2.v"],
+        "sources": ["src/aux/vhfastmulb16_mul_u8_u8_u16_lat3.v", "src/aux/vhfastmulb16_mul4x4_lat2.v"],
         "latency": 3,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -203,7 +203,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_add8x8_lat2",
-        "sources": ["src/vhfastmulb16_add8x8_lat2.v"],
+        "sources": ["src/aux/vhfastmulb16_add8x8_lat2.v"],
         "latency": 2,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -212,7 +212,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_sign",
-        "sources": ["src/vhfastmulb16_sign.v"],
+        "sources": ["src/aux/vhfastmulb16_sign.v"],
         "latency": 3,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -221,7 +221,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_flags_lat1",
-        "sources": ["src/vhfastmulb16_flags_lat1.v"],
+        "sources": ["src/aux/vhfastmulb16_flags_lat1.v"],
         "latency": 1,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -230,7 +230,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_flags_lat2",
-        "sources": ["src/vhfastmulb16_flags_lat2.v"],
+        "sources": ["src/aux/vhfastmulb16_flags_lat2.v"],
         "latency": 2,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -239,7 +239,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_except_lat2",
-        "sources": ["src/vhfastmulb16_except_lat2.v", "src/vhfastmulb16_flags_lat1.v"],
+        "sources": ["src/aux/vhfastmulb16_except_lat2.v", "src/aux/vhfastmulb16_flags_lat1.v"],
         "latency": 2,
         "rounding": "exact",
         "subnormal_handling": "n/a",
@@ -248,7 +248,7 @@ SUBMODULES = [
     },
     {
         "name": "vhfastmulb16_except_lat3",
-        "sources": ["src/vhfastmulb16_except_lat3.v", "src/vhfastmulb16_flags_lat2.v"],
+        "sources": ["src/aux/vhfastmulb16_except_lat3.v", "src/aux/vhfastmulb16_flags_lat2.v"],
         "latency": 3,
         "rounding": "exact",
         "subnormal_handling": "n/a",
