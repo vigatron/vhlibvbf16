@@ -15,9 +15,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Список скриптов тестбенчей (без tb_lib.sh) - через GLOB
-shopt -s nullglob
-TEST_SCRIPTS=( "$SCRIPT_DIR"/run_test_*.sh )
+# Список скриптов тестбенчей (без tb_lib.sh) - через GLOB, включая подпапки
+# компонентов (например, scripts/fma/).
+shopt -s nullglob globstar
+TEST_SCRIPTS=( "$SCRIPT_DIR"/**/run_test_*.sh )
 
 CMD="${1:-sim}"
 

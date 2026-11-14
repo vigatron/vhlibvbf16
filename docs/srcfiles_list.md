@@ -1,6 +1,6 @@
 # DUT Source Files List (src/*.v)
 
-Total modules: **20**
+Total modules: **21**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -24,6 +24,7 @@ Total modules: **20**
 | 18 | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4.v` | `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | Top-level FP16 + FP16 -> **F16** adder with **RNE** rounding | 4 clk |
 | 19 | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RTZ** rounding | 4 clk |
 | 20 | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Top-level BF16 + BF16 -> **BF16** adder with **RNE** rounding | 4 clk |
+| 21 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding | 4 clk |
 
 ---
 
@@ -43,6 +44,9 @@ vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3 / vhfastmulb16_mul_bf16_bf16_bf16_rne_l
 vhfastmulb16_mul_bf16_bf16_fp32_lat4
 ├── vhfastmulb16_mul4x4_comb (x4)
 └── vhfastmulb16_sign
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
+└── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
   (autonomous, no dependencies on other vhfastmulb16_* modules)
@@ -77,6 +81,7 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 | Top-level (FP32 add) | - | - | - | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | - | - | - | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` |
 | Top-level (BF16 add) | - | - | - | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `muladd_bf16_bf16_fp32_fp32_rne_lat4` |
 
 Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0).
 
@@ -84,7 +89,7 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 20 Verilog source files:
+The `src/` directory contains the following 21 Verilog source files:
 
 - `vhfastmulb16_add8x8_lat2.v`
 - `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v`
@@ -93,6 +98,7 @@ The `src/` directory contains the following 20 Verilog source files:
 - `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4.v`
 - `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4.v`
 - `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v`
+- `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v`
 - `vhfastmulb16_except_lat2.v`
 - `vhfastmulb16_except_lat3.v`
 - `vhfastmulb16_mul_bf16_bf16_fp32_lat4.v`

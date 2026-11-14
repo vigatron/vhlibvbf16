@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/*.v)
 
-Всего файлов: **32**
+Всего файлов: **34**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -33,16 +33,18 @@
 | 25 | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Directed + streaming, `LAT=4` | 32 |
 | 26 | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | Random/directed regression (Python BF16 model), `LAT=4` | 4096 |
 | 27 | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4_rand_tb.v` | `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | Random/directed regression (Python BF16 model), `LAT=4` | 4096 |
+| 28 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Directed + streaming + hold/reset, `LAT=4` | 44 |
+| 29 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Random/directed regression (exact Python FMA model), `LAT=4` | 2048 |
 
 ## Визуализационные / вспомогательные тестбенчи
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
-| 28 | `vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
-| 29 | `vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
-| 30 | `vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 31 | `vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
-| 32 | `vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
+| 30 | `vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
+| 31 | `vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
+| 32 | `vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 33 | `vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
+| 34 | `vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
 
 ---
 
@@ -76,6 +78,8 @@
 ./scripts/run_test_add_bf16_bf16_bf16_rne_lat4.sh sim
 ./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh sim
 ./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
 
 # С визуализацией (gtkwave)
 ./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh wave
@@ -86,6 +90,7 @@
 ./scripts/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh wave
 ./scripts/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
 ./scripts/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
 
 # Очистка артефактов
 ./scripts/run_test_mul_bf16_bf16_fp32_lat4.sh clean
@@ -123,3 +128,6 @@
   с бит-точным эталоном (`scripts/gen_fp16_vectors.py`)
 - `vhfastmulb16_add_bf16_bf16_bf16_*_rand_tb.v` — случайный/directed regression BF16-сумматоров
   с бит-точным эталоном (`scripts/gen_bf16_vectors.py`)
+- `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` — directed + hold/reset FMA
+- `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` — random/directed FMA
+  с точной Fraction-моделью (`scripts/gen_fma_vectors.py`)

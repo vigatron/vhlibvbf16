@@ -1,0 +1,366 @@
+{
+  "$schema": "bf16xbf16+f32 -> f32 fused multiply-add RNE test vectors",
+  "format": {
+    "input_a": "BF16 VALA (1s/8e/7m)",
+    "input_b": "BF16 VALB (1s/8e/7m)",
+    "input_s": "FP32 SUMM (1s/8e/23m)",
+    "output_c": "FP32 RESULT = SUMM + (VALA × VALB), RNE rounding",
+    "special_cases": "NaN in -> qNaN 0x7FC00000; Inf*finite + same-sign Inf -> Inf; Inf*finite + opposite-sign Inf -> qNaN; zero*finite + finite -> finite; exact cancellation x + (-x) -> +0; -0 + -0 = -0; -0 + +0 = +0",
+    "note": "BF16 subnormal operands are NOT flushed to zero (no FTZ). F32 subnormal results use RNE rounding. All hex values are exact, no trailing whitespace.",
+    "zero_sign_rules": "RNE: -0 + -0 = -0; -0 + +0 = +0; exact cancellation x + (-x) = +0; underflow to zero preserves the sign of the exact result"
+  },
+  "test_vectors": [
+    {
+      "no": 1,
+      "operation": "1.0 + (1.0 × 1.0) = 2.0",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x40000000", "value": "2.0" }
+    },
+    {
+      "no": 2,
+      "operation": "0.0 + (2.0 × 3.0) = 6.0",
+      "input_a": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_b": { "hex": "0x4040", "bf16": "16'h4040" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x40C00000", "value": "6.0" }
+    },
+    {
+      "no": 3,
+      "operation": "5.0 + (0.5 × 0.25) = 5.125",
+      "input_a": { "hex": "0x3F00", "bf16": "16'h3F00" },
+      "input_b": { "hex": "0x3E80", "bf16": "16'h3E80" },
+      "input_s": { "hex": "0x40A00000" },
+      "output_c": { "hex": "0x40A40000", "value": "5.125" }
+    },
+    {
+      "no": 4,
+      "operation": "0.0 + (-1.5 × 4.0) = -6.0",
+      "input_a": { "hex": "0xBFC0", "bf16": "16'hBFC0" },
+      "input_b": { "hex": "0x4080", "bf16": "16'h4080" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0xC0C00000", "value": "-6.0" }
+    },
+    {
+      "no": 5,
+      "operation": "10.0 + (0.0 × 3.0) = 10.0",
+      "input_a": { "hex": "0x0000", "bf16": "16'h0000" },
+      "input_b": { "hex": "0x4040", "bf16": "16'h4040" },
+      "input_s": { "hex": "0x41200000" },
+      "output_c": { "hex": "0x41200000", "value": "10.0" }
+    },
+    {
+      "no": 6,
+      "operation": "0.0 + (+Inf × 2.0) = +Inf",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7F800000", "value": "+Inf" }
+    },
+    {
+      "no": 7,
+      "operation": "0.0 + (+Inf × 0.0) = qNaN",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x0000", "bf16": "16'h0000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 8,
+      "operation": "NaN + (1.0 × 1.0) = qNaN",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x7FC00000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 9,
+      "operation": "-Inf + (+Inf × 1.0) = qNaN (Inf − Inf)",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0xFF800000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 10,
+      "operation": "+Inf + (+Inf × −1.0) = qNaN (Inf − Inf)",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0xBF80", "bf16": "16'hBF80" },
+      "input_s": { "hex": "0x7F800000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 11,
+      "operation": "0.0 + (max_BF16 × 2.0) = +Inf (product overflow)",
+      "input_a": { "hex": "0x7F7F", "bf16": "16'h7F7F" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7F800000", "value": "+Inf" }
+    },
+    {
+      "no": 12,
+      "operation": "0.0 + (min_sub_BF16 × 1.0) = F32 subnormal 0x00010000",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x00010000", "value": "2^-133 (subnormal)" }
+    },
+    {
+      "no": 13,
+      "operation": "2^-133 + (min_sub_BF16 × 1.0) = 2^-132",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00010000" },
+      "output_c": { "hex": "0x00020000", "value": "2^-132" }
+    },
+    {
+      "no": 14,
+      "operation": "1.0 + (1.0 × −1.0) = +0 (exact cancellation)",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0xBF80", "bf16": "16'hBF80" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 15,
+      "operation": "-1.0 + (1.0 × 1.0) = +0 (exact cancellation)",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0xBF800000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 16,
+      "operation": "-0.0 + (-0.0 × 1.0) = -0",
+      "input_a": { "hex": "0x8000", "bf16": "16'h8000" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x80000000" },
+      "output_c": { "hex": "0x80000000", "value": "-0" }
+    },
+    {
+      "no": 17,
+      "operation": "0.0 + (-Inf × 1.0) = -Inf",
+      "input_a": { "hex": "0xFF80", "bf16": "16'hFF80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0xFF800000", "value": "-Inf" }
+    },
+    {
+      "no": 18,
+      "operation": "0.0 + (NaN × 1.0) = qNaN",
+      "input_a": { "hex": "0x7FC0", "bf16": "16'h7FC0" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 19,
+      "operation": "0.0 + (1.0 × NaN) = qNaN",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x7FC0", "bf16": "16'h7FC0" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 20,
+      "operation": "0.5 + (1.0 × 1.0) = 1.5",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x3F000000" },
+      "output_c": { "hex": "0x3FC00000", "value": "1.5" }
+    },
+    {
+      "no": 21,
+      "operation": "1.0 + 2^-24 — tie-to-even, round down to even",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3380", "bf16": "16'h3380" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x3F800000", "value": "1.0" }
+    },
+    {
+      "no": 22,
+      "operation": "(1+2^-23) + 2^-24 — tie-to-even, round up to even",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3380", "bf16": "16'h3380" },
+      "input_s": { "hex": "0x3F800001" },
+      "output_c": { "hex": "0x3F800002", "value": "1+2^-22" }
+    },
+    {
+      "no": 23,
+      "operation": "1.0 + (2^-24 + 2^-31) — above tie, sticky=1",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3381", "bf16": "16'h3381" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x3F800001", "value": "1+2^-23" }
+    },
+    {
+      "no": 24,
+      "operation": "1.0 + (2^-25 + 2^-32) — below tie",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0x3301", "bf16": "16'h3301" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x3F800000", "value": "1.0" }
+    },
+    {
+      "no": 25,
+      "operation": "1.0 − 3·2^-25 — tie at subtraction → even",
+      "input_a": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_b": { "hex": "0xB3C0", "bf16": "16'hB3C0" },
+      "input_s": { "hex": "0x3F800000" },
+      "output_c": { "hex": "0x3F7FFFFE", "value": "1-3·2^-25" }
+    },
+    {
+      "no": 26,
+      "operation": "2^-150 = 0.5 ulp sub — tie → +0",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3700", "bf16": "16'h3700" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 27,
+      "operation": "2^-149 + 2^-150 → 2 ulp — fused≠unfused",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3700", "bf16": "16'h3700" },
+      "input_s": { "hex": "0x00000001" },
+      "output_c": { "hex": "0x00000002", "value": "2 ulp subnormal" }
+    },
+    {
+      "no": 28,
+      "operation": "3 ulp + 0.5 ulp → 4 ulp — fused≠unfused",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3700", "bf16": "16'h3700" },
+      "input_s": { "hex": "0x00000003" },
+      "output_c": { "hex": "0x00000004", "value": "4 ulp subnormal" }
+    },
+    {
+      "no": 29,
+      "operation": "1.5 ulp sub — tie → 2 ulp (no FTZ)",
+      "input_a": { "hex": "0x0003", "bf16": "16'h0003" },
+      "input_b": { "hex": "0x3700", "bf16": "16'h3700" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x00000002", "value": "2 ulp subnormal" }
+    },
+    {
+      "no": 30,
+      "operation": "−2^-149 + 2^-150 → −0 — fused≠unfused",
+      "input_a": { "hex": "0x0001", "bf16": "16'h0001" },
+      "input_b": { "hex": "0x3700", "bf16": "16'h3700" },
+      "input_s": { "hex": "0x80000001" },
+      "output_c": { "hex": "0x80000000", "value": "-0" }
+    },
+    {
+      "no": 31,
+      "operation": "2^-252 + 2^-149 — deep underflow, sticky",
+      "input_a": { "hex": "0x0080", "bf16": "16'h0080" },
+      "input_b": { "hex": "0x0080", "bf16": "16'h0080" },
+      "input_s": { "hex": "0x00000001" },
+      "output_c": { "hex": "0x00000001", "value": "2^-149" }
+    },
+    {
+      "no": 32,
+      "operation": "−Inf + (max×2) = −Inf (finite exact product, single final rounding)",
+      "input_a": { "hex": "0x7F7F", "bf16": "16'h7F7F" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0xFF800000" },
+      "output_c": { "hex": "0xFF800000", "value": "-Inf" }
+    },
+    {
+      "no": 33,
+      "operation": "FP32_max + 2^103 — overflow boundary → +Inf",
+      "input_a": { "hex": "0x7300", "bf16": "16'h7300" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x7F7FFFFF" },
+      "output_c": { "hex": "0x7F800000", "value": "+Inf" }
+    },
+    {
+      "no": 34,
+      "operation": "FP32_max + 2^102 — below boundary → max",
+      "input_a": { "hex": "0x7280", "bf16": "16'h7280" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x7F7FFFFF" },
+      "output_c": { "hex": "0x7F7FFFFF", "value": "FP32_max" }
+    },
+    {
+      "no": 35,
+      "operation": "−FP32_max − 2^103 → −Inf",
+      "input_a": { "hex": "0xF300", "bf16": "16'hF300" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0xFF7FFFFF" },
+      "output_c": { "hex": "0xFF800000", "value": "-Inf" }
+    },
+    {
+      "no": 36,
+      "operation": "(2^24−1) − (2^24−2^16) — 24-bit normalization",
+      "input_a": { "hex": "0xBFFF", "bf16": "16'hBFFF" },
+      "input_b": { "hex": "0x4B00", "bf16": "16'h4B00" },
+      "input_s": { "hex": "0x4B7FFFFF" },
+      "output_c": { "hex": "0x477FFF00", "value": "2^16-1" }
+    },
+    {
+      "no": 37,
+      "operation": "2^-126 − (1−2^-8)·2^-126 = 2^-134 (subnormal)",
+      "input_a": { "hex": "0xBF7F", "bf16": "16'hBF7F" },
+      "input_b": { "hex": "0x0080", "bf16": "16'h0080" },
+      "input_s": { "hex": "0x00800000" },
+      "output_c": { "hex": "0x00008000", "value": "2^-134" }
+    },
+    {
+      "no": 38,
+      "operation": "sNaN(BF16) → canonical qNaN",
+      "input_a": { "hex": "0x7F81", "bf16": "16'h7F81" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 39,
+      "operation": "two NaN with payload → canonical qNaN",
+      "input_a": { "hex": "0x7FC1", "bf16": "16'h7FC1" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x7FA00000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 40,
+      "operation": "NaN-addend priority over Inf-product",
+      "input_a": { "hex": "0x7F80", "bf16": "16'h7F80" },
+      "input_b": { "hex": "0x4000", "bf16": "16'h4000" },
+      "input_s": { "hex": "0x7FC00000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 41,
+      "operation": "−Inf × 0 → qNaN",
+      "input_a": { "hex": "0xFF80", "bf16": "16'hFF80" },
+      "input_b": { "hex": "0x0000", "bf16": "16'h0000" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x7FC00000", "value": "qNaN" }
+    },
+    {
+      "no": 42,
+      "operation": "−0 + (−0 × −1) = −0 + +0 → +0",
+      "input_a": { "hex": "0x8000", "bf16": "16'h8000" },
+      "input_b": { "hex": "0xBF80", "bf16": "16'hBF80" },
+      "input_s": { "hex": "0x80000000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 43,
+      "operation": "+0 + (−0 × 1) → +0",
+      "input_a": { "hex": "0x8000", "bf16": "16'h8000" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x00000000" },
+      "output_c": { "hex": "0x00000000", "value": "+0" }
+    },
+    {
+      "no": 44,
+      "operation": "tie across binade boundary → 1.0",
+      "input_a": { "hex": "0x3300", "bf16": "16'h3300" },
+      "input_b": { "hex": "0x3F80", "bf16": "16'h3F80" },
+      "input_s": { "hex": "0x3F7FFFFF" },
+      "output_c": { "hex": "0x3F800000", "value": "1.0" }
+    }
+  ]
+}
