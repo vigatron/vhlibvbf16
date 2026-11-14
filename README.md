@@ -9,7 +9,7 @@
 
 
 Author: V01G04A81  
-Rev: 0.0.7  
+Rev: 0.0.8  
 
 
 ## Description
@@ -133,8 +133,8 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` is available (latency 4): fused `SUMM + VALA × VALB` with a single RNE rounding, exact BF16 product, BF16 and FP32 subnormals are not flushed, and an exact intermediate product is not rounded to Inf before the final addition.
 - The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` is available (latency 8): same fused FMA functionality with an 8-stage balanced pipeline optimized for maximum Fmax. Key optimizations: rebalanced 8 stages (S1: decode + 4×mul4x4 + exp_p0/exp_s0 + clz24; S2: 2-level CSA + SUMM normalization; S3: CPA → man_prod + LOD k; S4: p24, exp_p + k, direct exp_p − exp_s; S5: sticky + alignment; S6: add/sub + carry fix-up + LZD; S7: normalization + parallel CARRY4 subtractors for exp_pre/grs_shift; S8: RNE + pack), direct shift_diff without mux on shift-amount path, parallel CARRY4 subtractors replacing prefix network, per-stage clock enable (en_d1..en_d7) with true CE on FDRE (no bubble insertion on en=0).
 - **Verification status (FMA lat4):** the directed testbench (44 vectors) and random regression (2048 vectors per seed, seeds 1–5 and 12345) pass with **0 errors**; an additional exact-Fraction regression of 6 × 4096 vectors (uniform random, FP32-subnormal `SUMM`, tiny BF16 products, specials and exact-cancellation cases) also reports **0 errors**. The reference model `scripts/gen_fma_vectors.py` uses exact `Fraction` arithmetic and is self-checked against all 44 directed JSON vectors.
-- **Verification status (FMA lat8):** directed testbench (45 vectors) — **0 errors**; random regression (2048 vectors) — **0 errors**; extended 100k continuous stream — **0 errors**; extended 20k random `en` (~50% gaps) — **0 errors** (specifically validates mid-stream `en=0` handling without spurious bubbles). Extended tests in `tmp/opencode/`.
-- **Full regression:** `./scripts/run_all.sh sim` runs all 30 test scripts (including `scripts/fma/`) with **PASSED=30, FAILED=0**.
+- **Verification status (FMA lat8):** directed testbench (45 vectors) — **0 errors**; random regression (2048 vectors) — **0 errors**; extended 100k continuous stream — **0 errors**; extended 20k random `en` (~50% gaps) — **0 errors** (specifically validates mid-stream `en=0` handling without spurious bubbles). Extended tests live in `tmp/opencode/` (local only, not tracked by git).
+- **Full regression:** `./scripts/run_all.sh sim` runs all 32 test scripts (including `scripts/fma/`) with **PASSED=32, FAILED=0**.
 - The FP32-adder top-level modules `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
 - The FP16-adder top-level modules `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
 - The BF16-adder top-level modules `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` and `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` are available (latency 4): BF16 + BF16 -> BF16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero, NaN results are canonical `0x7FC0`, and RTZ overflow saturates to max finite `0x7F7F`.
@@ -143,7 +143,7 @@ from a carry-save adder (CSA) tree and a final 16-bit carry-propagate adder (CPA
 - **Verification status (BF16 adders):** the directed tests (`tests/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
 - The building blocks are available: `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
 - `vhfastmulb16_fst_lat3` is a planned simplified variant; it is **not present in `src/` yet**.
-- The modules are implemented in pure logic without the multiplication operator `*`; replacing the whole `mul_u8_u8_u16_lat2` multiplier (4× `mul4x4` + CSA tree + CPA) with a DSP (for example, a DSP48A1) would save up to 50% of LUTs and significantly increase the operating speed.
+- The modules are implemented in pure logic without the multiplication operator `*`. **Use of DSP blocks (DSP48A1, DSP48E1, etc.) is categorically prohibited** for all modules to ensure portability across FPGA families. See `rules/dsp_prohibition.md`.
 
 ## Source Files
 
@@ -412,15 +412,26 @@ vectors remain unchanged. The FMA vectors are validated by the exact
 
 ## FPGA Resource Estimates
 
-The implementation is estimated for Xilinx Spartan-6 (XC6SLX9, XC6SLX16),
-Spartan-7 (XC7S15) and Artix-7 (XC7A15T).
-Detailed manual RTL estimates are maintained in:
+The implementation targets Xilinx Spartan-6 (XC6SLX9-2), Spartan-7 (XC7S15-1) and Artix-7 (XC7A15T-1). Device reports are **generated automatically** from Yosys (YoWASP) synthesis results, not hand-written:
+
+- `scripts/collect_stats.py` — synthesizes every design with Yosys: `hierarchy -top` → `flatten` → `synth_xilinx -family <xc6s|xc7> -run begin:map_ffs` (YoWASP WASM cannot run yosys-abc, so synthesis stops before ABC9), then parses the RTLIL dump on stdout. LUT6 is estimated as `gates / 2.5` (±20–25%); FF, CARRY4 and IO buffer counts are exact.
+- `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports.
+
+Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement; expect ±20–25%. For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
+
+Reports:
 
 - [`docs/stat/stat_top_all.md`](docs/stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32, FMA, add_fp32, add_fp16, add_bf16) and their typical (typ) Fmax across FPGA families;
-- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — submodules, bottom-up breakdown and typical (typ) Fmax;
-- [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md), [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), [`docs/stat/stat_top_artix7.md`](docs/stat/stat_top_artix7.md) — per-device details.
+- [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md), [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), [`docs/stat/stat_top_artix7.md`](docs/stat/stat_top_artix7.md) — per-device details;
+- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — bottom-up submodule comparison and typical (typ) Fmax; [`docs/stat/stat_others_spartan6.md`](docs/stat/stat_others_spartan6.md), [`docs/stat/stat_others_spartan7.md`](docs/stat/stat_others_spartan7.md), [`docs/stat/stat_others_artix7.md`](docs/stat/stat_others_artix7.md) — per-device submodule details.
 
-All values are manual estimates (±20–25%), not synthesis reports.
+To regenerate the statistics:
+
+```bash
+./scripts/collect_stats.py --all   # top-level modules + submodules
+./scripts/generate_stat_docs.py
+./scripts/generate_stat_others_docs.py
+```
 
 ## Author
 

@@ -8,17 +8,18 @@
 // Module: vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 // RESULT = SUMM + (VALA_BF16 × VALB_BF16), FP32 output, RNE rounding
 // Latency 4 clk, fully pipelined
-// Pipeline balanced:
+// Pipeline balanced 4 stages (ported from lat8 architecture):
 //   S1: operand decode, classification, mul4x4_comb partial products,
-//       exponent sums for product and SUMM
-//   S2: CSA-tree + CPA -> 16-bit mantissa product; product normalization;
-//       alignment of product and SUMM mantissas with sticky bit
-//   S3: mantissa add/sub (28-bit raw), carry fix-up, LZD normalization,
-//       11-bit signed exponent, GRS shift precompute
-//   S4: RNE rounding, subnormal shift, F32 pack -> output register
+//       exponent bases exp_p/exp_s, SUMM leading-zero count (encoder only)
+//   S2: CSA-tree 2 levels + CPA -> man_prod; LOD k; SUMM normalization;
+//       direct exp_p − exp_s; large/small select; sticky + alignment
+//   S3: mantissa add/sub (28-bit raw); carry fix-up; LZD;
+//       exp_pre and grs_shift from parallel CARRY4 subtractors
+//   S4: RNE rounding (G/R/S + tie-to-even); subnormal shift;
+//       NaN/Inf/Zero/Normal/Subnormal select; F32 pack -> output register
 // BF16 subnormal inputs are treated as finite values (no FTZ).
 // NaN -> canonical quiet NaN 0x7FC00000
-// en=0: HOLD (drain accepted data, keep last value)
+// en=0: HOLD (drain accepted data, keep last value) - per-stage CE
 // reset: synchronous, priority over en
 // ----------------------------------------------
 
@@ -35,14 +36,18 @@
  * 27-bit extended mantissa (24-bit significand + 3 GRS bits).  This matches
  * the FP32 adder convention (biased exponent - 150 = unbiased - 23).
  *
- * Pipeline is balanced 4 stages:
+ * Pipeline is balanced 4 stages (ported from lat8 architecture):
  *   S1: operand decode, classification, mul4x4_comb partial products,
- *       exponent sums for product and SUMM
- *   S2: CSA-tree + CPA -> 16-bit mantissa product; product normalization;
- *       alignment of product and SUMM mantissas with sticky bit
- *   S3: mantissa add/sub (28-bit raw), carry fix-up, LZD normalization,
- *       11-bit signed exponent, GRS shift precompute
- *   S4: RNE rounding, subnormal shift, F32 pack -> output register
+ *       exponent bases, SUMM leading-zero count (encoder only)
+ *   S2: CSA-tree 2 levels + CPA -> man_prod; LOD k; SUMM normalization;
+ *       direct exp_p − exp_s; large/small select; sticky + alignment
+ *   S3: mantissa add/sub (28-bit raw); carry fix-up; LZD;
+ *       exp_pre and grs_shift from parallel CARRY4 subtractors
+ *   S4: RNE rounding; subnormal shift; special-case select; F32 pack; output reg
+ *
+ * Every pipeline stage uses its own valid bit as a flip-flop clock enable
+ * (per-stage CE): no new sample is accepted while en=0, accepted samples
+ * drain through the pipeline, then outfp32s holds the last value.
  *
  * @param clk      Clock signal.
  * @param reset    Synchronous reset, active high, priority over en.
@@ -66,7 +71,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
 
     // ============================================================
     // STAGE S1: operand decode + classification + partial products
-    //   Combinational during cycle N, captured at N+1 edge
+    //   Combinational during cycle N, captured at N+1 edge (CE = en)
     // ============================================================
 
     // ---------------------------------------------------
@@ -121,8 +126,6 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire res_inf  = !res_nan && (prod_inf || s_inf);
     wire res_zero = !res_nan && !res_inf && (prod_zero && s_zero);
 
-    // NaN result: canonical quiet NaN (no payload preservation for speed)
-
     // ---------------------------------------------------
     // Effective BF16 exponent and mantissa (no FTZ)
     // exp_eff = exp | exp_z  (exp==0 -> 1 для субнормала, иначе exp без изменений)
@@ -142,9 +145,8 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [7:0] s_exp_eff = s_exp | {7'd0, s_exp_z};
     wire [23:0] s_man    = {~s_exp_z, s_frac};
 
-    // Normalize the FP32 addend significand.  For a subnormal SUMM the leading
-    // one is not at bit 23, so normalize it and compensate the exponent.  This
-    // keeps the exponent compare and mantissa alignment exact for subnormals.
+    // Leading-zero count of the SUMM significand (encoder only in S1;
+    // the normalization shift itself is placed in S2).
     function [4:0] clz24;
         input [23:0] v;
         begin
@@ -176,51 +178,38 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
         end
     endfunction
 
-    wire [4:0]  s_lz    = clz24(s_man);
-    wire [23:0] s_man_n = s_man << s_lz;
+    wire [4:0]  s_lz = clz24(s_man);
+
+    // Product exponent base (k = 0): exp_p = S + k - 144 (internal scale).
+    // SUMM exponent: exp_s = e_eff - 3 - s_lz (internal scale).
+    wire [10:0] exp_p0 = {2'b00, exp_sum_raw} - 11'd144;
+    wire [10:0] exp_s0 = {3'b000, s_exp_eff} - 11'd3 - {6'd0, s_lz};
 
     // ---------------------------------------------------
-    // Pipeline enable: 4 stages + output register.
+    // Per-stage pipeline enable (clock enable of each stage)
     // ---------------------------------------------------
     reg en_d1;
     reg en_d2;
     reg en_d3;
-    reg en_d4;
 
     always @(posedge clk) begin
         if (reset) begin
             en_d1 <= 1'b0;
             en_d2 <= 1'b0;
             en_d3 <= 1'b0;
-            en_d4 <= 1'b0;
         end else begin
             en_d1 <= en;
             en_d2 <= en_d1;
             en_d3 <= en_d2;
-            en_d4 <= en_d3;
         end
     end
 
-    wire en_pipe = en | en_d1 | en_d2 | en_d3 | en_d4;
+    // Kept for testbench visibility (not used by the datapath).
+    wire en_pipe = en | en_d1 | en_d2 | en_d3;
 
-    // ============================================================
-    // STAGE S1 registers (capture at N+1 edge)
-    // ============================================================
-    reg [7:0] p_hh_d1;
-    reg [7:0] p_hl_d1;
-    reg [7:0] p_lh_d1;
-    reg [7:0] p_ll_d1;
-    reg [8:0] exp_sum_d1;
-    reg [23:0] s_man_d1;
-    reg [7:0]  s_exp_d1;
-    reg [4:0]  s_lz_d1;
-    reg        prod_sign_d1;
-    reg        s_sign_d1;
-    reg        prod_zero_d1;
-    reg        s_zero_d1;
-    reg        s_inf_d1;
-
+    // ---------------------------------------------------
     // Combinational partial products (during cycle N)
+    // ---------------------------------------------------
     wire [3:0] a_high = a_man[7:4];
     wire [3:0] b_high = b_man[7:4];
     wire [3:0] a_low  = a_man[3:0];
@@ -252,42 +241,63 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
         .c(p_ll_calc)
     );
 
+    // ============================================================
+    // STAGE S1 registers (capture at N+1 edge, CE = en)
+    // ============================================================
+    reg [7:0] p_hh_d1;
+    reg [7:0] p_hl_d1;
+    reg [7:0] p_lh_d1;
+    reg [7:0] p_ll_d1;
+    reg [10:0] exp_p_d1;
+    reg [10:0] exp_s_d1;
+    reg [23:0] s_man_d1;
+    reg [4:0]  s_lz_d1;
+    reg        prod_sign_d1;
+    reg        s_sign_d1;
+    reg        prod_zero_d1;
+    reg        s_zero_d1;
+    reg        s_inf_d1;
+    reg [2:0]  flags_d1;        // {res_nan, res_inf, res_zero}
+
     always @(posedge clk) begin
         if (reset) begin
             p_hh_d1     <= 8'd0;
             p_hl_d1     <= 8'd0;
             p_lh_d1     <= 8'd0;
             p_ll_d1     <= 8'd0;
-            exp_sum_d1  <= 9'd0;
+            exp_p_d1    <= 11'd0;
+            exp_s_d1    <= 11'd0;
             s_man_d1    <= 24'd0;
-            s_exp_d1    <= 8'd0;
             s_lz_d1     <= 5'd0;
             prod_sign_d1 <= 1'b0;
             s_sign_d1    <= 1'b0;
             prod_zero_d1 <= 1'b0;
             s_zero_d1    <= 1'b0;
             s_inf_d1      <= 1'b0;
-        end else if (en_pipe) begin
+            flags_d1     <= 3'b000;
+        end else if (en) begin
             p_hh_d1     <= p_hh_calc;
             p_hl_d1     <= p_hl_calc;
             p_lh_d1     <= p_lh_calc;
             p_ll_d1     <= p_ll_calc;
-            exp_sum_d1  <= exp_sum_raw;
-            s_man_d1    <= s_man_n;
-            s_exp_d1    <= s_exp_eff;
+            exp_p_d1    <= exp_p0;
+            exp_s_d1    <= exp_s0;
+            s_man_d1    <= s_man;
             s_lz_d1     <= s_lz;
             prod_sign_d1 <= prod_sign;
             s_sign_d1    <= s_sign;
             prod_zero_d1 <= prod_zero;
             s_zero_d1    <= s_zero;
             s_inf_d1      <= s_inf;
+            flags_d1     <= {res_nan, res_inf, res_zero};
         end
     end
 
     // ============================================================
-    // STAGE S2: CSA-tree + CPA -> man_prod; product normalization;
-    //           alignment of product vs SUMM
-    //   Combinational during cycle N+1, captured at N+2 edge
+    // STAGE S2: CSA-tree 2 levels + CPA -> man_prod; LOD k;
+    //           SUMM normalization; direct exp_p − exp_s;
+    //           large/small select; sticky + alignment
+    //   Combinational during cycle N+1, captured at N+2 edge (CE = en_d1)
     // ============================================================
 
     // 16-bit mantissa product from partial products
@@ -304,6 +314,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [15:0] s2 = s1 ^ c1 ^ P3;
     wire [15:0] c2 = {g2[14:0], 1'b0};
 
+    // CPA -> 16-bit mantissa product
     wire [15:0] man_prod = s2 + c2;
 
     // Product leading-one detect (k: index of highest set bit, 0..15)
@@ -335,67 +346,58 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [15:0] p_norm = man_prod << (4'd15 - k_calc);
     wire [23:0] p24 = {p_norm, 8'h00};
 
-    // Product exponent in internal scale (value = ext27 * 2^(exp - 150)):
-    //   value_prod = man_prod * 2^(S_raw - 268)
-    //   P24 = man_prod << (23 - k)   (24-bit significand)
-    //   value_prod = P24 * 2^(S_raw + k - 291)
-    //   ext27 = {P24, 3'b000} = P24 << 3
-    //   value_prod = ext27 * 2^(S_raw + k - 294)
-    //   exp_p - 150 = S_raw + k - 294  =>  exp_p = S_raw + k - 144
-    wire [9:0] exp_p_calc = {1'b0, exp_sum_d1} + {6'd0, k_calc} - 10'd144;
+    // Product exponent in internal scale: exp_p = S + k - 144
+    wire [10:0] exp_p_calc = exp_p_d1 + {7'd0, k_calc};
 
-    // SUMM exponent in internal scale:
-    //   value_s = s_man * 2^(s_exp_eff - 150)
-    //   ext27 = {s_man, 3'b000} = s_man << 3
-    //   value_s = ext27 * 2^(s_exp_eff - 153)
-    //   exp_s - 150 = s_exp_eff - 153  =>  exp_s = s_exp_eff - 3
-    wire [9:0] exp_s_calc = {2'b00, s_exp_d1} - 10'd3 - {5'd0, s_lz_d1};
+    // SUMM significand normalization
+    wire [23:0] s_man_n = s_man_d1 << s_lz_d1;
+
+    // SUMM exponent in internal scale (already adjusted by s_lz in S1)
+    wire [10:0] exp_s_calc = exp_s_d1;
 
     // Zero-operand handling for comparison: zero mantissa -> very negative exponent
-    wire prod_man_zero = prod_zero_d1;   // prod_zero
-    wire s_man_zero    = s_zero_d1;      // s_zero
+    wire prod_man_zero = prod_zero_d1;
+    wire s_man_zero    = s_zero_d1;
 
     // Sign-extend to 11-bit for signed comparison
-    wire [10:0] exp_p_sext = {exp_p_calc[9], exp_p_calc};
-    wire [10:0] exp_s_sext = {exp_s_calc[9], exp_s_calc};
-    wire [10:0] exp_p_eff = prod_man_zero ? 11'b10000000000 : exp_p_sext; // -512 if zero
-    wire [10:0] exp_s_eff = s_man_zero    ? 11'b10000000000 : exp_s_sext; // -512 if zero
+    wire [10:0] exp_p_eff = prod_man_zero ? 11'b10000000000 : exp_p_calc; // -512 if zero
+    wire [10:0] exp_s_eff = s_man_zero    ? 11'b10000000000 : exp_s_calc; // -512 if zero
 
-    // Exponent comparison (signed 11-bit)
-    wire exp_p_sign = exp_p_eff[10];
-    wire exp_s_sign = exp_s_eff[10];
-    wire exp_p_ge_exp_s = (exp_p_sign != exp_s_sign) ? !exp_p_sign
-                                                   : (exp_p_eff >= exp_s_eff);
-    wire exp_p_eq_exp_s = (exp_p_eff == exp_s_eff);
+    // Direct signed exponent difference (sign-extended to 12 bits).
+    // large/small selection and the alignment shift both derive from this
+    // difference, so no multiplexer sits on the shift-amount path.
+    wire [11:0] exp_diff = {exp_p_eff[10], exp_p_eff} -
+                           {exp_s_eff[10], exp_s_eff};
+    wire        exp_diff_neg = exp_diff[11];
+    wire [11:0] shift_abs    = exp_diff_neg ? (~exp_diff + 12'd1) : exp_diff;
+    wire [4:0]  shift_amt    = shift_abs[4:0];
+    wire        shift_ge32   = |shift_abs[11:5];
 
-    // When exponents equal, compare mantissas (P24 vs s_man_d1)
-    wire p24_ge_sman = (p24 >= s_man_d1);
+    wire exp_p_eq_exp_s = (exp_diff == 12'd0);
+
+    // When exponents equal, compare mantissas (P24 vs s_man_n)
+    wire p24_ge_sman = (p24 >= s_man_n);
 
     // Large/small selection
-    wire large_is_prod = exp_p_ge_exp_s && (!exp_p_eq_exp_s || p24_ge_sman);
+    wire large_is_prod = !exp_diff_neg && (!exp_p_eq_exp_s || p24_ge_sman);
 
-    wire [23:0] large_man = large_is_prod ? p24 : s_man_d1;
-    wire [23:0] small_man = large_is_prod ? s_man_d1 : p24;
+    wire [23:0] large_man = large_is_prod ? p24 : s_man_n;
+    wire [23:0] small_man = large_is_prod ? s_man_n : p24;
 
-    wire [10:0] large_exp = large_is_prod ? exp_p_eff : exp_s_eff;
-    wire [10:0] small_exp = large_is_prod ? exp_s_eff : exp_p_eff;
+    wire [10:0] large_exp = exp_diff_neg ? exp_s_eff : exp_p_eff;
 
     wire        large_sign = large_is_prod ? prod_sign_d1 : s_sign_d1;
     wire        small_sign = large_is_prod ? s_sign_d1 : prod_sign_d1;
 
-    // Shift amount: |large_exp - small_exp| (capped at 32 for sticky flush)
-    // Both exponents are signed 11-bit values; sign-extend them to 12 bits
-    // before subtraction so negative exponents do not wrap around.
-    wire [11:0] shift_diff = {large_exp[10], large_exp} -
-                             {small_exp[10], small_exp};
-    wire        shift_neg  = shift_diff[11];
-    wire [11:0] shift_abs  = shift_neg ? (~shift_diff + 12'd1) : shift_diff;
-    wire [4:0]  shift_amt  = shift_abs[4:0];
-    wire        shift_ge32 = |shift_abs[11:5];
-
     // 27-bit extended mantissas: 24-bit significand + 3 low bits (G/R/S)
     wire [26:0] large_ext = {large_man, 3'b000};
     wire [26:0] small_ext = {small_man, 3'b000};
+
+    // op_add: 1 = add magnitudes (signs equal), 0 = subtract
+    wire op_add = (large_sign == small_sign);
+
+    // Result sign (non-special cases)
+    wire sign_res_c = large_sign;
 
     // Sticky-inclusive right shift (same technique as FP32 adder)
     wire [26:0] sp1 = small_ext | (small_ext << 1);
@@ -404,73 +406,70 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [26:0] sp4 = sp3 | (sp3 << 8);
     wire [26:0] sp5 = sp4 | (sp4 << 16);
     wire [31:0] spv = {{5{sp5[26]}}, sp5};
-
     wire [31:0] spv2 = {spv[30:0], 1'b0};
 
     wire [26:0] small_sh = (small_ext >> shift_amt) | {26'd0, spv2[shift_amt]};
     wire [26:0] small_al = shift_ge32 ? {26'd0, |small_ext} : small_sh;
 
-    // op_add: 1 = add magnitudes (signs equal), 0 = subtract
-    wire op_add = (large_sign == small_sign);
-
-    // Result sign (non-special cases)
-    wire sign_res_c = large_sign;
-
     // ============================================================
-    // STAGE S2 registers (capture at N+2 edge)
+    // STAGE S2 registers (capture at N+2 edge, CE = en_d1)
     // ============================================================
-    reg [26:0] man_hi_al_d1;
-    reg [26:0] man_lo_al_d1;
-    reg [10:0] exp_large_d1;
-    reg        sign_res_d1;
-    reg        op_add_d1;
+    reg [26:0] large_ext_d2;
+    reg [26:0] small_ext_d2;
+    reg [10:0] large_exp_d2;
+    reg [4:0]  shift_amt_d2;
+    reg        shift_ge32_d2;
+    reg        op_add_d2;
+    reg        sign_res_d2;
+    reg [2:0]  flags_d2;
+    reg        s_inf_d2;
     reg        prod_sign_d2;
     reg        s_sign_d2;
-    reg [2:0]  flags_d1;        // flags from S1 (captured at N+1)
-    reg [2:0]  flags_d2;        // flags from S2 (captured at N+2)
-    reg        s_inf_d2;
 
     always @(posedge clk) begin
         if (reset) begin
-            man_hi_al_d1 <= 27'd0;
-            man_lo_al_d1 <= 27'd0;
-            exp_large_d1 <= 11'd0;
-            sign_res_d1  <= 1'b0;
-            op_add_d1    <= 1'b0;
-            flags_d1     <= 3'b000;
-            flags_d2     <= 3'b000;
-            s_inf_d2     <= 1'b0;
-            prod_sign_d2 <= 1'b0;
-            s_sign_d2    <= 1'b0;
-        end else if (en_pipe) begin
-            man_hi_al_d1 <= large_ext;
-            man_lo_al_d1 <= small_al;
-            exp_large_d1 <= large_exp;
-            sign_res_d1  <= sign_res_c;
-            op_add_d1    <= op_add;
-            flags_d1     <= {res_nan, res_inf, res_zero};
-            flags_d2     <= flags_d1;
-            s_inf_d2     <= s_inf_d1;
-            prod_sign_d2 <= prod_sign_d1;
-            s_sign_d2    <= s_sign_d1;
+            large_ext_d2  <= 27'd0;
+            small_ext_d2  <= 27'd0;
+            large_exp_d2  <= 11'd0;
+            shift_amt_d2  <= 5'd0;
+            shift_ge32_d2 <= 1'b0;
+            op_add_d2     <= 1'b0;
+            sign_res_d2   <= 1'b0;
+            flags_d2      <= 3'b000;
+            s_inf_d2      <= 1'b0;
+            prod_sign_d2  <= 1'b0;
+            s_sign_d2     <= 1'b0;
+        end else if (en_d1) begin
+            large_ext_d2  <= large_ext;
+            small_ext_d2  <= small_al;
+            large_exp_d2  <= large_exp;
+            shift_amt_d2  <= shift_amt;
+            shift_ge32_d2 <= shift_ge32;
+            op_add_d2     <= op_add;
+            sign_res_d2   <= sign_res_c;
+            flags_d2      <= flags_d1;
+            s_inf_d2      <= s_inf_d1;
+            prod_sign_d2  <= prod_sign_d1;
+            s_sign_d2     <= s_sign_d1;
         end
     end
 
     // ============================================================
-    // STAGE S3: mantissa add/sub + normalization
-    //   Combinational during cycle N+2, captured at N+3 edge
+    // STAGE S3: mantissa add/sub + carry fix-up + LZD;
+    //           exp_pre and grs_shift from parallel CARRY4 subtractors
+    //   Combinational during cycle N+2, captured at N+3 edge (CE = en_d2)
     // ============================================================
 
-    wire [27:0] man_raw_c = op_add_d1 ?
-                            ({1'b0, man_hi_al_d1} + {1'b0, man_lo_al_d1}) :
-                            ({1'b0, man_hi_al_d1} - {1'b0, man_lo_al_d1});
+    wire [27:0] man_raw_c = op_add_d2 ?
+                            ({1'b0, large_ext_d2} + {1'b0, small_ext_d2}) :
+                            ({1'b0, large_ext_d2} - {1'b0, small_ext_d2});
 
-    // Carry fix-up and normalization (same technique as FP32 adder)
+    // Carry fix-up and normalization
     wire        man_carry = man_raw_c[27];
     wire [26:0] man_norm0 = man_carry ?
                             ({1'b0, man_raw_c[27:1]} | {26'd0, man_raw_c[0]}) :
                             man_raw_c[26:0];
-    wire [10:0] exp_adj   = exp_large_d1 + {9'd0, man_carry};
+    wire [10:0] exp_adj   = large_exp_d2 + {9'd0, man_carry};
 
     // Leading-zero detect over 28-bit raw result
     wire [27:0] lz1   = man_raw_c | (man_raw_c >> 1);
@@ -487,79 +486,74 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     assign lzd_c[3] = |(lz_oh & 28'b0000000001111111100000000111);
     assign lzd_c[4] = |(lz_oh & 28'b0000000000000000011111111111);
 
+    // LZD normalization
     wire [26:0] man_norm_c = man_norm0 << lzd_c;
 
-    // exp_pre = exp_adj - lzd (11-bit signed, internal scale)
-    wire [10:0] ep_lz = {6'd0, lzd_c};
-    wire [10:0] ep_p  = ~exp_adj | ep_lz;
-    wire [10:0] ep_g  = ~exp_adj & ep_lz;
-    wire [10:0] ep_g1 = ep_g  | (ep_p  & {ep_g[9:0],  1'b0});
-    wire [10:0] ep_p1 = ep_p  & {ep_p[9:0],  1'b0};
-    wire [10:0] ep_g2 = ep_g1 | (ep_p1 & {ep_g1[8:0], 2'b00});
-    wire [10:0] ep_p2 = ep_p1 & {ep_p1[8:0], 2'b00};
-    wire [10:0] ep_g3 = ep_g2 | (ep_p2 & {ep_g2[6:0], 4'b0000});
-    wire [10:0] exp_pre_c = (exp_adj ^ ep_lz) ^ {ep_g3[9:0], 1'b0};
+    // exp_pre     = exp_adj - lzd (11-bit signed, internal scale)
+    // grs_shift   = -exp_pre = lzd - exp_adj
+    // Both are computed by independent CARRY4 subtractors (no serial
+    // negate stage).
+    wire [10:0] ep_lz    = {6'd0, lzd_c};
+    wire [10:0] exp_pre_c = exp_adj - ep_lz;
+    wire [10:0] grs_neg_c = ep_lz - exp_adj;
 
-    // GRS shift for subnormal path: grs_shift = -exp_pre
-    // (positions man_norm leading bit at bit 24 for frac extraction)
-    wire [10:0] neg_exp_pre = ~exp_pre_c + 11'd1;
-    wire [4:0]  grs_shift_c = neg_exp_pre[4:0];
-    wire        grs_shift_ovf = |neg_exp_pre[10:5];  // true shift > 31 -> result 0
+    wire [4:0] grs_shift_c = grs_neg_c[4:0];
+    wire       grs_shift_ovf_c = |grs_neg_c[10:5];  // true shift > 31 -> result 0
 
     // Exact cancellation detection (result zero but not both inputs zero).
     // flags_d2 is aligned with man_raw_c.
     wire is_zero_c = (man_raw_c == 28'd0) && !flags_d2[0];
 
     // ============================================================
-    // STAGE S3 registers (capture at N+3 edge)
+    // STAGE S3 registers (capture at N+3 edge, CE = en_d2)
     // ============================================================
-    reg [26:0] man_norm_d1;
-    reg [10:0] exp_pre_d1;
-    reg [4:0]  grs_shift_d1;
-    reg        grs_shift_ovf_d1;
-    reg        sign_res_d3;
-    reg [2:0]  flags_d3;        // flags from S2, aligned with data
+    reg [26:0] man_norm_d3;
+    reg [10:0] exp_pre_d3;
+    reg [4:0]  grs_shift_d3;
+    reg        grs_shift_ovf_d3;
     reg        is_zero_d3;
-    reg        s_sign_d3;
+    reg        sign_res_d3;
+    reg [2:0]  flags_d3;
     reg        s_inf_d3;
     reg        prod_sign_d3;
+    reg        s_sign_d3;
 
     always @(posedge clk) begin
         if (reset) begin
-            man_norm_d1       <= 27'd0;
-            exp_pre_d1        <= 11'd0;
-            grs_shift_d1      <= 5'd0;
-            grs_shift_ovf_d1  <= 1'b0;
+            man_norm_d3       <= 27'd0;
+            exp_pre_d3        <= 11'd0;
+            grs_shift_d3      <= 5'd0;
+            grs_shift_ovf_d3  <= 1'b0;
+            is_zero_d3        <= 1'b0;
             sign_res_d3       <= 1'b0;
             flags_d3          <= 3'b000;
-            is_zero_d3        <= 1'b0;
-            s_sign_d3         <= 1'b0;
             s_inf_d3          <= 1'b0;
             prod_sign_d3      <= 1'b0;
-        end else if (en_pipe) begin
-            man_norm_d1       <= man_norm_c;
-            exp_pre_d1        <= exp_pre_c;
-            grs_shift_d1      <= grs_shift_c;
-            grs_shift_ovf_d1  <= grs_shift_ovf;
-            sign_res_d3       <= sign_res_d1;
-            flags_d3          <= flags_d2;
+            s_sign_d3         <= 1'b0;
+        end else if (en_d2) begin
+            man_norm_d3       <= man_norm_c;
+            exp_pre_d3        <= exp_pre_c;
+            grs_shift_d3      <= grs_shift_c;
+            grs_shift_ovf_d3  <= grs_shift_ovf_c;
             is_zero_d3        <= is_zero_c;
-            s_sign_d3         <= s_sign_d2;
+            sign_res_d3       <= sign_res_d2;
+            flags_d3          <= flags_d2;
             s_inf_d3          <= s_inf_d2;
             prod_sign_d3      <= prod_sign_d2;
+            s_sign_d3         <= s_sign_d2;
         end
     end
 
     // ============================================================
     // STAGE S4: RNE rounding + F32 pack -> output register
-    //   Combinational during cycle N+3, captured at N+4 edge
+    //   Combinational during cycle N+3, captured at N+4 edge (CE = en_d3)
     // ============================================================
 
     // Normal path: kept = man_norm[26:3] (24-bit significand)
-    wire [23:0] kept     = man_norm_d1[26:3];
-    wire        g_norm   = man_norm_d1[2];
-    wire        r_norm   = man_norm_d1[1];
-    wire        s_norm   = man_norm_d1[0];
+    wire [23:0] kept     = man_norm_d3[26:3];
+    wire        g_norm   = man_norm_d3[2];
+    wire        r_norm   = man_norm_d3[1];
+    wire        s_norm   = man_norm_d3[0];
     wire        rup_norm = g_norm && (r_norm | s_norm | kept[0]);
 
     wire [24:0] kept_inc = {1'b0, kept} + {24'd0, rup_norm};
@@ -567,22 +561,22 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire [23:0] kept_r   = ovf_norm ? 24'h800000 : kept_inc[23:0];
 
     // Subnormal path: shift by grs_shift
-    wire [26:0] man_grs   = man_norm_d1 >> grs_shift_d1;
+    wire [26:0] man_grs   = man_norm_d3 >> grs_shift_d3;
     wire        g_sub     = man_grs[0];
     // Sticky: all bits of man_norm shifted out below the guard bit.
     // Do not OR the kept fraction bits (bits above R) into sticky.
-    wire [26:0] sub_mask  = (27'd1 << grs_shift_d1) - 27'd1;
-    wire        s_sub     = |(man_norm_d1 & sub_mask);
+    wire [26:0] sub_mask  = (27'd1 << grs_shift_d3) - 27'd1;
+    wire        s_sub     = |(man_norm_d3 & sub_mask);
     wire [22:0] frac_raw  = man_grs[23:1];
     wire        rup_sub   = g_sub && (s_sub | frac_raw[0]);
 
     wire [23:0] frac_inc = {1'b0, frac_raw} + {23'd0, rup_sub};
     // True shift > 31: the value is far below 0.5 ulp, so round to signed zero.
-    wire        ovf_sub  = grs_shift_ovf_d1 ? 1'b0 : frac_inc[23];
-    wire [22:0] frac_sub = grs_shift_ovf_d1 ? 23'd0 : frac_inc[22:0];
+    wire        ovf_sub  = grs_shift_ovf_d3 ? 1'b0 : frac_inc[23];
+    wire [22:0] frac_sub = grs_shift_ovf_d3 ? 23'd0 : frac_inc[22:0];
 
     // FP32 biased exponent: E = exp_pre + 3 (internal scale -> FP32 biased)
-    wire [10:0] exp_f32_biased = exp_pre_d1 + 11'd3;
+    wire [10:0] exp_f32_biased = exp_pre_d3 + 11'd3;
 
     // Subnormal output: E <= 0  (biased exponent 0 or negative)
     wire sub_out    = exp_f32_biased[10] | (exp_f32_biased == 11'd0);
@@ -593,9 +587,9 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
     wire        exp_eq254  = !exp_f32_biased[10] && (exp_f32_biased[9:0] == 10'd254);
     wire        exp_ovf    = !sub_out && (exp_ge255 | (exp_eq254 & ovf_norm));
     wire [7:0]  exp_final  = sub_out ? (ovf_sub ? 8'd1 : 8'd0)
-                                    : (ovf_norm ? exp_plus1[7:0] : exp_f32_biased[7:0]);
+                                     : (ovf_norm ? exp_plus1[7:0] : exp_f32_biased[7:0]);
     wire [22:0] frac_final = sub_out ? (ovf_sub ? 23'd0 : frac_sub)
-                                    : kept_r[22:0];
+                                     : kept_r[22:0];
 
     // Output selection: NaN > Inf/overflow > zero > normal/subnormal
     wire [31:0] v_nan  = {1'b0, 8'hFF, 23'h400000};
@@ -611,7 +605,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
 
     // Additional zero detection: if normalized mantissa is exactly zero,
     // force result to zero regardless of pipeline flag alignment.
-    wire man_norm_zero = (man_norm_d1 == 27'd0);
+    wire man_norm_zero = (man_norm_d3 == 27'd0);
     wire zero_detected = is_zero_d3 | flags_d3[0] | man_norm_zero;
 
     // No product-overflow hack: a finite product that exceeds the FP32 range
@@ -630,12 +624,12 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4 (
         c_next = kind_hi ? c_hi : c_lo;
     end
 
-    // Output register (cycle N+4)
+    // Output register (cycle N+4), CE = en_d3.
     // reset has priority over en; en=0 holds the last value (HOLD).
     always @(posedge clk) begin
         if (reset) begin
             outfp32s <= 32'h0000_0000;
-        end else if (en_pipe) begin
+        end else if (en_d3) begin
             outfp32s <= c_next;
         end
         // else: HOLD (keep last value)
