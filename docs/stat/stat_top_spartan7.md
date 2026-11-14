@@ -449,8 +449,8 @@ p_*_d1 → CSA-дерево → 16-битный CPA → k_calc → exp_p_calc
 
 | Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ -1, MHz | Fmax typ -2, MHz |
 |--------|------|-----|---------|----------|-------------------|------------------|------------------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~915 | 246 | 4 | fused BF16×BF16+FP32, single IEEE 754 RNE | **~11.4%** | ~110 | ~120 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~916 | 562 | 8 | fused BF16×BF16+FP32, single IEEE 754 RNE, 8-stage balanced pipeline (P1-P4) | **~11.5%** | ~225 | ~245 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~915 | 246 | 4 | fused BF16×BF16+FP32, single IEEE 754 RNE | **~11.4%** | ~125 | ~140 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~916 | 562 | 8 | fused BF16×BF16+FP32, single IEEE 754 RNE, 8-stage balanced pipeline (P1-P4) | **~11.5%** | ~200 | ~220 |
 
 ### Модули сложения (Addition)
 
@@ -543,10 +543,10 @@ p_*_d1 → CSA-дерево → 16-bit CPA → k_calc → exp_p_calc
 |--------|----------|----------|-------------|
 | **LUTs** | **~916** (800-1050) | **~916** (800-1050) | **~11.5%** |
 | FF | **562** | **562** | **~3.5%** |
-| Fmax typ -1 | **~225 MHz** | — | — |
-| Fmax typ -2 | — | **~245 MHz** | — |
+| Fmax typ -1 | **~200 MHz** | — | — |
+| Fmax typ -2 | — | **~220 MHz** | — |
 
-Fused multiply-add с 8-стадийным **сбалансированным** конвейером (P1-P4 оптимизации: retiming S7→S8, rebalance S1→S2, deferred mantissa compare, LZD split S6/S7). Функционально идентичен lat4, latency = 8 тактов. Оптимизирован: CARRY4-вычитатели для exp_pre/grs_shift, per-stage CE, прямой exp_diff без mux, deferred mantissa compare, LZD split S6/S7. **Конвейер сбалансирован** (все стадии 7-11 LUT-уровней). **Fmax typ ~225 MHz на XC7S15-1, ~245 MHz на XC7S15-2**. Баг в exp_pre (префиксная сеть span=7 < 11 бит) исправлен в rev 0.0.7opt.
+Fused multiply-add с 8-стадийным **сбалансированным** конвейером (P1-P4 оптимизации: retiming S7→S8, rebalance S1→S2, deferred mantissa compare, LZD split S6/S7). Функционально идентичен lat4, latency = 8 тактов. Оптимизирован: CARRY4-вычитатели для exp_pre/grs_shift, per-stage CE, прямой exp_diff без mux, deferred mantissa compare, LZD split S6/S7. **Конвейер сбалансирован** (все стадии 7-11 LUT-уровней). **Fmax typ ~200 MHz на XC7S15-1, ~220 MHz на XC7S15-2**. Баг в exp_pre (префиксная сеть span=7 < 11 бит) исправлен в rev 0.0.7opt.
 
 ---
 
@@ -577,8 +577,8 @@ Fused multiply-add с 8-стадийным **сбалансированным** 
 | **AddF16 RNE** | ~190 | **~2.4%** | ~151 | **~0.9%** | ~155 | ~175 | ✅ Помещается. Если нужна IEEE 754 точность для FP16 сложения |
 | **AddBF16 RTZ** | ~165 | **~2.1%** | ~140 | **~0.9%** | ~165 | ~185 | ✅ Помещается с очень большим запасом |
 | **AddBF16 RNE** | ~195 | **~2.4%** | ~140 | **~0.9%** | ~150 | ~170 | ✅ Помещается. Если нужна IEEE 754 точность для BF16 сложения |
-| **FMA RNE** | ~915 | **~11.4%** | 246 | **~1.5%** | ~110 | ~120 | ✅ Помещается. Самый крупный модуль: fused BF16×BF16+FP32 |
-| **FMA RNE lat8** | ~916 | **~11.5%** | 562 | **~3.5%** | ~225 | ~245 | ✅ Помещается. FMA с 8-стадийным сбалансированным конвейером (P1-P4) |
+| **FMA RNE** | ~915 | **~11.4%** | 246 | **~1.5%** | ~125 | ~140 | ✅ Помещается. Самый крупный модуль: fused BF16×BF16+FP32 |
+| **FMA RNE lat8** | ~916 | **~11.5%** | 562 | **~3.5%** | ~200 | ~220 | ✅ Помещается. FMA с 8-стадийным сбалансированным конвейером (P1-P4) |
 
 Все десять top-level модулей занимают лишь **~2.0–11.5% LUT6** и **~0.9–3.5% FF**
 XC7S15 — остаётся запас **~88.5% LUTs** для остальной логики системы.

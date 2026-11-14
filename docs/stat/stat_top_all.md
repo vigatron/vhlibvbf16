@@ -150,8 +150,8 @@
 
 | Модуль | Latency | Fmax XC6SLX9 (-2) | Fmax XC6SLX16 (-2) | Fmax XC7S15-1 | Fmax XC7S15-2 | Fmax XC7A15T (-1) | Точность |
 |--------|---------|-------------------|--------------------|---------------|---------------|-------------------|----------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 4 | ~60–85–110 MHz | ~60–85–110 MHz | ~80–110–140 MHz | ~90–120–150 MHz | ~95–125–155 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 8 | ~145–190–230 MHz | ~145–190–230 MHz | ~175–225–270 MHz | ~195–245–295 MHz | ~195–245–290 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN; 8-stage balanced pipeline (P1-P4 optimizations) |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 4 | ~75–100–130 MHz | ~75–100–130 MHz | ~95–125–155 MHz | ~110–140–175 MHz | ~115–145–180 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 8 | ~130–170–210 MHz | ~130–170–210 MHz | ~155–200–245 MHz | ~170–220–270 MHz | ~170–220–265 MHz | fused BF16×BF16+FP32; single IEEE 754 RNE; subnormals preserved; canonical NaN; 8-stage balanced pipeline (P1-P4 optimizations) |
 
 ### Модули сложения (Addition)
 
@@ -180,8 +180,8 @@
 
 | Модуль | XC6SLX9-2 | XC6SLX16-2 | XC7S15-1 | XC7S15-2 | XC7A15T-1 |
 |--------|-----------|------------|----------|----------|-----------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~85** | **~85** | **~110** | **~120** | **~125** |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~190** | **~190** | **~225** | **~245** | **~245** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~100** | **~100** | **~125** | **~140** | **~145** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~170** | **~170** | **~200** | **~220** | **~220** |
 
 ### Модули сложения (Addition)
 
@@ -210,7 +210,7 @@
 
 5. **Маржа для роста.** На всех целевых FPGA остаётся не менее **~84% свободных LUT6** для остальной логики системы (худший случай — FMA lat8 на XC6SLX9: ~16.0%).
 
-6. **Fmax верифицирован через Yosys синтез.** Ценности Fmax основаны на синтезе в Yosys (abc9, synth_xilinx) с оценкой глубины логики. **Важно:** конвейер FMA lat8 **сбалансирован** после P1-P4 оптимизаций: все 8 стадий в диапазоне 7-11 LUT-уровней. Ожидаемый Fmax: **~190 MHz на XC6SLX9-2, ~225 MHz на XC7S15-1, ~245 MHz на XC7A15T-1**. Для lat4 (4 стадии) Fmax ниже: **~85 MHz на XC6SLX9-2** из-за тяжелой S2/S3. Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.
+6. **Fmax верифицирован через Yosys синтез.** Ценности Fmax основаны на синтезе в Yosys (abc9, synth_xilinx) с оценкой глубины логики. **Важно:** конвейер FMA lat8 **сбалансирован** после P1-P4 оптимизаций: все 8 стадий в диапазоне 7-11 LUT-уровней. Ожидаемый Fmax: **~170 MHz на XC6SLX9-2, ~200 MHz на XC7S15-1, ~220 MHz на XC7A15T-1**. Для lat4 (4 стадии) Fmax ниже: **~100 MHz на XC6SLX9-2** из-за тяжелой S2/S3. Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.
 
 7. **Категорический запрет на использование DSP блоков.** Все модули библиотеки реализованы **исключительно в чистой логике LUT/FF**. Использование DSP48A1, DSP48E1 или любых других DSP блоков **запрещено** для обеспечения переносимости между семействами FPGA (Spartan-6, Spartan-7, Artix-7 и др.), избежания привязки к конкретному производителю, единой методологии проектирования и прозрачности RTL-кода. Подробности см. в `rules/dsp_prohibition.md`.
 
@@ -220,4 +220,4 @@
 
 10. **Новые BF16 аддеры (`add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4`).** Latency = 4 такта, полный конвейер, subnormal операнды не флашатся в ноль. Архитектура унифицирована с FP16-вариантами: 14-битная расширенная мантисса, 15-битный raw результат, 4-битный LZD, но с 8-битной экспонентой и 9-битной знаковой экспонентой. RTZ-вариант ~165 LUT / ~140 FF, RNE-вариант ~195 LUT / ~140 FF (+30 LUT за RNE-округление). Canonical NaN `0x7FC0` и RTZ overflow в max finite `0x7F7F` уменьшают число регистров по сравнению с FP16/FP32-аддерами. Оценки ручные (±20–25%), требуют синтеза для точного Fmax.
 
-11. **FMA `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` — самый крупный модуль библиотеки.** Latency = 4 такта, fused-семантика: единственное RNE-округление применяется к `SUMM + VALA × VALB`, промежуточное произведение BF16 × BF16 точное (16 бит) и не округляется до Inf. **~915 LUT / 246 FF** (16.0% LUT6 и 2.1% FF на XC6SLX9; 8.8% и 1.2% на XC7A15T). Вариант с latency 8 (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`) использует **сбалансированный 8-стадийный конвейер** (P1-P4 оптимизации): **~916 LUT / 562 FF** (16.0% LUT6 и 4.9% FF на XC6SLX9), **Fmax typ ~190 MHz на Spartan-6 (-2), ~225 MHz на Spartan-7 (-1), ~245 MHz на Artix-7 (-1)**. Архитектура: CARRY4-вычитатели для exp_pre/grs_shift, per-stage CE, прямой exp_diff без mux, deferred mantissa compare, LZD split (S6/S7). DSP блоки не применяются, BRAM не используется. **Баг в exp_pre (префиксная сеть span=7 < 11 бит) исправлен в rev 0.0.7opt.**
+11. **FMA `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` — самый крупный модуль библиотеки.** Latency = 4 такта, fused-семантика: единственное RNE-округление применяется к `SUMM + VALA × VALB`, промежуточное произведение BF16 × BF16 точное (16 бит) и не округляется до Inf. **~915 LUT / 246 FF** (16.0% LUT6 и 2.1% FF на XC6SLX9; 8.8% и 1.2% на XC7A15T). Вариант с latency 8 (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`) использует **сбалансированный 8-стадийный конвейер** (P1-P4 оптимизации): **~916 LUT / 562 FF** (16.0% LUT6 и 4.9% FF на XC6SLX9), **Fmax typ ~170 MHz на Spartan-6 (-2), ~200 MHz на Spartan-7 (-1), ~220 MHz на Artix-7 (-1)**. Архитектура: CARRY4-вычитатели для exp_pre/grs_shift, per-stage CE, прямой exp_diff без mux, deferred mantissa compare, LZD split (S6/S7). DSP блоки не применяются, BRAM не используется. **Баг в exp_pre (префиксная сеть span=7 < 11 бит) исправлен в rev 0.0.7opt.**
