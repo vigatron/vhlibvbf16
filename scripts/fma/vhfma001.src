@@ -1,0 +1,4 @@
+# Источники DUT vhfma001 (LAT=8).
+# Используется тестбенчами run_test_vhfma001.sh.
+src/fma/vhfma001.v
+src/aux/vhfastmulb16_mul4x4_comb.v

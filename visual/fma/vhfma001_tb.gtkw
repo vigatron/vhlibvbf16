@@ -1,0 +1,50 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*]
+[dumpfile] "../../build/vhfma001.vcd"
+[savefile] "visual/fma/vhfma001_tb.gtkw"
+[treeopen] vhfma001_tb.
+[sst_width] 269
+[sst_width] 211
+[sst_expanded] 1
+[sst_vpaned_height] 371
+@420
+vhfma001_tb.EXP_CHECK
+vhfma001_tb.LAT
+vhfma001_tb.MAX_PRINT
+vhfma001_tb.N
+vhfma001_tb.checked
+@28
+vhfma001_tb.clk
+vhfma001_tb.en
+@420
+vhfma001_tb.errors
+@23
+[color] 3
+vhfma001_tb.inbf16a[15:0]
+[color] 3
+vhfma001_tb.inbf16b[15:0]
+[color] 3
+vhfma001_tb.infp32s[31:0]
+@22
+vhfma001_tb.hold_val[31:0]
+vhfma001_tb.outfp32s[31:0]
+@420
+vhfma001_tb.k
+@28
+vhfma001_tb.reset
+@28
+[treeopen] vhfma001_tb.uut.
+vhfma001_tb.uut.man_prod_d3[15:0]
+vhfma001_tb.uut.exp_p_d1[10:0]
+vhfma001_tb.uut.exp_p_calc[10:0]
+vhfma001_tb.uut.exp_s_d3[10:0]
+vhfma001_tb.uut.large_is_prod
+vhfma001_tb.uut.op_add_d4
+vhfma001_tb.uut.man_raw_c[27:0]
+vhfma001_tb.uut.man_norm_d7[26:0]
+vhfma001_tb.uut.exp_f32_d7[10:0]
+vhfma001_tb.uut.flags_d7[2:0]
+vhfma001_tb.uut.sign_res_d7
+vhfma001_tb.uut.c_next[31:0]
+vhfma001_tb.uut.en_pipe
