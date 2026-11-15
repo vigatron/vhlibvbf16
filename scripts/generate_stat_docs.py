@@ -157,7 +157,13 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
     lines.append(f"> Синтез останавливается до ABC9 (`-run begin:map_ffs`): YoWASP WASM не может запустить внешний `yosys-abc`.")
     lines.append(f"> **LUTs — оценка по числу вентилей** (gates / 2.5), структура иерархии развёрнута (`flatten`).")
     lines.append(f"> Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.")
-    lines.append(f"> Реальный синтез в Xilinx ISE/Vivado не выполнялся.")
+    if family == "xc6s":
+        lines.append(f"> Единственное реальное (пробное) post-PAR исполнение — детали ниже.")
+    else:
+        lines.append(f"> Реальный синтез в Xilinx ISE/Vivado не выполнялся.")
+    if family == "xc6s":
+        lines.append(f"> **Единственное реальное (пробное) post-PAR исполнение:** `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` на плате CMB32F407HDMIR3 (STM32F407 + XC6SLX9-2TQG144), Xilinx ISE 14.7, констрейнт 8 ns (125 MHz): **0 ошибок тайминга** (237 196 paths / 4 753 endpoints), min period **7.414 ns (≈134.9 MHz)**, **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.")
+        lines.append(f"> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставим. Пробный тест, не sign-off. Логи: `docs/benchmarks/log9_fma_lat8/`.")
     lines.append(f"> Ожидаемая погрешность оценки LUT без реального синтеза — **±20–25%**.")
     lines.append(f"> Для точного Fmax необходимо запустить Xilinx ISE/Vivado с `report_timing`.")
     lines.append(f"")
@@ -282,6 +288,8 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
     lines.append("")
     lines.append(f"Источник данных: {source_docs} ({generator_note}).")
     lines.append("LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.")
+    if conclusion_kind == "top":
+        lines.append("Есть одно пробное post-PAR измерение FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7, min period 7.414 ns ≈ 134.9 MHz) — см. `stat_top_spartan6.md` и `docs/benchmarks/log9_fma_lat8/`.")
     lines.append("")
     lines.append("---")
     lines.append("")

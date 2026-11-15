@@ -2,6 +2,7 @@
 
 Источник данных: `docs/stat/stat_top_spartan6.md`, `docs/stat/stat_top_spartan7.md`, `docs/stat/stat_top_artix7.md` (генерируются `scripts/generate_stat_docs.py` из `build/stat/*.json`).
 LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.
+Есть одно пробное post-PAR измерение FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7, min period 7.414 ns ≈ 134.9 MHz) — см. `stat_top_spartan6.md` и `docs/benchmarks/log9_fma_lat8/`.
 
 ---
 
