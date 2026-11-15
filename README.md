@@ -417,7 +417,9 @@ The implementation targets Xilinx Spartan-6 (XC6SLX9-2), Spartan-7 (XC7S15-1) an
 - `scripts/collect_stats.py` — synthesizes every design with Yosys: `hierarchy -top` → `flatten` → `synth_xilinx -family <xc6s|xc7> -run begin:map_ffs` (YoWASP WASM cannot run yosys-abc, so synthesis stops before ABC9), then parses the RTLIL dump on stdout. LUT6 is estimated as `gates / 2.5` (±20–25%); FF, CARRY4 and IO buffer counts are exact.
 - `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports.
 
-Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement; expect ±20–25%. For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
+Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
+
+**Real-board measurement (preliminary, trial).** The `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` module has been placed & routed in Xilinx ISE 14.7 on a **CMB32F407HDMIR3** board (hybrid STM32F407 + Spartan-6 XC6SLX9-2TQG144). The measured top includes the DUT (`u_mul`) **plus a minimal parallel data-loading interface** (helper logic: input/output registers `u_regs` and a thin MCU parallel-bus wrapper `u_iface`, packed into IOBs), not the bare DUT — figures are not directly comparable to the Yosys estimates above. With an 8 ns (125 MHz) clock constraint: **0 timing errors** (237,196 analyzed paths / 4,753 endpoints), minimum period **7.414 ns (~134.9 MHz)**, **887 slice registers (7%)**, **1,117 slice LUTs (19%)**, **514 occupied slices (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOBs («Performance with IOB Packing»). Trial run, not a sign-off; more devices/trials pending. Logs: [`docs/benchmarks/log9_fma_lat8/`](docs/benchmarks/log9_fma_lat8/).
 
 Reports:
 
