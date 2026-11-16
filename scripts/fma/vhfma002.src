@@ -1,0 +1,3 @@
+# Источники DUT vhfma002 (LAT=8).
+# Используется тестбенчами run_test_vhfma002.sh.
+src/fma/vhfma002.v

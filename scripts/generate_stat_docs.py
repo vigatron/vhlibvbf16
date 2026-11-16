@@ -150,7 +150,7 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
     lines.append(f"| **Device** | {device} |")
     lines.append(f"| **LUTs (6-input / LUT6)** | **{lut_total:,}** |")
     lines.append(f"| **Flip-Flops** | {ff_total:,} |")
-    lines.append(f"| **DSP** | {fam_info['dsp_total']} × {fam_info['dsp_type']} (не используются — запрещено правилами) |")
+    lines.append(f"| **DSP** | {fam_info['dsp_total']} × {fam_info['dsp_type']} (исключительно LUT/FF; исключение — `vhfma002`, см. `rules/dsp_prohibition.md`) |")
     lines.append(f"| **Block RAM** | {fam_info['bram_total']} (не используется) |")
     lines.append(f"")
     lines.append(f"> **Важно:** Все цифры ниже — **оценки на основе синтеза в Yosys (YoWASP)**.")
@@ -234,7 +234,12 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
         lines.append(f"| **Gates (pre-ABC9)** | {format_number(metrics.get('gates'))} | — |")
         lines.append(f"| **Logic Cells (total)** | {format_exact(metrics.get('logic_cells'))} | — |")
         lines.append(f"| **IO (IBUF+OBUF)** | {format_exact(metrics.get('iob'))} | — |")
-        lines.append(f"| **DSP48** | {metrics.get('dsp48', 'N/A')} | 0% (запрещено, проверено) |")
+        dsp_used = metrics.get('dsp48', 0) or 0
+        if dsp_used:
+            dsp_note = f"{format_percent(dsp_used, fam_info['dsp_total'])} (разрешено исключением — `rules/dsp_prohibition.md`)"
+        else:
+            dsp_note = "0% (запрещено, проверено)"
+        lines.append(f"| **DSP48** | {metrics.get('dsp48', 'N/A')} | {dsp_note} |")
         lines.append(f"| **Fmax (typ, manual)** | {fmax.get('estimated_mhz', 'N/A')} MHz | источник: {fmax.get('source', 'unknown')} |")
         lines.append(f"| **Latency** | {m['latency']} cycles | — |")
         lines.append(f"| **Rounding** | {m['rounding']} | — |")
@@ -309,7 +314,7 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
 
     for fid in family_order:
         fi = FAMILIES[fid]
-        lines.append(f"| {fi['device']} | {family_names[fid]} | {fi['lut6_total']:,} | {fi['ff_total']:,} | {fi['dsp_total']} × {fi['dsp_type']} (не исп.) | {fi['bram_total']} (не исп.) |")
+        lines.append(f"| {fi['device']} | {family_names[fid]} | {fi['lut6_total']:,} | {fi['ff_total']:,} | {fi['dsp_total']} × {fi['dsp_type']} (исключение: `vhfma002`) | {fi['bram_total']} (не исп.) |")
 
     lines.append("")
     lines.append("---")
@@ -498,7 +503,7 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
 
     lines.append(f"6. **LUT — оценка, Fmax — калибровка.** LUT6 получено делением числа вентилей на 2.5 до ABC9 (YoWASP WASM не выполняет yosys-abc; погрешность ±20–25%). Fmax — ручные типовые значения (`scripts/modules_config.py`), не измерение post-PAR. Для точного Fmax требуется Xilinx ISE/Vivado с `report_timing`.")
     lines.append(f"")
-    lines.append(f"7. **Категорический запрет на использование DSP блоков.** Все модули библиотеки реализованы **исключительно в чистой логике LUT/FF**. Использование DSP48A1, DSP48E1 или любых других DSP блоков **запрещено**. Проверка: `dsp48 = 0` во всех отчётах. Подробности см. в `rules/dsp_prohibition.md`.")
+    lines.append(f"7. **Категорический запрет на использование DSP блоков — с одним исключением.** Все модули библиотеки реализованы **исключительно в чистой логике LUT/FF**. Исключение: `vhfma002` (экспериментальный DSP-вариант `vhfma001`) — ему разрешено использовать DSP48 для умножения 8×8 мантисс BF16 (см. `rules/dsp_prohibition.md`). Проверка: `dsp48 = 0` во всех отчётах, кроме `vhfma002`. Подробности см. в `rules/dsp_prohibition.md`.")
     lines.append(f"")
     lines.append(f"8. **Автоматизация:** Статистика собрана скриптом `scripts/collect_stats.py`, документация сгенерирована `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py`. Исходные данные в `build/stat*.json`.")
     lines.append(f"")

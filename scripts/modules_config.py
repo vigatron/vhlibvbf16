@@ -151,6 +151,17 @@ MODULES = [
         "category": "fma",
         "fmax": {"xc6s": 170, "xc7s": 200, "xc7a": 220},
     },
+    {
+        "name": "vhfma002",
+        "sources": [
+            "src/fma/vhfma002.v",
+        ],
+        "latency": 8,
+        "rounding": "RNE",
+        "subnormal_handling": "preserve",
+        "category": "fma",
+        "fmax": {"xc6s": 180, "xc7s": 210, "xc7a": 230},
+    },
 ]
 
 # Bottom-up submodules for docs/stat/stat_others_*.md (generated).
