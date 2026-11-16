@@ -1,0 +1,58 @@
+[*]
+[*] GTKWave Analyzer v3.3.116 (w)1999-2023 BSI
+[*] Mon Nov 16 00:00:00 2026
+[*]
+[dumpfile] "../../build/vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3.vcd"
+[savefile] "visual/mul/vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.gtkw"
+[timestart] 0
+[size] 1360 721
+[pos] -1 -1
+*-15.599998 385000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.
+[treeopen] vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.
+[sst_width] 278
+[signals_width] 200
+[sst_expanded] 1
+[sst_vpaned_height] 233
+@29
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.clk
+@28
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.reset
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.en
+@420
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.k
+@22
+[color] 3
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.a_in[15:0]
+[color] 3
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.b_in[15:0]
+[color] 2
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.c_out[15:0]
+@28
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.v_s1
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.v_s2
+@22
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.prod16[15:0]
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.exp_sum[8:0]
+@28
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.sign_xor
+@22
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s1_prod[15:0]
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s1_exp_sum[8:0]
+@28
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s1_nan
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s1_inf
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s1_zero
+@22
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.man_norm[6:0]
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.exp_n[8:0]
+@28
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.prod_msb
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.exp_underflow
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.exp_overflow
+@22
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s2_man[6:0]
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.s2_exp_n[8:0]
+vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3_tb.uut.c_next[15:0]
+[pattern_trace] 1
+[pattern_trace] 0
