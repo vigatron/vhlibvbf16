@@ -24,6 +24,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~252 | ~252 | ~252 |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~259 | ~259 | ~259 |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | ~230 | ~230 | ~230 |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~485 | ~485 | ~485 |
 
 ## Сравнение top-level модулей (FF)
@@ -34,6 +35,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | 106 | 106 | 106 |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | 117 | 117 | 117 |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | 61 | 61 | 61 |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | 170 | 170 | 170 |
 
 ## Сравнение top-level модулей (% от доступных LUT6)
@@ -44,6 +46,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **~4.4%** | **~3.1%** | **~2.4%** |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **~4.5%** | **~3.2%** | **~2.5%** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | **~4.0%** | **~2.9%** | **~2.2%** |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **~8.5%** | **~6.1%** | **~4.7%** |
 
 ## Сравнение Latency и Fmax (оценка)
@@ -54,6 +57,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|---------|---------------------|---------------------|---------------------|----------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | 3 | 175 MHz | 205 MHz | 230 MHz | truncation (RTZ); FTZ |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | 3 | 155 MHz | 180 MHz | 210 MHz | IEEE 754 RNE; FTZ |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | 3 | 200 MHz | 230 MHz | 255 MHz | truncation (RTZ); FTZ |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | 4 | 145 MHz | 165 MHz | 190 MHz | exact; subnormals preserved |
 
 ## Сравнение top-level модулей (LUTs)
@@ -160,6 +164,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | **175** | **205** | **230** |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | **155** | **180** | **210** |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | **200** | **230** | **255** |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | **145** | **165** | **190** |
 
 ### Комбинированные модули (Combined / FMA)
@@ -189,7 +194,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 
 ## Краткие выводы
 
-1. **Все модули компактны.** Наименьшее устройство (XC6SLX9): самый прожорливый модуль (`vhfma001`) занимает **~20.1% LUT6** (~1148 LUT); самый компактный (`vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`) — ~4.4% LUT6.
+1. **Все модули компактны.** Наименьшее устройство (XC6SLX9): самый прожорливый модуль (`vhfma001`) занимает **~20.1% LUT6** (~1148 LUT); самый компактный (`vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3`) — ~4.0% LUT6.
 
 2. **RNE дороже RTZ в среднем на ~24 LUT.** Это стоимость IEEE 754 округления "до ближайшего чётного" (G/R/S биты, инкремент мантиссы, корректировка экспоненты).
 
@@ -207,5 +212,5 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 
 ---
 
-*Последнее обновление: 2026-11-16T06:22:10.519045Z*
+*Последнее обновление: 2026-11-16T14:40:37.766011Z*
 *Инструменты: Yosys/YoWASP, wasmtime*
