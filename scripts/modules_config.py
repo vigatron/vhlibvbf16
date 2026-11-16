@@ -152,6 +152,18 @@ MODULES = [
         "fmax": {"xc6s": 170, "xc7s": 200, "xc7a": 220},
     },
     {
+        "name": "vhfma001",
+        "sources": [
+            "src/fma/vhfma001.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
+        ],
+        "latency": 8,
+        "rounding": "RNE",
+        "subnormal_handling": "preserve",
+        "category": "fma",
+        "fmax": {"xc6s": 180, "xc7s": 210, "xc7a": 230},
+    },
+    {
         "name": "vhfma002",
         "sources": [
             "src/fma/vhfma002.v",

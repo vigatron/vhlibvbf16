@@ -1,7 +1,7 @@
 // ----------------------------------------------
 // vhlibvbf16 - Fused Multiply-Add BF16 x BF16 + FP32 -> FP32.
 // RNE, DSP blocks allowed for the 8x8 mantissa multiply
-// (exception granted by rules/dsp_prohibition.md for this module only).
+// (exception: DSP Block Exception, see vhfma002 section in README.md).
 // Author: Viktor Glebov / V01G04A81
 // License: MIT
 // https://github.com/vigatron/vhlibvbf16
@@ -41,8 +41,8 @@
  * The BF16 x BF16 product is exact (no intermediate rounding); the single
  * RNE rounding is applied only at the final FMA result.
  * The 8x8 mantissa multiply is mapped onto a DSP block; this is allowed
- * only for this module (see rules/dsp_prohibition.md). All other modules
- * of the library stay in pure LUT/FF logic.
+ * only for this module (see "DSP Block Exception (vhfma002)" in README.md).
+ * All other modules of the library stay in pure LUT/FF logic.
  *
  * Internal exponent scale: value = ext27 * 2^(exp - 150), where ext27 is the
  * 27-bit extended mantissa (24-bit significand + 3 GRS bits).  This matches
@@ -169,7 +169,8 @@ module vhfma002 (
 
     // ---------------------------------------------------
     // DSP-mapped 8x8 multiplication (combinational, registered in S1)
-    // The only DSP block allowed in this module (dsp_prohibition.md exception).
+    // The only DSP block allowed in this module (see "DSP Block Exception
+    // (vhfma002)" in README.md).
     // use_dsp/use_dsp48 are vendor attributes; iverilog ignores them.
     // ---------------------------------------------------
     (* use_dsp = "yes", use_dsp48 = "yes" *) wire [15:0] man_prod = a_man * b_man;

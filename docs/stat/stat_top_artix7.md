@@ -7,7 +7,7 @@
 | **Device** | XC7A15T-1 |
 | **LUTs (6-input / LUT6)** | **10,400** |
 | **Flip-Flops** | 20,800 |
-| **DSP** | 45 × DSP48E1 (исключительно LUT/FF; исключение — `vhfma002`, см. `rules/dsp_prohibition.md`) |
+| **DSP** | 45 × DSP48E1 (исключительно LUT/FF; исключение — `vhfma002`, см. раздел «DSP Block Exception (`vhfma002`)» в README.md) |
 | **Block RAM** | 25 × 36Kb (не используется) |
 
 > **Важно:** Все цифры ниже — **оценки на основе синтеза в Yosys (YoWASP)**.
@@ -36,6 +36,7 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 145 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 220 |
+| `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~11.0%** | 230 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~9.8%** | 230 |
 
 ### Модули сложения (Addition)
@@ -517,6 +518,49 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 ---
 
+### `vhfma001`
+
+| Ресурс | Значение | % от доступных |
+|--------|----------|----------------|
+| **LUTs (est.)** | ~1148 | **~11.0%** |
+| **FF** | 570 | **~2.7%** |
+| **CARRY4** | 78 | — |
+| **CARRY8** | 0 | — |
+| **LUT6_2** | 0 | — |
+| **MUXF7** | 0 | — |
+| **MUXF8** | 0 | — |
+| **Gates (pre-ABC9)** | ~2871 | — |
+| **Logic Cells (total)** | 3618 | — |
+| **IO (IBUF+OBUF)** | 99 | — |
+| **DSP48** | 0 | 0% (запрещено, проверено) |
+| **Fmax (typ, manual)** | 230 MHz | источник: manual |
+| **Latency** | 8 cycles | — |
+| **Rounding** | RNE | — |
+| **Subnormals** | preserve | — |
+
+**Критический путь (оценка):**
+```
+unknown
+```
+
+**Распределение ячеек:**
+
+| Тип ячейки | Количество |
+|------------|------------|
+| $_AND_ | 354 |
+| $_MUX_ | 1260 |
+| $_NOT_ | 267 |
+| $_OR_ | 763 |
+| $_SDFFE_PP0P_ | 563 |
+| $_SDFF_PP0_ | 7 |
+| $_XNOR_ | 16 |
+| $_XOR_ | 211 |
+| CARRY4 | 78 |
+| IBUF | 67 |
+| OBUF | 32 |
+
+---
+
 ### `vhfma002`
 
 | Ресурс | Значение | % от доступных |
@@ -531,7 +575,7 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 | **Gates (pre-ABC9)** | ~2540 | — |
 | **Logic Cells (total)** | 3220 | — |
 | **IO (IBUF+OBUF)** | 99 | — |
-| **DSP48** | 1 | **~2.2%** (разрешено исключением — `rules/dsp_prohibition.md`) |
+| **DSP48** | 1 | **~2.2%** (разрешено исключением — см. README.md, «DSP Block Exception (`vhfma002`)») |
 | **Fmax (typ, manual)** | 230 MHz | источник: manual |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RNE | — |
@@ -561,5 +605,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-16T05:52:49.924811Z*
+*Сгенерировано автоматически: 2026-11-16T06:22:10.518765Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
