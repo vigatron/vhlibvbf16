@@ -54,12 +54,15 @@ The following top-level modules are the primary entry points of the library:
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax) | F32 | 8 clk | RNE (IEEE-754) |
 | `vhfma001` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax, pure LUT/FF; speed-optimized clone of lat8) | F32 | 8 clk | RNE (IEEE-754) |
 | `vhfma002` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax; 8x8 BF16 mantissa multiply mapped to one DSP48 — allowed exception) | F32 | 8 clk | RNE (IEEE-754) |
+| `vhfma001` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax, pure LUT/FF; speed-optimized clone of lat8) | F32 | 8 clk | RNE (IEEE-754) |
+| `vhfma002` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax; 8x8 BF16 mantissa multiply mapped to one DSP48 — allowed exception) | F32 | 8 clk | RNE (IEEE-754) |
 
 ### Auxiliary Modules
 
 Helper modules used internally by the top-level DUTs.
 
 
+The corresponding files are located in the `src` folder (the multiplication top DUTs are in `src/mul/`, the addition top DUTs are in `src/add/`, the FMA modules are in `src/fma/`, the auxiliary submodules are in `src/aux/`).
 The corresponding files are located in the `src` folder (the multiplication top DUTs are in `src/mul/`, the addition top DUTs are in `src/add/`, the FMA modules are in `src/fma/`, the auxiliary submodules are in `src/aux/`).
 
 The DUT is written in plain **Verilog-2005** (IEEE 1364-2005, no SystemVerilog
@@ -70,6 +73,34 @@ The design supports two rounding modes:
 - **RTZ** (Round Toward Zero) — truncation, simple discard of the lower bits;
 - **RNE** (Round to Nearest Even) — IEEE 754 rounding.
 
+The implementation does not require any DSP blocks for the reference flow: the
+multiplication is built from a carry-save adder (CSA) tree and a final 16-bit
+carry-propagate adder (CPA). A single module is explicitly exempted from this
+rule — `vhfma002` (see [DSP Block Exception](#dsp-block-exception-vhfma002)).
+All other modules stay in pure LUT/FF logic.
+
+## DSP Block Exception (`vhfma002`)
+
+**`vhfma002` is the only module of the library allowed to use DSP blocks.**
+
+- The 8x8-bit BF16 mantissa multiply is a single `*` operator with
+  `(* use_dsp = "yes" *)` and maps onto one DSP48A1 (Spartan-6) or DSP48E1
+  (Spartan-7 / Artix-7) cell. Everything else in the module is regular LUT/FF logic.
+- Rationale: maximum Fmax at a fixed latency of 8 cycles. The DSP multiply path is
+  much shorter than a LUT-based 8x8 multiplier built from four 4x4 `mul4x4_comb`
+  instances (that is what `vhfma001` does).
+- Interface, latency (8 clk), RNE rounding, subnormal handling, special-case
+  semantics and the per-stage clock-enable model are identical to `vhfma001`
+  and `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`.
+- Synthesis evidence: Yosys (YoWASP) 0.70 reports exactly one DSP48 cell per
+  family for `vhfma002` (`DSP48A1` on XC6S, `DSP48E1` on XC7S/XC7A); see
+  [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md) and
+  [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), section `vhfma002`.
+- Post-PAR Fmax is not confirmed yet: the `fmax` values in
+  `scripts/modules_config.py` (180/210/230 MHz) are a hand-calibrated typical
+  estimate, not a measurement. For a sign-off, run Xilinx ISE/Vivado `report_timing`.
+- All other modules of the library remain strictly DSP-free and keep the `*`-free
+  convention of the reference implementation.
 The implementation does not require any DSP blocks for the reference flow: the
 multiplication is built from a carry-save adder (CSA) tree and a final 16-bit
 carry-propagate adder (CPA). A single module is explicitly exempted from this
@@ -239,6 +270,8 @@ The `src/` directory contains **25** Verilog source files:
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
 | `fma/vhfma001.v` | `vhfma001` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; speed-optimized clone of lat8, pure LUT/FF) | 8 clk |
 | `fma/vhfma002.v` | `vhfma002` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; single DSP48-mapped 8x8 mantissa multiply — allowed exception) | 8 clk |
+| `fma/vhfma001.v` | `vhfma001` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; speed-optimized clone of lat8, pure LUT/FF) | 8 clk |
+| `fma/vhfma002.v` | `vhfma002` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; single DSP48-mapped 8x8 mantissa multiply — allowed exception) | 8 clk |
 
 ### Auxiliary Modules
 
@@ -275,6 +308,13 @@ vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
 └── vhfastmulb16_mul4x4_comb (x4)
+
+vhfma001
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfma002
+  (autonomous, no dependencies on other vhfastmulb16_* modules;
+   one DSP48 block for the 8x8 BF16 mantissa multiply — allowed exception)
 
 vhfma001
 └── vhfastmulb16_mul4x4_comb (x4)
@@ -370,6 +410,10 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/fma/vhfma001_rand_tb.v` | `vhfma001` (random regression, LAT=8) |
 | `tests/fma/vhfma002_tb.v` | `vhfma002` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfma002_rand_tb.v` | `vhfma002` (random regression, LAT=8) |
+| `tests/fma/vhfma001_tb.v` | `vhfma001` (directed + hold/reset, LAT=8) |
+| `tests/fma/vhfma001_rand_tb.v` | `vhfma001` (random regression, LAT=8) |
+| `tests/fma/vhfma002_tb.v` | `vhfma002` (directed + hold/reset, LAT=8) |
+| `tests/fma/vhfma002_rand_tb.v` | `vhfma002` (random regression, LAT=8) |
 
 ### Auxiliary Modules
 
@@ -440,6 +484,10 @@ Run the simulation with:
 ./scripts/fma/run_test_vhfma001_rand.sh sim
 ./scripts/fma/run_test_vhfma002.sh sim
 ./scripts/fma/run_test_vhfma002_rand.sh sim
+./scripts/fma/run_test_vhfma001.sh sim
+./scripts/fma/run_test_vhfma001_rand.sh sim
+./scripts/fma/run_test_vhfma002.sh sim
+./scripts/fma/run_test_vhfma002_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/aux/run_test_mul4x4.sh wave
@@ -455,6 +503,8 @@ Run the simulation with:
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
+./scripts/fma/run_test_vhfma001.sh wave
+./scripts/fma/run_test_vhfma002.sh wave
 ./scripts/fma/run_test_vhfma001.sh wave
 ./scripts/fma/run_test_vhfma002.sh wave
 
@@ -480,6 +530,7 @@ subdirectory per operation):
 | `testvalues/mul/test_values_mul_bf16_bf16_bf16/` | BF16 × BF16 → BF16 vectors (main 16 + RNE/RTZ tables + fst FAST/RTZ vectors) |
 | `testvalues/mul/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
 | `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`); reused by the lat8, `vhfma001` and `vhfma002` variants |
+| `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`); reused by the lat8, `vhfma001` and `vhfma002` variants |
 | `testvalues/add/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
 | `testvalues/add/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
 | `testvalues/add/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
@@ -502,7 +553,10 @@ The implementation targets Xilinx Spartan-6 (XC6SLX9-2), Spartan-7 (XC7S15-1) an
 - `scripts/collect_stats.py` — synthesizes every design with Yosys: `hierarchy -top` → `flatten` → `synth_xilinx -family <xc6s|xc7> -run begin:map_ffs` (YoWASP WASM cannot run yosys-abc, so synthesis stops before ABC9), then parses the RTLIL dump on stdout. LUT6 is estimated as `gates / 2.5` (±20–25%); FF, CARRY4 and IO buffer counts are exact.
 - `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports (pass `--write` to overwrite the `docs/stat/*.md` files; without it they run in dry-run mode).
 - Stat reports were regenerated on **2026-11-16** and now include `vhfma001` (LUT ~1148 est., FF 570, **DSP48 = 0**) and `vhfma002` (LUT ~1016 est., FF 510, **DSP48 = 1** — explicitly allowed exception); see the `vhfma001` / `vhfma002` sections of the per-device reports.
+- `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports (pass `--write` to overwrite the `docs/stat/*.md` files; without it they run in dry-run mode).
+- Stat reports were regenerated on **2026-11-16** and now include `vhfma001` (LUT ~1148 est., FF 570, **DSP48 = 0**) and `vhfma002` (LUT ~1016 est., FF 510, **DSP48 = 1** — explicitly allowed exception); see the `vhfma001` / `vhfma002` sections of the per-device reports.
 
+Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. The `vhfma002` Fmax values (180/210/230 MHz) and `vhfma001` (180/210/230 MHz) are manual calibrations and are **not confirmed** by PAR yet (the `vhfma002` one was made before the DSP-mapped rework). For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
 Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. The `vhfma002` Fmax values (180/210/230 MHz) and `vhfma001` (180/210/230 MHz) are manual calibrations and are **not confirmed** by PAR yet (the `vhfma002` one was made before the DSP-mapped rework). For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
 
 **Real-board measurement (preliminary, trial).** The `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` module has been placed & routed in Xilinx ISE 14.7 on a **CMB32F407HDMIR3** board (hybrid STM32F407 + Spartan-6 XC6SLX9-2TQG144). The measured top includes the DUT (`u_mul`) **plus a minimal parallel data-loading interface** (helper logic: input/output registers `u_regs` and a thin MCU parallel-bus wrapper `u_iface`, packed into IOBs), not the bare DUT — figures are not directly comparable to the Yosys estimates above. With an 8 ns (125 MHz) clock constraint: **0 timing errors** (237,196 analyzed paths / 4,753 endpoints), minimum period **7.414 ns (~134.9 MHz)**, **887 slice registers (7%)**, **1,117 slice LUTs (19%)**, **514 occupied slices (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOBs ("Performance with IOB Packing"). Trial run (2026-11-15, not a sign-off; more devices/trials pending). Logs: [`docs/benchmarks/log9_fma_lat8/`](docs/benchmarks/log9_fma_lat8/) —
@@ -521,6 +575,8 @@ To regenerate the statistics:
 
 ```bash
 ./scripts/collect_stats.py --all   # top-level modules + submodules
+./scripts/generate_stat_docs.py --write
+./scripts/generate_stat_others_docs.py --write
 ./scripts/generate_stat_docs.py --write
 ./scripts/generate_stat_others_docs.py --write
 ```
@@ -548,6 +604,7 @@ Author: Viktor Glebov / V01G04A81 2026
 
 ## License
 
+MIT — see [LICENSE](LICENSE).
 MIT — see [LICENSE](LICENSE).
 
 <https://github.com/vigatron/vhlibvbf16>

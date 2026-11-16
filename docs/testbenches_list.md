@@ -96,6 +96,12 @@
 ./scripts/fma/run_test_vhfma001_rand.sh sim
 ./scripts/fma/run_test_vhfma002.sh sim
 ./scripts/fma/run_test_vhfma002_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
+./scripts/fma/run_test_vhfma001.sh sim
+./scripts/fma/run_test_vhfma001_rand.sh sim
+./scripts/fma/run_test_vhfma002.sh sim
+./scripts/fma/run_test_vhfma002_rand.sh sim
 
 # С визуализацией (gtkwave)
 ./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh wave
@@ -147,5 +153,7 @@
 - `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` — directed + hold/reset FMA
 - `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` — random/directed FMA
   с точной Fraction-моделью (`scripts/gen_fma_vectors.py`)
+- `vhfma001_tb.v` / `vhfma001_rand_tb.v` — directed + random FMA (latency 8, клон lat8 для максимального Fmax, чистый LUT/FF)
+- `vhfma002_tb.v` / `vhfma002_rand_tb.v` — directed + random FMA (latency 8; единственное исключение с DSP48 — умножение 8×8 мантисс)
 - `vhfma001_tb.v` / `vhfma001_rand_tb.v` — directed + random FMA (latency 8, клон lat8 для максимального Fmax, чистый LUT/FF)
 - `vhfma002_tb.v` / `vhfma002_rand_tb.v` — directed + random FMA (latency 8; единственное исключение с DSP48 — умножение 8×8 мантисс)

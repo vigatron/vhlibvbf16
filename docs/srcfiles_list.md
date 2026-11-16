@@ -65,6 +65,13 @@ vhfma002
   (autonomous, no dependencies on other vhfastmulb16_* modules;
    one DSP48 block for the 8x8 BF16 mantissa multiply — allowed exception)
 
+vhfma001
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfma002
+  (autonomous, no dependencies on other vhfastmulb16_* modules;
+   one DSP48 block for the 8x8 BF16 mantissa multiply — allowed exception)
+
 vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
   (autonomous, no dependencies on other vhfastmulb16_* modules)
 
@@ -99,6 +106,17 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 | Top-level (FP16 add) | - | - | - | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` | - |
 | Top-level (BF16 add) | - | - | - | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` | - |
 | Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `muladd_bf16_bf16_fp32_fp32_rne_lat4` | `muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
+| Component | Latency 1 | Latency 2 | Latency 3 | Latency 4 | Latency 8 |
+|-----------|-----------|-----------|-----------|-----------|-----------|
+| Mul4x4 | `mul4x4` | `mul4x4_lat2` | - | - | - |
+| Mul8x8 | - | `mul_u8_u8_u16_lat2` | `mul_u8_u8_u16_lat3` | - | - |
+| Flags | `flags_lat1` | `flags_lat2` | - | - | - |
+| Exceptions | - | `except_lat2` | `except_lat3` | - | - |
+| Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | - |
+| Top-level (FP32 add) | - | - | - | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` | - |
+| Top-level (FP16 add) | - | - | - | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` | - |
+| Top-level (BF16 add) | - | - | - | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` | - |
+| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `muladd_bf16_bf16_fp32_fp32_rne_lat4` | `muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
 
 Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0).
 
@@ -106,6 +124,7 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
+The `src/` directory contains the following 24 Verilog source files:
 The `src/` directory contains the following 24 Verilog source files:
 
 - `aux/vhfastmulb16_add8x8_lat2.v`
@@ -117,6 +136,8 @@ The `src/` directory contains the following 24 Verilog source files:
 - `add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v`
+- `fma/vhfma001.v`
+- `fma/vhfma002.v`
 - `fma/vhfma001.v`
 - `fma/vhfma002.v`
 - `aux/vhfastmulb16_except_lat2.v`

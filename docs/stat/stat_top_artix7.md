@@ -8,6 +8,7 @@
 | **LUTs (6-input / LUT6)** | **10,400** |
 | **Flip-Flops** | 20,800 |
 | **DSP** | 45 × DSP48E1 (исключительно LUT/FF; исключение — `vhfma002`, см. раздел «DSP Block Exception (`vhfma002`)» в README.md) |
+| **DSP** | 45 × DSP48E1 (исключительно LUT/FF; исключение — `vhfma002`, см. раздел «DSP Block Exception (`vhfma002`)» в README.md) |
 | **Block RAM** | 25 × 36Kb (не используется) |
 
 > **Важно:** Все цифры ниже — **оценки на основе синтеза в Yosys (YoWASP)**.
@@ -37,6 +38,8 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 145 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 220 |
+| `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~11.0%** | 230 |
+| `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~9.8%** | 230 |
 | `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~11.0%** | 230 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~9.8%** | 230 |
 
