@@ -101,34 +101,6 @@ All other modules stay in pure LUT/FF logic.
   estimate, not a measurement. For a sign-off, run Xilinx ISE/Vivado `report_timing`.
 - All other modules of the library remain strictly DSP-free and keep the `*`-free
   convention of the reference implementation.
-The implementation does not require any DSP blocks for the reference flow: the
-multiplication is built from a carry-save adder (CSA) tree and a final 16-bit
-carry-propagate adder (CPA). A single module is explicitly exempted from this
-rule — `vhfma002` (see [DSP Block Exception](#dsp-block-exception-vhfma002)).
-All other modules stay in pure LUT/FF logic.
-
-## DSP Block Exception (`vhfma002`)
-
-**`vhfma002` is the only module of the library allowed to use DSP blocks.**
-
-- The 8x8-bit BF16 mantissa multiply is a single `*` operator with
-  `(* use_dsp = "yes" *)` and maps onto one DSP48A1 (Spartan-6) or DSP48E1
-  (Spartan-7 / Artix-7) cell. Everything else in the module is regular LUT/FF logic.
-- Rationale: maximum Fmax at a fixed latency of 8 cycles. The DSP multiply path is
-  much shorter than a LUT-based 8x8 multiplier built from four 4x4 `mul4x4_comb`
-  instances (that is what `vhfma001` does).
-- Interface, latency (8 clk), RNE rounding, subnormal handling, special-case
-  semantics and the per-stage clock-enable model are identical to `vhfma001`
-  and `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`.
-- Synthesis evidence: Yosys (YoWASP) 0.70 reports exactly one DSP48 cell per
-  family for `vhfma002` (`DSP48A1` on XC6S, `DSP48E1` on XC7S/XC7A); see
-  [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md) and
-  [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), section `vhfma002`.
-- Post-PAR Fmax is not confirmed yet: the `fmax` values in
-  `scripts/modules_config.py` (180/210/230 MHz) are a hand-calibrated typical
-  estimate, not a measurement. For a sign-off, run Xilinx ISE/Vivado `report_timing`.
-- All other modules of the library remain strictly DSP-free and keep the `*`-free
-  convention of the reference implementation.
 
 ## Arithmetic Specification
 
@@ -316,13 +288,6 @@ vhfma002
   (autonomous, no dependencies on other vhfastmulb16_* modules;
    one DSP48 block for the 8x8 BF16 mantissa multiply — allowed exception)
 
-vhfma001
-└── vhfastmulb16_mul4x4_comb (x4)
-
-vhfma002
-  (autonomous, no dependencies on other vhfastmulb16_* modules;
-   one DSP48 block for the 8x8 BF16 mantissa multiply — allowed exception)
-
 vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4
   (autonomous, no dependencies on other vhfastmulb16_* modules)
 
@@ -410,10 +375,6 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/fma/vhfma001_rand_tb.v` | `vhfma001` (random regression, LAT=8) |
 | `tests/fma/vhfma002_tb.v` | `vhfma002` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfma002_rand_tb.v` | `vhfma002` (random regression, LAT=8) |
-| `tests/fma/vhfma001_tb.v` | `vhfma001` (directed + hold/reset, LAT=8) |
-| `tests/fma/vhfma001_rand_tb.v` | `vhfma001` (random regression, LAT=8) |
-| `tests/fma/vhfma002_tb.v` | `vhfma002` (directed + hold/reset, LAT=8) |
-| `tests/fma/vhfma002_rand_tb.v` | `vhfma002` (random regression, LAT=8) |
 
 ### Auxiliary Modules
 
@@ -484,10 +445,6 @@ Run the simulation with:
 ./scripts/fma/run_test_vhfma001_rand.sh sim
 ./scripts/fma/run_test_vhfma002.sh sim
 ./scripts/fma/run_test_vhfma002_rand.sh sim
-./scripts/fma/run_test_vhfma001.sh sim
-./scripts/fma/run_test_vhfma001_rand.sh sim
-./scripts/fma/run_test_vhfma002.sh sim
-./scripts/fma/run_test_vhfma002_rand.sh sim
 
 # Visualization (gtkwave)
 ./scripts/aux/run_test_mul4x4.sh wave
@@ -503,8 +460,6 @@ Run the simulation with:
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
-./scripts/fma/run_test_vhfma001.sh wave
-./scripts/fma/run_test_vhfma002.sh wave
 ./scripts/fma/run_test_vhfma001.sh wave
 ./scripts/fma/run_test_vhfma002.sh wave
 
