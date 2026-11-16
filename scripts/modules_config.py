@@ -49,6 +49,18 @@ MODULES = [
         "fmax": {"xc6s": 155, "xc7s": 180, "xc7a": 210},
     },
     {
+        "name": "vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3",
+        "sources": [
+            "src/mul/vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
+        ],
+        "latency": 3,
+        "rounding": "RTZ",
+        "subnormal_handling": "FTZ",
+        "category": "multiplication",
+        "fmax": {"xc6s": 200, "xc7s": 230, "xc7a": 255},
+    },
+    {
         "name": "vhfastmulb16_mul_bf16_bf16_fp32_lat4",
         "sources": [
             "src/mul/vhfastmulb16_mul_bf16_bf16_fp32_lat4.v",

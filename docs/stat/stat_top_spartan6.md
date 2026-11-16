@@ -8,6 +8,7 @@
 | **LUTs (6-input / LUT6)** | **5,720** |
 | **Flip-Flops** | 11,440 |
 | **DSP** | 16 × DSP48A1 (исключительно LUT/FF; исключение — `vhfma002`, см. раздел «DSP Block Exception (`vhfma002`)» в README.md) |
+| **DSP** | 16 × DSP48A1 (исключительно LUT/FF; исключение — `vhfma002`, см. раздел «DSP Block Exception (`vhfma002`)» в README.md) |
 | **Block RAM** | 32 × 18Kb (не используется) |
 
 > **Важно:** Все цифры ниже — **оценки на основе синтеза в Yosys (YoWASP)**.
@@ -30,6 +31,7 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~252 | 106 | 3 | truncation (RTZ); FTZ | **~4.4%** | 175 |
 | `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~259 | 117 | 3 | IEEE 754 RNE; FTZ | **~4.5%** | 155 |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | ~230 | 61 | 3 | truncation (RTZ); FTZ | **~4.0%** | 200 |
 | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~485 | 170 | 4 | exact; subnormals preserved | **~8.5%** | 145 |
 
 ### Комбинированные модули (Combined / FMA)
@@ -38,6 +40,8 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~17.7%** | 100 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~17.7%** | 170 |
+| `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~20.1%** | 180 |
+| `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~17.8%** | 180 |
 | `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~20.1%** | 180 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~17.8%** | 180 |
 
@@ -135,6 +139,48 @@ mul4x4 (CSA) → CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp
 | $_SDFF_PP0_ | 15 |
 | $_XOR_ | 112 |
 | CARRY4 | 23 |
+| IBUF | 35 |
+| OBUF | 16 |
+
+---
+
+### `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3`
+
+| Ресурс | Значение | % от доступных |
+|--------|----------|----------------|
+| **LUTs (est.)** | ~230 | **~4.0%** |
+| **FF** | 61 | **~0.5%** |
+| **CARRY4** | 17 | — |
+| **CARRY8** | 0 | — |
+| **LUT6_2** | 0 | — |
+| **MUXF7** | 0 | — |
+| **MUXF8** | 0 | — |
+| **Gates (pre-ABC9)** | ~575 | — |
+| **Logic Cells (total)** | 704 | — |
+| **IO (IBUF+OBUF)** | 51 | — |
+| **DSP48** | 0 | 0% (запрещено, проверено) |
+| **Fmax (typ, manual)** | 200 MHz | источник: manual |
+| **Latency** | 3 cycles | — |
+| **Rounding** | RTZ | — |
+| **Subnormals** | FTZ | — |
+
+**Критический путь (оценка):**
+```
+unknown
+```
+
+**Распределение ячеек:**
+
+| Тип ячейки | Количество |
+|------------|------------|
+| $_AND_ | 208 |
+| $_MUX_ | 97 |
+| $_NOT_ | 36 |
+| $_OR_ | 119 |
+| $_SDFFE_PP0P_ | 59 |
+| $_SDFF_PP0_ | 2 |
+| $_XOR_ | 115 |
+| CARRY4 | 17 |
 | IBUF | 35 |
 | OBUF | 16 |
 
@@ -607,5 +653,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-16T06:22:10.518115Z*
+*Сгенерировано автоматически: 2026-11-16T14:40:37.764326Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
