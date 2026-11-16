@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/**/*.v)
 
-Всего файлов: **36**
+Всего файлов: **40**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -37,16 +37,20 @@
 | 29 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Random/directed regression (exact Python FMA model), `LAT=4` | 2048 |
 | 30 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Directed + streaming + hold/reset, `LAT=8` | 45 |
 | 31 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Random/directed regression (exact Python FMA model), `LAT=8` | 2048 |
+| 32 | `fma/vhfma001_tb.v` | `vhfma001` | Directed + streaming + hold/reset, `LAT=8` | 45 |
+| 33 | `fma/vhfma001_rand_tb.v` | `vhfma001` | Random regression, `LAT=8` | 2048 |
+| 34 | `fma/vhfma002_tb.v` | `vhfma002` | Directed + streaming + hold/reset, `LAT=8` | 45 |
+| 35 | `fma/vhfma002_rand_tb.v` | `vhfma002` | Random regression, `LAT=8` | 2048 |
 
 ## Визуализационные / вспомогательные тестбенчи
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
-| 32 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
-| 33 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
-| 34 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 35 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
-| 36 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
+| 36 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
+| 37 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
+| 38 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 39 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
+| 40 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
 
 ---
 
@@ -82,6 +86,12 @@
 ./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
+./scripts/fma/run_test_vhfma001.sh sim
+./scripts/fma/run_test_vhfma001_rand.sh sim
+./scripts/fma/run_test_vhfma002.sh sim
+./scripts/fma/run_test_vhfma002_rand.sh sim
 
 # С визуализацией (gtkwave)
 ./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh wave
@@ -133,3 +143,5 @@
 - `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_tb.v` — directed + hold/reset FMA
 - `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` — random/directed FMA
   с точной Fraction-моделью (`scripts/gen_fma_vectors.py`)
+- `vhfma001_tb.v` / `vhfma001_rand_tb.v` — directed + random FMA (latency 8, клон lat8 для максимального Fmax, чистый LUT/FF)
+- `vhfma002_tb.v` / `vhfma002_rand_tb.v` — directed + random FMA (latency 8; единственное исключение с DSP48 — умножение 8×8 мантисс)
