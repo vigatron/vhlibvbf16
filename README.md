@@ -453,6 +453,25 @@ The device resource reports (Yosys/YoWASP estimates, Fmax calibration notes and 
 preliminary real-board measurement) are maintained in
 [docs/resource_estimates.md](docs/resource_estimates.md).
 
+## Real-board benchmarks (CMB32F407HDMIR3)
+
+Post-PAR timing measurements were performed on the **CMB32F407HDMIR3** board
+(hybrid STM32F407 MCU + Xilinx Spartan-6 XC6SLX9-2TQG144 FPGA, SDRAM
+128-MBit / 256-MBit (x16), 7.5 ns / 6 ns ≈ 133 / 166 MHz), using Xilinx ISE
+14.7. The measured top includes the DUT plus a minimal parallel data-loading
+interface (`u_regs` + `u_iface`, IOB-packed), not the bare DUT — figures are
+not directly comparable to the Yosys estimates.
+
+Detailed logs: [`docs/benchmarks/log_fma_fst_lat8/`](docs/benchmarks/log_fma_fst_lat8/)
+and [`docs/benchmarks/log_fma_rne_lat8/`](docs/benchmarks/log_fma_rne_lat8/).
+
+| Module | Constraint | Min period | Equivalent Fmax | Timing errors |
+|--------|------------|------------|-----------------|---------------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8) | 6 ns | 5.243 ns | ≈190.7 MHz | 0 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, lat=8) | 8 ns | 7.414 ns | ≈134.9 MHz | 0 |
+
+Trial run (2026-11-15, not a sign-off; more devices/trials pending).
+
 ## Revision History
 
 The full revision history (Rev 0.0.1 … 0.0.12) is maintained in [docs/rev_history.md](docs/rev_history.md).
