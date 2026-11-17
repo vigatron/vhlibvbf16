@@ -16,7 +16,7 @@ Rev: 0.0.13
 ## Description
 
 Compact pipelined BF16/FP32 arithmetic library (Verilog)<br>
-BF16 multiplier (RTZ / RNE / **FAST max-Fmax**), BF16×BF16→F32 multiplier, BF16×BF16+FP32 fused multiply-add (including the `vhfma001` max-Fmax clone and the `vhfma002` DSP-mapped variant), BF16 adders, FP32 adders and FP16 adders; RTZ/RNE; the reference implementation does not require DSP blocks (a single allowed exception exists — see [DSP Block Exception](#dsp-block-exception-vhfma002)).
+BF16 multiplier (RTZ / RNE / **FAST max-Fmax**), BF16×BF16→F32 multiplier, BF16×BF16+FP32 fused multiply-add (RNE and **FAST max-Fmax** variants, including the `vhfma001` max-Fmax clone and the `vhfma002` DSP-mapped variant), BF16 adders, FP32 adders and FP16 adders; RTZ/RNE; the reference implementation does not require DSP blocks (a single allowed exception exists — see [DSP Block Exception](#dsp-block-exception-vhfma002)).
 
 `vhfastmulb16_mul_bf16_bf16_bf16` is a hardware implementation of a BFloat16 (Brain Floating Point) multiplier.
 It multiplies two BF16 numbers and produces a BF16 result on the output.
@@ -52,6 +52,7 @@ The following top-level modules are the primary entry points of the library:
 |---------|----------|---------------|---------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | BF16 × BF16 + FP32 fused multiply-add | F32 | 4 clk | RNE (IEEE-754) |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax) | F32 | 8 clk | RNE (IEEE-754) |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | BF16 × BF16 + FP32 fused multiply-add (**FAST / max-Fmax**) | F32 | 8 clk | RTZ (truncation), FTZ |
 | `vhfma001` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax, pure LUT/FF; speed-optimized clone of lat8) | F32 | 8 clk | RNE (IEEE-754) |
 | `vhfma002` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax; 8x8 BF16 mantissa multiply mapped to one DSP48 — allowed exception) | F32 | 8 clk | RNE (IEEE-754) |
 
@@ -163,6 +164,31 @@ NaN and a smaller register footprint.
 | **Zero sign** | `-0 + -0 = -0`; `-0 + +0 = +0`; exact cancellation `x + (-x) = +0`; underflow to zero preserves the exact-result sign |
 | **Pipeline** | 4 clock cycles latency, fully pipelined, HOLD on `en=0` |
 
+### FAST FMA module (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`)
+
+Speed-optimized (max-Fmax) variant of the BF16 × BF16 + FP32 FMA with RTZ
+rounding and FTZ on BF16/FP32 subnormals. The BF16 × BF16 product is exact;
+the single final rounding is RTZ (truncation). No F32 subnormal results are
+produced; every zero result is `+0`. The alignment path has no sticky and the
+carry fix-up drops the shifted-out bit, so rare 1-ulp deviations from exact
+RTZ are possible — a deliberate FAST trade-off (bit-exact IEEE RNE is not a
+requirement for this module).
+
+| Feature | Behavior |
+|---------|----------|
+| **Format** | Inputs: BF16 `VALA`, BF16 `VALB`, FP32 `SUMM`; output FP32: `s[31] \| exp[30:23] \| frac[22:0]` |
+| **Operation** | `RESULT = SUMM + (VALA × VALB)` (fused, exact product) |
+| **Rounding** | RTZ (truncation): the 24-bit significand `man_norm[26:3]` is kept, low 3 bits dropped; no G/R/S, no tie-to-even |
+| **Subnormal inputs** | **Flush To Zero (FTZ)**: BF16 `exp=0` and FP32 `exp=0` are treated as zero |
+| **Subnormal results** | Not generated: `exp_f32 <= 0` → `+0` |
+| **Zero sign** | Every zero result → `+0` (both-zero, exact cancellation, underflow) |
+| **NaN** | Canonical quiet NaN `0x7FC00000` — no sign, no payload |
+| **Infinity** | `Inf × finite` and `±Inf` with the same sign → `±Inf`; `Inf × 0` and `Inf + (-Inf)` → qNaN |
+| **Overflow** | `exp_f32 >= 255` → `±Inf` |
+| **Exception priority** | NaN > Inf > Zero > Underflow > Overflow > normal |
+| **Pipeline** | 8 clock cycles, fully pipelined; after `en=0` drains 8 cycles, then HOLD |
+| **Implementation** | Autonomous (only 4× `vhfastmulb16_mul4x4_comb`); no `*` operator; pure LUT/FF, 0 DSP |
+
 ### FP32-adder modules (`vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4`)
 
 | Feature | `add_fp32_fp32_fp32_rtz_lat4` | `add_fp32_fp32_fp32_rne_lat4` |
@@ -185,7 +211,7 @@ testbenches, random regressions, full `run_all.sh` regression) are listed in
 
 ## Source Files
 
-The `src/` directory contains **25** Verilog source files:
+The `src/` directory contains **26** Verilog source files:
 
 ### Multiplication Modules
 
@@ -219,6 +245,7 @@ The `src/` directory contains **25** Verilog source files:
 |------|--------|-------------|---------|
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding | 4 clk |
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
+| `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (8-stage, max Fmax; FTZ) | 8 clk |
 | `fma/vhfma001.v` | `vhfma001` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; speed-optimized clone of lat8, pure LUT/FF) | 8 clk |
 | `fma/vhfma002.v` | `vhfma002` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; single DSP48-mapped 8x8 mantissa multiply — allowed exception) | 8 clk |
 
@@ -256,6 +283,9 @@ vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfma001
@@ -324,7 +354,7 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 
 | Component | Modules |
 |-----------|---------|
-| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
+| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, `vhfma001`, `vhfma002` |
 
 ## Testbenches
 
@@ -376,6 +406,8 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` (random regression, LAT=4) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (random regression, LAT=8) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (directed + hold/reset, LAT=8) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (random regression, LAT=8) |
 | `tests/fma/vhfma001_tb.v` | `vhfma001` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfma001_rand_tb.v` | `vhfma001` (random regression, LAT=8) |
 | `tests/fma/vhfma002_tb.v` | `vhfma002` (directed + hold/reset, LAT=8) |

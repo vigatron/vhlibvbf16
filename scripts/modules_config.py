@@ -164,6 +164,18 @@ MODULES = [
         "fmax": {"xc6s": 170, "xc7s": 200, "xc7a": 220},
     },
     {
+        "name": "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8",
+        "sources": [
+            "src/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
+        ],
+        "latency": 8,
+        "rounding": "RTZ",
+        "subnormal_handling": "FTZ",
+        "category": "fma",
+        "fmax": {"xc6s": 200, "xc7s": 230, "xc7a": 250},
+    },
+    {
         "name": "vhfma001",
         "sources": [
             "src/fma/vhfma001.v",

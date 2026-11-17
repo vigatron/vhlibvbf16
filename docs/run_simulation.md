@@ -45,6 +45,8 @@ Run the simulation with:
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand.sh sim
 ./scripts/fma/run_test_vhfma001.sh sim
 ./scripts/fma/run_test_vhfma001_rand.sh sim
 ./scripts/fma/run_test_vhfma002.sh sim
@@ -64,6 +66,8 @@ Run the simulation with:
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8.sh wave
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand.sh wave
 ./scripts/fma/run_test_vhfma001.sh wave
 ./scripts/fma/run_test_vhfma002.sh wave
 
@@ -75,6 +79,6 @@ Run the simulation with:
 subdirectories such as `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/`; the benches without a dedicated script
 (`vhfastmulb16_flags_lat2_tb.v`, `vhfastmulb16_mul4x4_chk_tb.v`,
 `vhfastmulb16_mul4x4_lat2_tb.v`, `vhfastmulb16_mul_u8_u8_u16_lat3_tb.v`) are not included.
-Last full run: **2026-11-16, PASSED=38, FAILED=0**.
+Last full run: **2026-11-17, PASSED=40, FAILED=0**.
 See [testbenches_list.md](testbenches_list.md) and
 [srcfiles_list.md](srcfiles_list.md) for more details.

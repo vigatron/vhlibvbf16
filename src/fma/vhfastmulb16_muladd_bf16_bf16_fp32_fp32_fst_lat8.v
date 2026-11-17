@@ -555,12 +555,14 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8 (
 
     wire [26:0] man_norm_c = man_norm0_d6 << lzd_c;
     wire [10:0] exp_pre_c  = exp_adj_d6 - {6'd0, lzd_c};
+    // FP32 смещённая экспонента считается здесь, чтобы в S8 не было сумматора.
+    wire [10:0] exp_f32_biased_c = exp_pre_c + 11'd3;
 
     // ============================================================
     // STAGE S7 registers (capture at N+7 edge, CE = en_d6)
     // ============================================================
     reg [26:0] man_norm_d7;
-    reg [10:0] exp_pre_d7;
+    reg [10:0] exp_f32_d7;
     reg        is_zero_d7;
     reg        sign_res_d7;
     reg [2:0]  flags_d7;
@@ -571,7 +573,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8 (
     always @(posedge clk) begin
         if (reset) begin
             man_norm_d7  <= 27'd0;
-            exp_pre_d7   <= 11'd0;
+            exp_f32_d7   <= 11'd0;
             is_zero_d7   <= 1'b0;
             sign_res_d7  <= 1'b0;
             flags_d7     <= 3'b000;
@@ -580,7 +582,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8 (
             s_sign_d7    <= 1'b0;
         end else if (en_d6) begin
             man_norm_d7  <= man_norm_c;
-            exp_pre_d7   <= exp_pre_c;
+            exp_f32_d7   <= exp_f32_biased_c;
             is_zero_d7   <= is_zero_d6;
             sign_res_d7  <= sign_res_d6;
             flags_d7     <= flags_d6;
@@ -595,7 +597,7 @@ module vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8 (
     //   Combinational during cycle N+7, captured at N+8 edge (CE = en_d7)
     // ============================================================
 
-    wire [10:0] exp_f32_biased = exp_pre_d7 + 11'd3;
+    wire [10:0] exp_f32_biased = exp_f32_d7;
     wire        underflow = exp_f32_biased[10] | (exp_f32_biased == 11'd0);
     wire        overflow  = !underflow && (exp_f32_biased[9:0] >= 10'd255);
 

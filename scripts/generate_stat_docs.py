@@ -407,7 +407,11 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
                 row += f" {fmax} MHz |"
             acc = accuracy_str(m)
             if "muladd" in name:
-                acc += "; fused BF16×BF16+FP32; single RNE"
+                acc += "; fused BF16×BF16+FP32"
+                if m["rounding"] == "RNE":
+                    acc += "; single RNE"
+                elif m["rounding"] == "RTZ":
+                    acc += "; single RTZ"
             row += f" {acc} |"
             lines.append(row)
 
