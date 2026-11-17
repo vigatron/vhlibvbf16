@@ -497,50 +497,13 @@ vectors remain unchanged. The FMA vectors are validated by the exact
 
 ## FPGA Resource Estimates
 
-The implementation targets Xilinx Spartan-6 (XC6SLX9-2), Spartan-7 (XC7S15-1) and Artix-7 (XC7A15T-1). Device reports are **generated automatically** from Yosys (YoWASP) synthesis results, not hand-written:
-
-- `scripts/collect_stats.py` — synthesizes every design with Yosys: `hierarchy -top` → `flatten` → `synth_xilinx -family <xc6s|xc7> -run begin:map_ffs` (YoWASP WASM cannot run yosys-abc, so synthesis stops before ABC9), then parses the RTLIL dump on stdout. LUT6 is estimated as `gates / 2.5` (±20–25%); FF, CARRY4 and IO buffer counts are exact.
-- `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports (pass `--write` to overwrite the `docs/stat/*.md` files; without it they run in dry-run mode).
-- Stat reports were regenerated on **2026-11-16** and now include `vhfma001` (LUT ~1148 est., FF 570, **DSP48 = 0**) and `vhfma002` (LUT ~1016 est., FF 510, **DSP48 = 1** — explicitly allowed exception); see the `vhfma001` / `vhfma002` sections of the per-device reports.
-
-Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. The `vhfma002` Fmax values (180/210/230 MHz) and `vhfma001` (180/210/230 MHz) are manual calibrations and are **not confirmed** by PAR yet (the `vhfma002` one was made before the DSP-mapped rework). For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
-
-**Real-board measurement (preliminary, trial).** The `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` module has been placed & routed in Xilinx ISE 14.7 on a **CMB32F407HDMIR3** board (hybrid STM32F407 + Spartan-6 XC6SLX9-2TQG144). The measured top includes the DUT (`u_mul`) **plus a minimal parallel data-loading interface** (helper logic: input/output registers `u_regs` and a thin MCU parallel-bus wrapper `u_iface`, packed into IOBs), not the bare DUT — figures are not directly comparable to the Yosys estimates above. With an 8 ns (125 MHz) clock constraint: **0 timing errors** (237,196 analyzed paths / 4,753 endpoints), minimum period **7.414 ns (~134.9 MHz)**, **887 slice registers (7%)**, **1,117 slice LUTs (19%)**, **514 occupied slices (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOBs ("Performance with IOB Packing"). Trial run (2026-11-15, not a sign-off; more devices/trials pending). Logs: [`docs/benchmarks/log9_fma_lat8/`](docs/benchmarks/log9_fma_lat8/) —
-[`test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log9_fma_lat8/test_xc6slx9_fma8.cmd_log),
-[`test_xc6slx9_fma8.twr`](docs/benchmarks/log9_fma_lat8/test_xc6slx9_fma8.twr),
-[`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log9_fma_lat8/test_xc6slx9_fma8_summary.html).
-No post-PAR trial exists yet for `vhfma001` / `vhfma002`.
-
-Reports (regenerated 2026-11-16; `vhfma001` and `vhfma002` rows included):
-
-- [`docs/stat/stat_top_all.md`](docs/stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32, FMA, add_fp32, add_fp16, add_bf16) and their typical (typ) Fmax across FPGA families;
-- [`docs/stat/stat_top_spartan6.md`](docs/stat/stat_top_spartan6.md), [`docs/stat/stat_top_spartan7.md`](docs/stat/stat_top_spartan7.md), [`docs/stat/stat_top_artix7.md`](docs/stat/stat_top_artix7.md) — per-device details;
-- [`docs/stat/stat_others_all.md`](docs/stat/stat_others_all.md) — bottom-up submodule comparison and typical (typ) Fmax; [`docs/stat/stat_others_spartan6.md`](docs/stat/stat_others_spartan6.md), [`docs/stat/stat_others_spartan7.md`](docs/stat/stat_others_spartan7.md), [`docs/stat/stat_others_artix7.md`](docs/stat/stat_others_artix7.md) — per-device submodule details.
-
-To regenerate the statistics:
-
-```bash
-./scripts/collect_stats.py --all   # top-level modules + submodules
-./scripts/generate_stat_docs.py --write
-./scripts/generate_stat_others_docs.py --write
-```
+The device resource reports (Yosys/YoWASP estimates, Fmax calibration notes and the
+preliminary real-board measurement) are maintained in
+[docs/resource_estimates.md](docs/resource_estimates.md).
 
 ## Revision History
 
-| Rev | Date | Changes |
-|-----|------|---------|
-| 0.0.12 | 2026-11-16 | `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` (FAST / max-Fmax BF16 × BF16 → BF16 multiplier) added: single balanced 3-stage pipeline (no nested latency modules), RTZ, FTZ inputs, canonical qNaN `0x7FC0` (no sign), sign XOR on Inf/zero/normal; autonomous (only 4× `vhfastmulb16_mul4x4_comb`, 0 DSP). Verification: directed testbench (16 vectors) + random regression (2048 vectors, Python FTZ/RTZ golden model `scripts/gen_fst_bf16_vectors.py`) — **0 errors**; test vectors `testvalues/mul/test_values_mul_bf16_bf16_bf16/test_values_mul_bf16_bf16_fst_rtz.{json,md}`. Stats regenerated (YoWASP, LUT estimate): ~230 LUT, ~61 FF, 230 MHz on XC7S15-1 (vs ~252 / 106 / 205 MHz for `rtz_lat3`); full regression **PASSED=38, FAILED=0** |
-| 0.0.11 | 2026-11-16 | `vhfma001` (max-Fmax clone of the lat8 FMA, pure LUT/FF, 8 clk) and `vhfma002` (8-stage FMA with the 8x8 BF16 mantissa multiply mapped to one DSP48 — the sole allowed DSP exception) released; stats regenerated 2026-11-16 (`vhfma001`: LUT ~1148 est., FF 570, DSP48 = 0; `vhfma002`: LUT ~1016 est., FF 510, DSP48 = 1); README synchronized (module lists, testbenches); full regression **PASSED=36, FAILED=0** |
-| 0.0.10 | 2026-11-15 | First post-PAR trial on a real board (XC6SLX9-2TQG144, ISE 14.7, CMB32F407HDMIR3): lat8 FMA at 125 MHz, 0 timing errors; logs in [`docs/benchmarks/log9_fma_lat8/`](docs/benchmarks/log9_fma_lat8/); `vhfma001` added; stat reports updated |
-| 0.0.9 | 2026-11-14 | Source/testbench folder reorganization (`mul/`, `add/`, `fma/`, `aux/`) |
-| 0.0.8 | 2026-11-14 | `tmpfix` (lat8 FMA hotfix) |
-| 0.0.7opt | 2026-11-14 | lat8 FMA rebalanced (S2 prefix-CLZ, S4 nonzero-gate, S7 shift-of-shift removal + exponent retiming, S8 pure pack stage) |
-| 0.0.7 | 2026-11-14 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` added; stats updated |
-| 0.0.6 | 2026-11-14 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` draft; README fixes |
-| 0.0.5 | 2026-11-12 | Refactoring |
-| 0.0.4 | 2026-11-11 | FP16 adder modules added; README updated |
-| 0.0.3 / 0.0.2 | 2026-11-11 / 2026-11-10 | FP32 adder test vectors; FP32 adder draft |
-| 0.0.1 | 2026-11-06 | First public revision (stats fix) |
+The full revision history (Rev 0.0.1 … 0.0.12) is maintained in [docs/rev_history.md](docs/rev_history.md).
 
 ## Author
 
