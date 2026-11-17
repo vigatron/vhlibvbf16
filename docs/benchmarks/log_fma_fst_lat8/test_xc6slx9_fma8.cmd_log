@@ -1,0 +1,6 @@
+xst -intstyle ise -ifn "/home/vigatron/VHSrc/VHProjectsVerilog/test_fma_lat8/test_xc6slx9_fma8.xst" -ofn "/home/vigatron/VHSrc/VHProjectsVerilog/test_fma_lat8/test_xc6slx9_fma8.syr" 
+ngdbuild -intstyle ise -dd _ngo -nt timestamp -uc src/cmb32f407hdmir4.ucf -p xc6slx9-tqg144-2 test_xc6slx9_fma8.ngc test_xc6slx9_fma8.ngd  
+map -intstyle ise -p xc6slx9-tqg144-2 -w -logic_opt on -ol high -xe n -t 1 -xt 0 -r 4 -global_opt speed -equivalent_register_removal on -mt off -ir off -pr off -lc off -power off -o test_xc6slx9_fma8_map.ncd test_xc6slx9_fma8.ngd test_xc6slx9_fma8.pcf 
+par -w -intstyle ise -ol high -xe n -mt off test_xc6slx9_fma8_map.ncd test_xc6slx9_fma8.ncd test_xc6slx9_fma8.pcf 
+trce -intstyle ise -v 8 -s 2 -n 4 -fastpaths -xml test_xc6slx9_fma8.twx test_xc6slx9_fma8.ncd -o test_xc6slx9_fma8.twr test_xc6slx9_fma8.pcf 
+bitgen -intstyle ise -f test_xc6slx9_fma8.ut test_xc6slx9_fma8.ncd 
