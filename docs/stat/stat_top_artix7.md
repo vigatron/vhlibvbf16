@@ -37,6 +37,7 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 145 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 220 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | 528 | 8 | truncation (RTZ); FTZ | **~6.4%** | 250 |
 | `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~11.0%** | 230 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~9.8%** | 230 |
 
@@ -561,6 +562,49 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 ---
 
+### `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`
+
+| Ресурс | Значение | % от доступных |
+|--------|----------|----------------|
+| **LUTs (est.)** | ~667 | **~6.4%** |
+| **FF** | 528 | **~2.5%** |
+| **CARRY4** | 47 | — |
+| **CARRY8** | 0 | — |
+| **LUT6_2** | 0 | — |
+| **MUXF7** | 0 | — |
+| **MUXF8** | 0 | — |
+| **Gates (pre-ABC9)** | ~1668 | — |
+| **Logic Cells (total)** | 2342 | — |
+| **IO (IBUF+OBUF)** | 99 | — |
+| **DSP48** | 0 | 0% (запрещено, проверено) |
+| **Fmax (typ, manual)** | 250 MHz | источник: manual |
+| **Latency** | 8 cycles | — |
+| **Rounding** | RTZ | — |
+| **Subnormals** | FTZ | — |
+
+**Критический путь (оценка):**
+```
+8-stage balanced pipeline: S1 decode+FTZ+4×mul4x4, S2 CSA, S3 CPA+1-bit norm, S4 exp diff+large/small, S5 alignment, S6 28-bit add+LZD, S7 LZD normalize+exp_pre, S8 RTZ pack; no sticky, no RNE, no subnormal path
+```
+
+**Распределение ячеек:**
+
+| Тип ячейки | Количество |
+|------------|------------|
+| $_AND_ | 289 |
+| $_MUX_ | 625 |
+| $_NOT_ | 159 |
+| $_OR_ | 384 |
+| $_SDFFE_PP0P_ | 521 |
+| $_SDFF_PP0_ | 7 |
+| $_XNOR_ | 16 |
+| $_XOR_ | 195 |
+| CARRY4 | 47 |
+| IBUF | 67 |
+| OBUF | 32 |
+
+---
+
 ### `vhfma001`
 
 | Ресурс | Значение | % от доступных |
@@ -648,5 +692,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-16T15:19:19.501554Z*
+*Сгенерировано автоматически: 2026-11-17T13:39:24.223916Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*

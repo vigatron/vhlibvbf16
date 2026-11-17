@@ -14,9 +14,22 @@
 > Синтез останавливается до ABC9 (`-run begin:map_ffs`): YoWASP WASM не может запустить внешний `yosys-abc`.
 > **LUTs — оценка по числу вентилей** (gates / 2.5), структура иерархии развёрнута (`flatten`).
 > Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.
-> Единственное реальное (пробное) post-PAR исполнение — детали ниже.
-> **Единственное реальное (пробное) post-PAR исполнение:** `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` на плате CMB32F407HDMIR3 (STM32F407 + XC6SLX9-2TQG144), Xilinx ISE 14.7, констрейнт 8 ns (125 MHz): **0 ошибок тайминга** (237 196 paths / 4 753 endpoints), min period **7.414 ns (≈134.9 MHz)**, **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.
-> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставим. Пробный тест, не sign-off. Логи: `docs/benchmarks/log9_fma_lat8/`.
+> **Реальные post-PAR измерения (Xilinx ISE 14.7, плата CMB32F407HDMIR3, XC6SLX9-2TQG144) — папка `docs/benchmarks/`:**
+>
+> **`log_fma_fst_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8), минимальная обвязка с шиной загрузки данных:
+> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
+> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
+> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
+> - Констрейнт: **6 ns (≈166.7 MHz)**; **0 ошибок тайминга**; **min period 5.243 ns (≈190.7 MHz)**; slack 0.757 ns; Data Path Delay 5.227 ns (1 уровень логики).
+>
+> **`log_fma_rne_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, subnormals preserved, lat=8), минимальная обвязка с шиной загрузки данных:
+> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
+> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
+> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
+> - Констрейнт: **8 ns (125 MHz)**; **0 ошибок тайминга** (237 196 paths / 4 753 endpoints); **min period 7.414 ns (≈134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 уровня логики: 2.664 ns логика + 4.120 ns route); **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.
+>
+> Папка `log9_fma_lat8` удалена (переименована — это сборка `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, см. `log_fma_rne_lat8`).
+> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробный тест, не sign-off.
 > Ожидаемая погрешность оценки LUT без реального синтеза — **±20–25%**.
 > Для точного Fmax необходимо запустить Xilinx ISE/Vivado с `report_timing`.
 

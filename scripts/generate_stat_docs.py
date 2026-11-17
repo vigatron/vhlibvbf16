@@ -158,12 +158,23 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
     lines.append(f"> **LUTs — оценка по числу вентилей** (gates / 2.5), структура иерархии развёрнута (`flatten`).")
     lines.append(f"> Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.")
     if family == "xc6s":
-        lines.append(f"> Единственное реальное (пробное) post-PAR исполнение — детали ниже.")
+        pass
     else:
         lines.append(f"> Реальный синтез в Xilinx ISE/Vivado не выполнялся.")
     if family == "xc6s":
-        lines.append(f"> **Единственное реальное (пробное) post-PAR исполнение:** `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` на плате CMB32F407HDMIR3 (STM32F407 + XC6SLX9-2TQG144), Xilinx ISE 14.7, констрейнт 8 ns (125 MHz): **0 ошибок тайминга** (237 196 paths / 4 753 endpoints), min period **7.414 ns (≈134.9 MHz)**, **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.")
-        lines.append(f"> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставим. Пробный тест, не sign-off. Логи: `docs/benchmarks/log9_fma_lat8/`.")
+        lines.append(f"> **Реальные post-PAR измерения (Xilinx ISE 14.7, плата CMB32F407HDMIR3, XC6SLX9-2TQG144) — папка `docs/benchmarks/`:**")
+        lines.append(f"> **`log_fma_fst_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8), минимальная обвязка с шиной загрузки данных:")
+        lines.append(f"> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.")
+        lines.append(f"> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.")
+        lines.append(f"> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.")
+        lines.append(f"> - Констрейнт: **6 ns (≈166.7 MHz)**; **0 ошибок тайминга**; **min period 5.243 ns (≈190.7 MHz)**; slack 0.757 ns; Data Path Delay 5.227 ns (1 уровень логики).")
+        lines.append(f"> **`log_fma_rne_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, subnormals preserved, lat=8), минимальная обвязка с шиной загрузки данных:")
+        lines.append(f"> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.")
+        lines.append(f"> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.")
+        lines.append(f"> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.")
+        lines.append(f"> - Констрейнт: **8 ns (125 MHz)**; **0 ошибок тайминга** (237 196 paths / 4 753 endpoints); **min period 7.414 ns (≈134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 уровня логики: 2.664 ns логика + 4.120 ns route); **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.")
+        lines.append(f"> Папка `log9_fma_lat8` удалена (переименована — это сборка `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, см. `log_fma_rne_lat8`).")
+        lines.append(f"> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробный тест, не sign-off.")
     lines.append(f"> Ожидаемая погрешность оценки LUT без реального синтеза — **±20–25%**.")
     lines.append(f"> Для точного Fmax необходимо запустить Xilinx ISE/Vivado с `report_timing`.")
     lines.append(f"")
@@ -294,7 +305,10 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
     lines.append(f"Источник данных: {source_docs} ({generator_note}).")
     lines.append("LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.")
     if conclusion_kind == "top":
-        lines.append("Есть одно пробное post-PAR измерение FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7, min period 7.414 ns ≈ 134.9 MHz) — см. `stat_top_spartan6.md` и `docs/benchmarks/log9_fma_lat8/`.")
+        lines.append("Есть два пробных post-PAR измерения FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`:")
+        lines.append("- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns.")
+        lines.append("- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns.")
+        lines.append("Папка `log9_fma_lat8` удалена (переименована — это сборка `..._rne_lat8`, см. `log_fma_rne_lat8`).")
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -407,7 +421,11 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
                 row += f" {fmax} MHz |"
             acc = accuracy_str(m)
             if "muladd" in name:
-                acc += "; fused BF16×BF16+FP32; single RNE"
+                acc += "; fused BF16×BF16+FP32"
+                if m["rounding"] == "RNE":
+                    acc += "; single RNE"
+                elif m["rounding"] == "RTZ":
+                    acc += "; single RTZ"
             row += f" {acc} |"
             lines.append(row)
 
