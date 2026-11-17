@@ -462,8 +462,9 @@ Post-PAR timing measurements were performed on the **CMB32F407HDMIR3** board
 interface (`u_regs` + `u_iface`, IOB-packed), not the bare DUT — figures are
 not directly comparable to the Yosys estimates.
 
-Detailed logs: [`docs/benchmarks/log_fma_fst_lat8/`](docs/benchmarks/log_fma_fst_lat8/)
-and [`docs/benchmarks/log_fma_rne_lat8/`](docs/benchmarks/log_fma_rne_lat8/).
+Detailed logs:
+- [`log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — FAST (RTZ, FTZ, lat=8)
+- [`log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — RNE (lat=8)
 
 | Module | Constraint | Min period | Equivalent Fmax | Timing errors |
 |--------|------------|------------|-----------------|---------------|
@@ -474,7 +475,7 @@ Trial run (2026-11-15, not a sign-off; more devices/trials pending).
 
 ## Revision History
 
-The full revision history (Rev 0.0.1 … 0.0.12) is maintained in [docs/rev_history.md](docs/rev_history.md).
+The full revision history (Rev 0.0.1 … 0.0.13) is maintained in [docs/rev_history.md](docs/rev_history.md).
 
 ## Author
 
