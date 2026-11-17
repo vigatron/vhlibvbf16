@@ -158,7 +158,7 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
     lines.append(f"> **LUTs — оценка по числу вентилей** (gates / 2.5), структура иерархии развёрнута (`flatten`).")
     lines.append(f"> Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.")
     if family == "xc6s":
-        lines.append(f"> Единственное реальное (пробное) post-PAR исполнение — детали ниже.")
+        pass
     else:
         lines.append(f"> Реальный синтез в Xilinx ISE/Vivado не выполнялся.")
     if family == "xc6s":
