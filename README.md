@@ -179,27 +179,9 @@ NaN and a smaller register footprint.
 
 ## Development Status
 
-- The BF16-output top-level modules `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` and `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` are available (latency 3).
-- The FAST BF16-output top-level module `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` is available (latency 3): speed-optimized variant with a single 3-stage pipeline (no nested latency modules), RTZ rounding, FTZ inputs, canonical qNaN `0x7FC0` (no sign), sign XOR on Inf/zero/normal; autonomous (only 4× `vhfastmulb16_mul4x4_comb`, 0 DSP). Synthesis (YoWASP, LUT estimate): ~230 LUT, ~61 FF, ~230 MHz on XC7S15-1 (vs ~252 LUT / ~106 FF / 205 MHz for `rtz_lat3`).
-- The F32-output top-level module `vhfastmulb16_mul_bf16_bf16_fp32_lat4` is available (latency 4): exact BF16 x BF16 product represented as IEEE-754 binary32, no rounding, BF16 subnormals are not flushed, F32 subnormal results are truncated (RTZ).
-- The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` is available (latency 4): fused `SUMM + VALA × VALB` with a single RNE rounding, exact BF16 product, BF16 and FP32 subnormals are not flushed, and an exact intermediate product is not rounded to Inf before the final addition.
-- The FMA top-level module `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` is available (latency 8): same fused FMA functionality with an 8-stage balanced pipeline optimized for maximum Fmax. Key optimizations: rebalanced 8 stages (S1: decode + 4×mul4x4 + exp_p0/exp_s0 + clz24; S2: 2-level CSA + SUMM normalization; S3: CPA → man_prod + LOD k; S4: p24, exp_p + k, direct exp_p - exp_s; S5: sticky + alignment; S6: add/sub + carry fix-up + LZD; S7: normalization + parallel CARRY4 subtractors for exp_pre/grs_shift; S8: RNE + pack), direct shift_diff without mux on shift-amount path, parallel CARRY4 subtractors replacing prefix network, per-stage clock enable (en_d1..en_d7) with true CE on FDRE (no bubble insertion on en=0).
-- **Verification status (FMA lat4):** the directed testbench (44 vectors) and random regression (2048 vectors per seed, seeds 1–5 and 12345) pass with **0 errors**; an additional exact-Fraction regression of 6 × 4096 vectors (uniform random, FP32-subnormal `SUMM`, tiny BF16 products, specials and exact-cancellation cases) also reports **0 errors**. The reference model `scripts/gen_fma_vectors.py` uses exact `Fraction` arithmetic and is self-checked against all 44 directed JSON vectors.
-- The FMA top-level module `vhfma001` is available (latency 8): speed-optimized clone of the lat8 FMA (S2 prefix-CLZ, S4 nonzero-gate for the mantissa compare, S7 shift-of-shift removal — subnormal GRS computed directly from S6 registers, S7/S8 exponent retiming), identical latency, interface and control model to lat8; pure LUT/FF implementation.
-- The FMA top-level module `vhfma002` is available (latency 8): experimental variant of `vhfma001` with the 8x8 BF16 mantissa multiply mapped to a single DSP48 block (`*` with `use_dsp="yes"`) — the only module of the library allowed to use DSP blocks. Reworked on 2026-11-16: single DSP-mapped multiply replacing four LUT 4x4 multipliers, product CLZ16 one-hot decoder replacing the `casez` priority leading-one detect, dead logic removed; see [DSP Block Exception](#dsp-block-exception-vhfma002).
-- **Verification status (vhfma001):** directed testbench (45 vectors, `tests/fma/vhfma001_tb.v`) — **0 errors**; random regression (2048 vectors, `tests/fma/vhfma001_rand_tb.v`, seed 12345) — **0 errors**.
-- **Verification status (vhfma002):** directed testbench (45 vectors, `tests/fma/vhfma002_tb.v`, hold/reset checks included) — **0 errors**; random regression (2048 vectors, `tests/fma/vhfma002_rand_tb.v`, seed 12345) — **0 errors**; additional seeds 777 and 20260601 — **0 errors** (local, not committed; rerun with `python3 scripts/gen_fma_vectors.py --count 2048 --seed <seed> --out build/vhfma002_rand.hex`).
-- **Verification status (FMA lat8):** directed testbench (45 vectors) — **0 errors**; random regression (2048 vectors) — **0 errors**; extended 100k continuous stream — **0 errors**; extended 20k random `en` (~50% gaps) — **0 errors** (specifically validates mid-stream `en=0` handling without spurious bubbles).
-- **Full regression:** `./scripts/run_all.sh sim` runs all **38** test scripts (including `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/`) with **PASSED=38, FAILED=0** (run on 2026-11-16, Icarus Verilog 12.0).
-- The FP32-adder top-level modules `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` and `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` are available (latency 4): FP32 + FP32 -> FP32 with RTZ and RNE rounding respectively.
-- The FP16-adder top-level modules `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` and `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` are available (latency 4): FP16 + FP16 -> FP16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero.
-- The BF16-adder top-level modules `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` and `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` are available (latency 4): BF16 + BF16 -> BF16 with RTZ and RNE rounding respectively; subnormal operands are not flushed to zero, NaN results are canonical `0x7FC0`, and RTZ overflow saturates to max finite `0x7F7F`.
-- **Verification status (FP32 adders):** the directed smoke tests pass and both random regressions (`tests/add/vhfastmulb16_add_fp32_fp32_fp32_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**. Additional wide runs: 120 000 vectors (seed 777) and 300 000 vectors (seed 999) per mode — **0 errors**. Rounding/subnormal/overflow corner cases are covered by directed vectors. The RNE datapath no longer uses non-constant loop bounds (Yosys blocker removed). Stage-2 rebalancing reduced the Yosys logic depth from 56 to **20** (RTZ) / **22** (RNE) levels at +2–7 % cell area, latency remains 4.
-- **Verification status (FP16 adders):** the directed smoke tests pass and both random regressions (`tests/add/vhfastmulb16_add_fp16_fp16_fp16_*_lat4_rand_tb.v`, 4096 vectors against a bit-exact IEEE-754 model) report **0 mismatches**; rounding/subnormal/overflow corner cases are covered by directed vectors.
-- **Verification status (BF16 adders):** the directed tests (`tests/add/vhfastmulb16_add_bf16_bf16_bf16_*_lat4_tb.v`, 32 vectors) and random regressions (`..._rand_tb.v`, 4096 vectors against `scripts/gen_bf16_vectors.py`) pass with **0 mismatches**; extended 20 000-vector runs with seeds 777/999 and exhaustive 256×256 subnormal/min-normal pairs also report 0 errors for both RTZ and RNE.
-- The building blocks are available: `vhfastmulb16_mul4x4`, `vhfastmulb16_mul4x4_lat2`, `vhfastmulb16_mul4x4_comb`, `vhfastmulb16_mul_u8_u8_u16_lat2`, `vhfastmulb16_mul_u8_u8_u16_lat3`, `vhfastmulb16_add8x8_lat2`, `vhfastmulb16_sign`, `vhfastmulb16_flags_lat1`, `vhfastmulb16_flags_lat2`, `vhfastmulb16_except_lat2`, `vhfastmulb16_except_lat3`.
-- The FAST BF16 multiplier `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` is a speed-optimized variant of the BF16-output multiplier (see above); it is autonomous (only `vhfastmulb16_mul4x4_comb`) and implemented in pure LUT/FF (0 DSP).
-- The modules are implemented in pure logic; the multiplication operator `*` appears **only** in `vhfma002` (DSP48-mapped, explicitly allowed exception). **Use of DSP blocks (DSP48A1, DSP48E1, etc.) is prohibited for all other modules** to ensure portability across FPGA families; see [DSP Block Exception](#dsp-block-exception-vhfma002).
+The per-module availability notes and the verification status of the DUTs (directed
+testbenches, random regressions, full `run_all.sh` regression) are listed in
+[docs/dev_status.md](docs/dev_status.md).
 
 ## Source Files
 
@@ -304,17 +286,45 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 
 ### Versions with Different Latency
 
-| Component | Latency 1 | Latency 2 | Latency 3 | Latency 4 | Latency 8 |
-|-----------|-----------|-----------|-----------|-----------|-----------|
-| Mul4x4 | `vhfastmulb16_mul4x4` | `vhfastmulb16_mul4x4_lat2` | - | - | - |
-| Mul8x8 | - | `vhfastmulb16_mul_u8_u8_u16_lat2` | `vhfastmulb16_mul_u8_u8_u16_lat3` | - | - |
-| Flags | `vhfastmulb16_flags_lat1` | `vhfastmulb16_flags_lat2` | - | - | - |
-| Exceptions | - | `vhfastmulb16_except_lat2` | `vhfastmulb16_except_lat3` | - | - |
-| Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | - |
-| Top-level (FP32 add) | - | - | - | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | - |
-| Top-level (FP16 add) | - | - | - | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4`, `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | - |
-| Top-level (BF16 add) | - | - | - | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4`, `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | - |
-| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
+#### Latency 1
+
+| Component | Modules |
+|-----------|---------|
+| Mul4x4 | `vhfastmulb16_mul4x4` |
+| Flags | `vhfastmulb16_flags_lat1` |
+
+#### Latency 2
+
+| Component | Modules |
+|-----------|---------|
+| Mul4x4 | `vhfastmulb16_mul4x4_lat2` |
+| Mul8x8 | `vhfastmulb16_mul_u8_u8_u16_lat2` |
+| Flags | `vhfastmulb16_flags_lat2` |
+| Exceptions | `vhfastmulb16_except_lat2` |
+
+#### Latency 3
+
+| Component | Modules |
+|-----------|---------|
+| Mul8x8 | `vhfastmulb16_mul_u8_u8_u16_lat3` |
+| Exceptions | `vhfastmulb16_except_lat3` |
+| Top-level (BF16 × BF16) | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` |
+
+#### Latency 4
+
+| Component | Modules |
+|-----------|---------|
+| Top-level (BF16 × BF16) | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
+| Top-level (FP32 add) | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` |
+| Top-level (FP16 add) | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4`, `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` |
+| Top-level (BF16 add) | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4`, `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` |
+
+#### Latency 8
+
+| Component | Modules |
+|-----------|---------|
+| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
 
 ## Testbenches
 
@@ -395,104 +405,14 @@ Most testbenches have a dedicated run script. In particular, several
 
 See `scripts/run_test_*.sh` and the component subdirectories `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/` for the complete mapping.
 
-Run the simulation with:
-
-```bash
-# All testbench scripts
-./scripts/run_all.sh sim
-
-# Individual tests
-./scripts/aux/run_test_mul4x4.sh sim
-./scripts/aux/run_test_mul4x4_lat2.sh sim
-./scripts/aux/run_test_mul_u8_u8_u16_lat2.sh sim
-./scripts/aux/run_test_mul_u8_u8_u16_lat2_chk.sh sim
-./scripts/aux/run_test_mul_u8_u8_u16_lat3.sh sim
-./scripts/aux/run_test_add8x8_lat2.sh sim
-./scripts/aux/run_test_add8x8_reva.sh sim
-./scripts/aux/run_test_sign.sh sim
-./scripts/aux/run_test_flags_lat1.sh sim
-./scripts/aux/run_test_flags_lat2.sh sim
-./scripts/aux/run_test_except_lat2.sh sim
-./scripts/aux/run_test_except_lat3.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_bf16_rtz_lat3.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_bf16_rne_lat3.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_bf16_fst_lat3.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_bf16_fst_lat3_rand.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh sim
-./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4_rand.sh sim
-./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4.sh sim
-./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4.sh sim
-./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh sim
-./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh sim
-./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4.sh sim
-./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4.sh sim
-./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh sim
-./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh sim
-./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4.sh sim
-./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4.sh sim
-./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh sim
-./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh sim
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4.sh sim
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
-./scripts/fma/run_test_vhfma001.sh sim
-./scripts/fma/run_test_vhfma001_rand.sh sim
-./scripts/fma/run_test_vhfma002.sh sim
-./scripts/fma/run_test_vhfma002_rand.sh sim
-
-# Visualization (gtkwave)
-./scripts/aux/run_test_mul4x4.sh wave
-./scripts/aux/run_test_mul_u8_u8_u16_lat2.sh wave
-./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4.sh wave
-./scripts/mul/run_test_mul_bf16_bf16_fp32_lat4_rand.sh wave
-./scripts/add/run_test_add_fp32_fp32_fp32_rtz_lat4_rand.sh wave
-./scripts/add/run_test_add_fp32_fp32_fp32_rne_lat4_rand.sh wave
-./scripts/add/run_test_add_fp16_fp16_fp16_rtz_lat4_rand.sh wave
-./scripts/add/run_test_add_fp16_fp16_fp16_rne_lat4_rand.sh wave
-./scripts/add/run_test_add_bf16_bf16_bf16_rtz_lat4_rand.sh wave
-./scripts/add/run_test_add_bf16_bf16_bf16_rne_lat4_rand.sh wave
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh wave
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh wave
-./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh wave
-./scripts/fma/run_test_vhfma001.sh wave
-./scripts/fma/run_test_vhfma002.sh wave
-
-# Clean up build artifacts
-./scripts/run_all.sh clean
-```
-
-`run_all.sh` runs every `run_test_*.sh` script, including component
-subdirectories such as `scripts/mul/`, `scripts/add/`, `scripts/fma/` and `scripts/aux/`; the benches without a dedicated script
-(`vhfastmulb16_flags_lat2_tb.v`, `vhfastmulb16_mul4x4_chk_tb.v`,
-`vhfastmulb16_mul4x4_lat2_tb.v`, `vhfastmulb16_mul_u8_u8_u16_lat3_tb.v`) are not included.
-Last full run: **2026-11-16, PASSED=38, FAILED=0**.
-See [docs/testbenches_list.md](docs/testbenches_list.md) and
-[docs/srcfiles_list.md](docs/srcfiles_list.md) for more details.
+The run commands (`run_all.sh sim` / `wave` / `clean`, individual test scripts, the list
+of benches without a dedicated script and the last full regression result) are listed in
+[docs/run_simulation.md](docs/run_simulation.md).
 
 ## Test Values
 
-Test vectors live in the top-level [testvalues/](testvalues/) directory (one
-subdirectory per operation):
-
-| Directory | Contents |
-|-----------|----------|
-| `testvalues/mul/test_values_mul_bf16_bf16_bf16/` | BF16 × BF16 → BF16 vectors (main 16 + RNE/RTZ tables + fst FAST/RTZ vectors) |
-| `testvalues/mul/test_values_mul_bf16_bf16_fp32/` | BF16 × BF16 → F32 exact-product vectors (`.md` + `.json`) |
-| `testvalues/fma/test_values_muladd_bf16_bf16_fp32_fp32_rne_lat4/` | BF16 × BF16 + FP32 → F32 fused-multiply-add vectors, 44 directed cases (`.md` + `.json`); reused by the lat8, `vhfma001` and `vhfma002` variants |
-| `testvalues/add/test_values_add_bf16_bf16_bf16/` | BF16 + BF16 → BF16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
-| `testvalues/add/test_values_add_fp16_fp16_fp16/` | FP16 + FP16 → FP16 vectors, 32 directed cases (`.json` + RNE/RTZ tables) |
-| `testvalues/add/test_values_add_fp16_fp16_fp32/` | FP32 + FP32 → FP32 vectors, 32 directed cases (`.json` + RNE/RTZ tables) — directory name is historical |
-
-The main machine-readable `.json` files are validated by `scripts/check_test_values.py`
-(BF16 x BF16 -> F32), `scripts/checkvectors_add_bf16_bf16_bf16.py` (BF16 add),
-`scripts/checkvectors_add_fp16_fp16_fp16.py` (FP16 add, RNE/RTZ) and
-`scripts/checkvectors_mul_bf16_bf16_fp32.py` (BF16 x BF16 -> F32); the FP16
-tables are generated from the directed testbench vectors by
-`scripts/gen_fp16_vectors.py`. The BF16 adders use the exact integer model in
-`scripts/gen_bf16_vectors.py` for random/directed regression; the 32 JSON
-vectors remain unchanged. The FMA vectors are validated by the exact
-`Fraction` model in `scripts/gen_fma_vectors.py` (`--self-check`).
+The test-vector layout (per-operation subdirectories, file formats, validation and
+generation scripts) is described in [docs/test_values.md](docs/test_values.md).
 
 
 ## FPGA Resource Estimates

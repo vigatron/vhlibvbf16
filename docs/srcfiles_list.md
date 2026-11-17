@@ -88,17 +88,45 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 
 ## Versions with Different Latency
 
-| Component | Latency 1 | Latency 2 | Latency 3 | Latency 4 | Latency 8 |
-|-----------|-----------|-----------|-----------|-----------|-----------|
-| Mul4x4 | `mul4x4` | `mul4x4_lat2` | - | - | - |
-| Mul8x8 | - | `mul_u8_u8_u16_lat2` | `mul_u8_u8_u16_lat3` | - | - |
-| Flags | `flags_lat1` | `flags_lat2` | - | - | - |
-| Exceptions | - | `except_lat2` | `except_lat3` | - | - |
-| Top-level (BF16 × BF16) | - | - | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | - |
-| Top-level (FP32 add) | - | - | - | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` | - |
-| Top-level (FP16 add) | - | - | - | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` | - |
-| Top-level (BF16 add) | - | - | - | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` | - |
-| Top-level (BF16 × BF16 + FP32 FMA) | - | - | - | `muladd_bf16_bf16_fp32_fp32_rne_lat4` | `muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
+### Latency 1
+
+| Component | Modules |
+|-----------|---------|
+| Mul4x4 | `mul4x4` |
+| Flags | `flags_lat1` |
+
+### Latency 2
+
+| Component | Modules |
+|-----------|---------|
+| Mul4x4 | `mul4x4_lat2` |
+| Mul8x8 | `mul_u8_u8_u16_lat2` |
+| Flags | `flags_lat2` |
+| Exceptions | `except_lat2` |
+
+### Latency 3
+
+| Component | Modules |
+|-----------|---------|
+| Mul8x8 | `mul_u8_u8_u16_lat3` |
+| Exceptions | `except_lat3` |
+| Top-level (BF16 × BF16) | `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3`, `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` |
+
+### Latency 4
+
+| Component | Modules |
+|-----------|---------|
+| Top-level (BF16 × BF16) | `vhfastmulb16_mul_bf16_bf16_fp32_lat4` |
+| Top-level (FP32 add) | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` |
+| Top-level (FP16 add) | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` |
+| Top-level (BF16 add) | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | `muladd_bf16_bf16_fp32_fp32_rne_lat4` |
+
+### Latency 8
+
+| Component | Modules |
+|-----------|---------|
+| Top-level (BF16 × BF16 + FP32 FMA) | `muladd_bf16_bf16_fp32_fp32_rne_lat8`, `vhfma001`, `vhfma002` |
 
 Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0).
 
