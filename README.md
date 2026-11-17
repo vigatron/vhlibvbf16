@@ -3,7 +3,7 @@
 ![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
 ![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Rev](https://img.shields.io/badge/Rev-0.0.12-informational)
+![Rev](https://img.shields.io/badge/Rev-0.0.13-informational)
 ![Date](https://img.shields.io/badge/date-2026--11--16-informational)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-run__all.sh%20PASSED%2038%2F38-brightgreen)
