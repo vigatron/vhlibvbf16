@@ -37,7 +37,7 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~12.6%** | 125 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 200 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~662 | 528 | 8 | truncation (RTZ); FTZ | **~8.3%** | 230 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | 528 | 8 | truncation (RTZ); FTZ | **~8.3%** | 230 |
 | `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~14.3%** | 210 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 210 |
 
@@ -566,15 +566,15 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 | Ресурс | Значение | % от доступных |
 |--------|----------|----------------|
-| **LUTs (est.)** | ~662 | **~8.3%** |
+| **LUTs (est.)** | ~667 | **~8.3%** |
 | **FF** | 528 | **~3.3%** |
-| **CARRY4** | 50 | — |
+| **CARRY4** | 47 | — |
 | **CARRY8** | 0 | — |
 | **LUT6_2** | 0 | — |
 | **MUXF7** | 0 | — |
 | **MUXF8** | 0 | — |
-| **Gates (pre-ABC9)** | ~1654 | — |
-| **Logic Cells (total)** | 2331 | — |
+| **Gates (pre-ABC9)** | ~1668 | — |
+| **Logic Cells (total)** | 2342 | — |
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 230 MHz | источник: manual |
@@ -591,15 +591,15 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 | Тип ячейки | Количество |
 |------------|------------|
-| $_AND_ | 284 |
+| $_AND_ | 289 |
 | $_MUX_ | 625 |
-| $_NOT_ | 161 |
-| $_OR_ | 383 |
+| $_NOT_ | 159 |
+| $_OR_ | 384 |
 | $_SDFFE_PP0P_ | 521 |
 | $_SDFF_PP0_ | 7 |
 | $_XNOR_ | 16 |
-| $_XOR_ | 185 |
-| CARRY4 | 50 |
+| $_XOR_ | 195 |
+| CARRY4 | 47 |
 | IBUF | 67 |
 | OBUF | 32 |
 
@@ -692,5 +692,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-17T10:50:51.911887Z*
+*Сгенерировано автоматически: 2026-11-17T13:39:24.223432Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
