@@ -3,10 +3,10 @@
 ![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
 ![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Rev](https://img.shields.io/badge/Rev-0.0.13-informational)
-![Date](https://img.shields.io/badge/date-2026--11--16-informational)
+![Rev](https://img.shields.io/badge/Rev-0.0.14-informational)
+![Date](https://img.shields.io/badge/date-2026--11--21-informational)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
-![Tests](https://img.shields.io/badge/tests-run__all.sh%20PASSED%2038%2F38-brightgreen)
+![Tests](https://img.shields.io/badge/tests-run__all.sh%20PASSED%2042%2F42-brightgreen)
 
 
 Author: V01G04A81  
@@ -480,17 +480,22 @@ not directly comparable to the Yosys estimates.
 Detailed logs:
 - [`log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — FAST (RTZ, FTZ, lat=8)
 - [`log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — RNE (lat=8)
+- [`log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — FAST (RTZ, FTZ, lat=4).  
+Note: the build uses the same ISE project name `test_xc6slx9_fma8` as the lat=8 runs; only the DUT source inside `u_mul` differs.
 
 | Module | Constraint | Min period | Equivalent Fmax | Timing errors |
 |--------|------------|------------|-----------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8) | 6 ns | 5.243 ns | ≈190.7 MHz | 0 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, lat=8) | 8 ns | 7.414 ns | ≈134.9 MHz | 0 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (FAST, RTZ, FTZ, lat=4) | 10 ns | 7.987 ns | ≈125.2 MHz | 0 |
 
-Trial run (2026-11-15, not a sign-off; more devices/trials pending).
+The lat=4 run reports **493 slice registers** (vs 890 for lat=8), **759 slice LUTs**, **359 occupied slices**, **0 DSP48A1** — confirming the ~2× flip-flop reduction of the 4-stage rebalance. The worst internal DUT path (`grp_mul`, `u_mul/Mmux_b_man11_FRB → u_mul/Madd_exp_p_calc_lut<0>1_FRB`) has a data-path delay of 9.283 ns (8 logic levels, ≈106.9 MHz), so the internal DUT limit is lower than the whole-top 125.2 MHz figure.
+
+Trial runs (2026-11-15 for lat=8, 2026-11-21 for lat=4; not sign-offs; more devices/trials pending).
 
 ## Revision History
 
-The full revision history (Rev 0.0.1 … 0.0.13) is maintained in [docs/rev_history.md](docs/rev_history.md).
+The full revision history (Rev 0.0.1 … 0.0.14) is maintained in [docs/rev_history.md](docs/rev_history.md).
 
 ## Author
 

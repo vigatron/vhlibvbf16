@@ -24,8 +24,13 @@ Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.
 - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — resource & timing summary.
 - Constraint: **8 ns (125 MHz)**; **0 timing errors** (237,196 analyzed paths / 4,753 endpoints); minimum period **7.414 ns (~134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 logic levels: 2.664 ns logic + 4.120 ns route); **887 slice registers (7%)**, **1,117 slice LUTs (19%)**, **514 occupied slices (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOBs ("Performance with IOB Packing").
 
-Trial run (2026-11-15, not a sign-off; more devices/trials pending).
-Folder `log9_fma_lat8` removed (renamed — this is the `..._rne_lat8` build, see `log_fma_rne_lat8`).
+**`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`** (FAST, RTZ, FTZ, lat=4) — [`log_fma_fst_lat4`](benchmarks/log_fma_fst_lat4/):
+- [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log) — ISE run log (the build reuses the `test_xc6slx9_fma8` project name; only the DUT inside `u_mul` differs from the lat=8 runs).
+- [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr) — timing report.
+- [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — resource & timing summary.
+- Constraint: **10 ns (100 MHz)**; **0 timing errors**; minimum period **7.987 ns (~125.2 MHz)**; worst internal DUT path `grp_mul` (`u_mul/Mmux_b_man11_FRB → u_mul/Madd_exp_p_calc_lut<0>1_FRB`) min period **9.357 ns (~106.9 MHz)** with Data Path Delay 9.283 ns (8 logic levels), slack 0.643 ns; **493 slice registers (4%)**, **759 slice LUTs (13%)**, **359 occupied slices (25%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOBs. Compared with `..._fst_lat8` (890 slice registers / 802 slice LUTs / 467 occupied slices), the 4-stage rebalance confirms the ~2× flip-flop reduction at a lower Fmax; the internal DUT path (~107 MHz) is below the 170 MHz Yosys estimate, at the lower edge of the ±20–25% tolerance.
+
+Trial runs (2026-11-15 for the lat=8 variants, 2026-11-21 for the lat=4 variant; not sign-offs; more devices/trials pending). Folder `log9_fma_lat8` removed (renamed — this is the `..._rne_lat8` build, see `log_fma_rne_lat8`).
 
 No post-PAR trial exists yet for `vhfma001` / `vhfma002`.
 
