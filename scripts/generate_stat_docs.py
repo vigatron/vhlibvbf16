@@ -173,8 +173,13 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
         lines.append(f"> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.")
         lines.append(f"> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.")
         lines.append(f"> - Констрейнт: **8 ns (125 MHz)**; **0 ошибок тайминга** (237 196 paths / 4 753 endpoints); **min period 7.414 ns (≈134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 уровня логики: 2.664 ns логика + 4.120 ns route); **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.")
+        lines.append(f"> **`log_fma_fst_lat4`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (FAST, RTZ, FTZ, lat=4), минимальная обвязка с шиной загрузки данных (сборка использует то же имя проекта `test_xc6slx9_fma8`, что и lat=8 — отличается только DUT внутри `u_mul`):")
+        lines.append(f"> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.")
+        lines.append(f"> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr) — отчёт тайминга.")
+        lines.append(f"> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.")
+        lines.append(f"> - Констрейнт: **10 ns (100 MHz)**; **0 ошибок тайминга**; **min period 7.987 ns (≈125.2 MHz)**; худший внутренний путь DUT `grp_mul` (`u_mul/Mmux_b_man11_FRB → u_mul/Madd_exp_p_calc_lut<0>1_FRB`): **9.357 ns (≈106.9 MHz)**, Data Path Delay 9.283 ns (8 уровней логики), slack 0.643 ns; **493 slice FF (4%)**, **759 slice LUT (13%)**, **359 занятых слайсов (25%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB. Сравнение с `..._fst_lat8` (890 slice FF / 802 slice LUT / 467 слайсов): 4-стадийная перебалансировка подтверждает ~2× сокращение FF при более низком Fmax; внутренний предел DUT ≈107 MHz ниже Yosys-оценки 170 MHz (нижняя граница допуска ±20–25%).")
         lines.append(f"> Папка `log9_fma_lat8` удалена (переименована — это сборка `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, см. `log_fma_rne_lat8`).")
-        lines.append(f"> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробный тест, не sign-off.")
+        lines.append(f"> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробные тесты (lat=8 — 2026-11-15, lat=4 — 2026-11-21), не sign-off.")
     lines.append(f"> Ожидаемая погрешность оценки LUT без реального синтеза — **±20–25%**.")
     lines.append(f"> Для точного Fmax необходимо запустить Xilinx ISE/Vivado с `report_timing`.")
     lines.append(f"")
@@ -192,8 +197,8 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
 
         lines.append(f"### {cat_title}")
         lines.append(f"")
-        lines.append(f"| Модуль | LUTs | FF | Latency | Точность | % LUTs (от {lut_total:,}) | Fmax typ, MHz |")
-        lines.append(f"|--------|------|-----|---------|----------|---------------------------|---------------|")
+        lines.append(f"| Модуль | LUTs | FF | Latency | Точность | % LUTs (от {lut_total:,}) | Fmax typ, MHz | Fmax post-PAR, MHz |")
+        lines.append(f"|--------|------|-----|---------|----------|---------------------------|---------------|--------------------|")
 
         for m in cat_modules:
             name = m["name"]
@@ -211,7 +216,13 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
             pct_str = format_percent(lut, lut_total)
             fmax_str = str(fmax.get("estimated_mhz", "N/A"))
 
-            lines.append(f"| `{name}` | {lut_str} | {ff_str} | {latency} | {acc} | {pct_str} | {fmax_str} |")
+            measured = data.get("measured_post_pare") or {}
+            if isinstance(measured, dict) and measured.get("mhz") is not None:
+                meas_str = f"{measured['mhz']:g}"
+            else:
+                meas_str = "—"
+
+            lines.append(f"| `{name}` | {lut_str} | {ff_str} | {latency} | {acc} | {pct_str} | {fmax_str} | {meas_str} |")
 
         lines.append(f"")
 
@@ -252,6 +263,21 @@ def generate_family_doc(family: str, family_results: Dict[str, Dict], all_result
             dsp_note = "0% (запрещено, проверено)"
         lines.append(f"| **DSP48** | {metrics.get('dsp48', 'N/A')} | {dsp_note} |")
         lines.append(f"| **Fmax (typ, manual)** | {fmax.get('estimated_mhz', 'N/A')} MHz | источник: {fmax.get('source', 'unknown')} |")
+
+        measured = data.get("measured_post_pare") or {}
+        if isinstance(measured, dict) and measured.get("mhz") is not None:
+            meas_note = (
+                f"{measured.get('device', '?')} / {measured.get('board', '?')}, "
+                f"{measured.get('tool', '?')}; констрейнт {measured.get('constraint_ns', '?')} ns; "
+                f"лог: [`{measured.get('log', '?').rstrip('/').split('/')[-1]}`]"
+                f"({measured.get('log', '?')})"
+            )
+            lines.append(f"| **Fmax (post-PAR, measured)** | {measured['mhz']:g} MHz | {meas_note} |")
+            if measured.get("note"):
+                lines.append(f"| ↳ примечание | {measured['note']} | — |")
+        else:
+            lines.append(f"| **Fmax (post-PAR, measured)** | — | измерений нет |")
+
         lines.append(f"| **Latency** | {m['latency']} cycles | — |")
         lines.append(f"| **Rounding** | {m['rounding']} | — |")
         lines.append(f"| **Subnormals** | {m['subnormal_handling']} | — |")
@@ -305,9 +331,10 @@ def generate_all_doc(all_results: Dict[str, Dict[str, Dict]],
     lines.append(f"Источник данных: {source_docs} ({generator_note}).")
     lines.append("LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.")
     if conclusion_kind == "top":
-        lines.append("Есть два пробных post-PAR измерения FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`:")
-        lines.append("- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns.")
-        lines.append("- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns.")
+        lines.append("Есть пробные post-PAR измерения трёх FMA (lat8 rne/fst и lat4 fst) на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`. Измеренные значения приведены в колонке «Fmax post-PAR, MHz»; Fmax typ — ручная калибровка, не измерение.")
+        lines.append("- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns (typ manual 200 MHz).")
+        lines.append("- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns (typ manual 170 MHz).")
+        lines.append("- `log_fma_fst_lat4` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, FAST/RTZ/FTZ, lat=4): min period **7.987 ns (≈125.2 MHz)**, 0 ошибок тайминга, констрейнт 10 ns; внутренний путь DUT `grp_mul` 9.357 ns (≈106.9 MHz) (typ manual 170 MHz).")
         lines.append("Папка `log9_fma_lat8` удалена (переименована — это сборка `..._rne_lat8`, см. `log_fma_rne_lat8`).")
     lines.append("")
     lines.append("---")

@@ -233,6 +233,7 @@ def run_yosys_synth(module: Dict, family: str) -> Dict[str, Any]:
             "logic_levels_max": None,
             "critical_path": get_critical_path_hint(module),
         },
+        "measured_post_pare": module.get("measured_post_pare", {}).get(family),
         "latency": module["latency"],
         "pipeline_stages": module["latency"],
         "rounding": module["rounding"],

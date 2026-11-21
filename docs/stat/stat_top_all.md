@@ -2,10 +2,10 @@
 
 Источник данных: `docs/stat/stat_top_spartan6.md`, `docs/stat/stat_top_spartan7.md`, `docs/stat/stat_top_artix7.md` (генерируются `scripts/generate_stat_docs.py` из `build/stat/*.json`).
 LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.
-Есть два пробных post-PAR измерения FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`:
-- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns.
-- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns.
-Папка `log9_fma_lat8` удалена (переименована — это сборка `..._rne_lat8`, см. `log_fma_rne_lat8`).
+Есть пробные post-PAR измерения трёх FMA (lat8 rne/fst и lat4 fst) на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`. Измеренные значения приведены в колонке «Fmax post-PAR, MHz»; Fmax typ — ручная калибровка, не измерение.
+- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns (typ manual 200 MHz).
+- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns (typ manual 170 MHz).
+- `log_fma_fst_lat4` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, FAST/RTZ/FTZ, lat=4): min period **7.987 ns (≈125.2 MHz)**, 0 ошибок тайминга, констрейнт 10 ns; внутренний путь DUT `grp_mul` 9.357 ns (≈106.9 MHz) (typ manual 170 MHz).
 
 ---
 
@@ -225,5 +225,5 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 
 ---
 
-*Последнее обновление: 2026-11-21T10:56:39.216399Z*
+*Последнее обновление: 2026-11-21T14:24:36.033260Z*
 *Инструменты: Yosys/YoWASP, wasmtime*
