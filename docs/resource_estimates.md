@@ -6,9 +6,9 @@ The implementation targets Xilinx Spartan-6 (XC6SLX9-2), Spartan-7 (XC7S15-1) an
 
 - `scripts/collect_stats.py` — synthesizes every design with Yosys: `hierarchy -top` → `flatten` → `synth_xilinx -family <xc6s|xc7> -run begin:map_ffs` (YoWASP WASM cannot run yosys-abc, so synthesis stops before ABC9), then parses the RTLIL dump on stdout. LUT6 is estimated as `gates / 2.5` (±20–25%); FF, CARRY4 and IO buffer counts are exact.
 - `scripts/generate_stat_docs.py` / `scripts/generate_stat_others_docs.py` — generate the top-level and bottom-up submodule reports (pass `--write` to overwrite the `stat/*.md` files; without it they run in dry-run mode).
-- Stat reports were regenerated on **2026-11-17** and now include `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (LUT ~662 est., FF 528, CARRY4 50, **DSP48 = 0**; Fmax typ 200/230/250 MHz on XC6SLX9-2/XC7S15-1/XC7A15T-1), `vhfma001` (LUT ~1148 est., FF 570, **DSP48 = 0**) and `vhfma002` (LUT ~1016 est., FF 510, **DSP48 = 1** — explicitly allowed exception); see the corresponding sections of the per-device reports.
+- Stat reports were regenerated on **2026-11-21** and now include `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (4-stage FAST FMA; LUT ~667 est., FF 234, **DSP48 = 0**; Fmax typ 170/200/220 MHz on XC6SLX9-2/XC7S15-1/XC7A15T-1) alongside `..._fst_lat8` (LUT ~667 est., FF 528, CARRY4 50, **DSP48 = 0**; Fmax typ 200/230/250 MHz), `vhfma001` (LUT ~1148 est., FF 570, **DSP48 = 0**) and `vhfma002` (LUT ~1016 est., FF 510, **DSP48 = 1** — explicitly allowed exception); see the corresponding sections of the per-device reports.
 
-Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. The `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` Fmax values (200/230/250 MHz), the `vhfma002` Fmax values (180/210/230 MHz) and `vhfma001` (180/210/230 MHz) are manual calibrations and are **not confirmed** by PAR yet (the `vhfma002` one was made before the DSP-mapped rework). For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
+Fmax (typ) is a hand-calibrated typical value stored in `scripts/modules_config.py` (`fmax` per module and family, `source: manual`), not a post-PAR measurement (a first trial post-PAR measurement exists — see below); expect ±20–25%. The `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` Fmax values (200/230/250 MHz), the `..._fst_lat4` Fmax values (170/200/220 MHz), the `vhfma002` Fmax values (180/210/230 MHz) and `vhfma001` (180/210/230 MHz) are manual calibrations and are **not confirmed** by PAR yet (the `vhfma002` one was made before the DSP-mapped rework). For a sign-off Fmax, run Xilinx ISE/Vivado with `report_timing`.
 
 **Real-board measurements (preliminary, trial).** Both modules have been placed & routed in Xilinx ISE 14.7 on a **CMB32F407HDMIR3** board (hybrid STM32F407 + Spartan-6 XC6SLX9-2TQG144). The measured top includes the DUT (`u_mul`) **plus a minimal parallel data-loading interface** (helper logic: input/output registers `u_regs` and a thin MCU parallel-bus wrapper `u_iface`, packed into IOBs), not the bare DUT — figures are not directly comparable to the Yosys estimates above.
 
@@ -29,7 +29,7 @@ Folder `log9_fma_lat8` removed (renamed — this is the `..._rne_lat8` build, se
 
 No post-PAR trial exists yet for `vhfma001` / `vhfma002`.
 
-Reports (regenerated 2026-11-17; `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, `vhfma001` and `vhfma002` rows included):
+Reports (regenerated 2026-11-21; `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, `..._fst_lat8`, `vhfma001` and `vhfma002` rows included):
 
 - [`stat/stat_top_all.md`](stat/stat_top_all.md) — comparison of the top-level modules (RTZ, RNE, F32, FMA, add_fp32, add_fp16, add_bf16) and their typical (typ) Fmax across FPGA families;
 - [`stat/stat_top_spartan6.md`](stat/stat_top_spartan6.md), [`stat/stat_top_spartan7.md`](stat/stat_top_spartan7.md), [`stat/stat_top_artix7.md`](stat/stat_top_artix7.md) — per-device details;

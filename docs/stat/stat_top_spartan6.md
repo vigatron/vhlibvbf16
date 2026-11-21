@@ -15,21 +15,18 @@
 > **LUTs — оценка по числу вентилей** (gates / 2.5), структура иерархии развёрнута (`flatten`).
 > Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.
 > **Реальные post-PAR измерения (Xilinx ISE 14.7, плата CMB32F407HDMIR3, XC6SLX9-2TQG144) — папка `docs/benchmarks/`:**
->
 > **`log_fma_fst_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8), минимальная обвязка с шиной загрузки данных:
-> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE (XST → NGDBuild → MAP → PAR → TRCE → Bitgen).
+> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
 > - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
 > - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
 > - Констрейнт: **6 ns (≈166.7 MHz)**; **0 ошибок тайминга**; **min period 5.243 ns (≈190.7 MHz)**; slack 0.757 ns; Data Path Delay 5.227 ns (1 уровень логики).
->
 > **`log_fma_rne_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, subnormals preserved, lat=8), минимальная обвязка с шиной загрузки данных:
 > - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
 > - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
 > - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
 > - Констрейнт: **8 ns (125 MHz)**; **0 ошибок тайминга** (237 196 paths / 4 753 endpoints); **min period 7.414 ns (≈134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 уровня логики: 2.664 ns логика + 4.120 ns route); **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.
->
 > Папка `log9_fma_lat8` удалена (переименована — это сборка `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, см. `log_fma_rne_lat8`).
-> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками не сопоставимо. Пробный тест, не sign-off.
+> Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробный тест, не sign-off.
 > Ожидаемая погрешность оценки LUT без реального синтеза — **±20–25%**.
 > Для точного Fmax необходимо запустить Xilinx ISE/Vivado с `report_timing`.
 
@@ -52,6 +49,7 @@
 |--------|------|-----|---------|----------|---------------------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~17.7%** | 100 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~17.7%** | 170 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | ~667 | 234 | 4 | truncation (RTZ); FTZ | **~11.7%** | 170 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | 528 | 8 | truncation (RTZ); FTZ | **~11.7%** | 200 |
 | `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~20.1%** | 180 |
 | `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~17.8%** | 180 |
@@ -577,6 +575,49 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 ---
 
+### `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`
+
+| Ресурс | Значение | % от доступных |
+|--------|----------|----------------|
+| **LUTs (est.)** | ~667 | **~11.7%** |
+| **FF** | 234 | **~2.0%** |
+| **CARRY4** | 44 | — |
+| **CARRY8** | 0 | — |
+| **LUT6_2** | 0 | — |
+| **MUXF7** | 0 | — |
+| **MUXF8** | 0 | — |
+| **Gates (pre-ABC9)** | ~1667 | — |
+| **Logic Cells (total)** | 2044 | — |
+| **IO (IBUF+OBUF)** | 99 | — |
+| **DSP48** | 0 | 0% (запрещено, проверено) |
+| **Fmax (typ, manual)** | 170 MHz | источник: manual |
+| **Latency** | 4 cycles | — |
+| **Rounding** | RTZ | — |
+| **Subnormals** | FTZ | — |
+
+**Критический путь (оценка):**
+```
+p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3
+```
+
+**Распределение ячеек:**
+
+| Тип ячейки | Количество |
+|------------|------------|
+| $_AND_ | 290 |
+| $_MUX_ | 625 |
+| $_NOT_ | 159 |
+| $_OR_ | 382 |
+| $_SDFFE_PP0P_ | 231 |
+| $_SDFF_PP0_ | 3 |
+| $_XNOR_ | 16 |
+| $_XOR_ | 195 |
+| CARRY4 | 44 |
+| IBUF | 67 |
+| OBUF | 32 |
+
+---
+
 ### `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`
 
 | Ресурс | Значение | % от доступных |
@@ -707,5 +748,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-17T13:39:24.222621Z*
+*Сгенерировано автоматически: 2026-11-21T10:56:39.208482Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*

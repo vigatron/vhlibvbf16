@@ -267,6 +267,8 @@ def get_critical_path_hint(module: Dict) -> str:
 
     if "muladd" in name and "lat4" in name:
         return "p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3"
+    elif name == "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4":
+        return "4-stage balanced pipeline: S1 decode+FTZ+4×mul4x4, S2 CSA+CPA+1-bit norm+exp diff+large/small+alignment, S3 28-bit add+LZD+normalize+exp_f32, S4 RTZ pack; no sticky, no RNE, no subnormal path"
     elif name == "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8":
         return "8-stage balanced pipeline: S1 decode+FTZ+4×mul4x4, S2 CSA, S3 CPA+1-bit norm, S4 exp diff+large/small, S5 alignment, S6 28-bit add+LZD, S7 LZD normalize+exp_pre, S8 RTZ pack; no sticky, no RNE, no subnormal path"
     elif "muladd" in name and "lat8" in name:

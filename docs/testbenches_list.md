@@ -1,6 +1,6 @@
 # Список тестбенчей (tests/**/*.v)
 
-Всего файлов: **44**
+Всего файлов: **46**
 
 ## Основные проверяющие тестбенчи (с `TEST PASSED` / `TEST FAILED`)
 
@@ -43,18 +43,20 @@
 | 35 | `fma/vhfma001_rand_tb.v` | `vhfma001` | Random regression, `LAT=8` | 2048 |
 | 36 | `fma/vhfma002_tb.v` | `vhfma002` | Directed + streaming + hold/reset, `LAT=8` | 45 |
 | 37 | `fma/vhfma002_rand_tb.v` | `vhfma002` | Random regression, `LAT=8` | 2048 |
-| 38 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Directed + streaming + hold/reset, `LAT=8` | 57 |
-| 39 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Random/directed regression (Python FAST/RTZ/FTZ model), `LAT=8` | 2048 |
+| 38 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | Directed + streaming + hold/reset, `LAT=4` | 57 |
+| 39 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | Random/directed regression (Python FAST/RTZ/FTZ model), `LAT=4` | 2048 |
+| 40 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Directed + streaming + hold/reset, `LAT=8` | 57 |
+| 41 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Random/directed regression (Python FAST/RTZ/FTZ model), `LAT=8` | 2048 |
 
 ## Визуализационные / вспомогательные тестбенчи
 
 | # | Файл | Модуль | Описание |
 |---|------|--------|----------|
-| 40 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
-| 41 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
-| 42 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
-| 43 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
-| 44 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
+| 42 | `aux/vhfastmulb16_mul4x4_chk_tb.v` | `mul4x4` | 4 пары: 3×5, 7×9, 10×11, 15×15 |
+| 43 | `aux/vhfastmulb16_mul4x4_lat2_chk_tb.v` | `mul4x4_lat2` | 12 векторов, LAT=2 |
+| 44 | `aux/vhfastmulb16_mul_u8_u8_u16_lat2_chk_tb.v` | `mul_u8_u8_u16_lat2` | 4 пары: 1×9, 3×11, 5×13, 7×15 |
+| 45 | `aux/vhfastmulb16_mul_u8_u8_u16_lat3_chk_tb.v` | `mul_u8_u8_u16_lat3` | 4 пары, LAT=3 |
+| 46 | `aux/vhfastmulb16_flags_lat2_chk_tb.v` | `flags_lat2` | 12 векторов, LAT=2 |
 
 ---
 
@@ -94,6 +96,8 @@
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat4.sh sim
+./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat4_rand.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8.sh sim
 ./scripts/fma/run_test_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand.sh sim
 ./scripts/fma/run_test_vhfma001.sh sim
@@ -133,6 +137,8 @@
 | `add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_fp16_fp16.json` | FP16 + FP16 -> FP16, 32 вектора (RNE/RTZ) |
 | `add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_rne.md` | FP16 addition, только C (RNE) |
 | `add/test_values_add_fp16_fp16_fp16/test_values_add_fp16_rtz.md` | FP16 addition, только C (RTZ) |
+| `fma/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat4/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat4.json` | BF16 × BF16 + FP32 → F32 FAST FMA (RTZ/FTZ), 57 направленных векторов (те же значения, что у `..._fst_lat8`) |
+| `fma/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat4/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat4.md` | Те же векторы в Markdown-таблице |
 | `fma/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8.json` | BF16 × BF16 + FP32 → F32 FAST FMA (RTZ/FTZ), 57 направленных векторов |
 | `fma/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8/test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8.md` | Те же векторы в Markdown-таблице |
 
@@ -155,4 +161,5 @@
   с точной Fraction-моделью (`scripts/gen_fma_vectors.py`)
 - `vhfma001_tb.v` / `vhfma001_rand_tb.v` — directed + random FMA (latency 8, клон lat8 для максимального Fmax, чистый LUT/FF)
 - `vhfma002_tb.v` / `vhfma002_rand_tb.v` — directed + random FMA (latency 8; единственное исключение с DSP48 — умножение 8×8 мантисс)
+- `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_tb.v` / `..._rand_tb.v` — directed + random **FAST** FMA (latency 4, RTZ/FTZ, Python-модель `scripts/gen_fst_fma_vectors.py --variant lat4`)
 - `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_tb.v` / `..._rand_tb.v` — directed + random **FAST** FMA (latency 8, RTZ/FTZ, Python-модель `scripts/gen_fst_fma_vectors.py`)

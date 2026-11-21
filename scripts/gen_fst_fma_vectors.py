@@ -3,8 +3,14 @@
 """@file gen_fst_fma_vectors.py
 @brief Generate BF16 x BF16 + FP32 -> FP32 FAST (RTZ/FTZ) test vectors.
 
-Bit-exact reference model of the planned DUT
-`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`:
+Bit-exact reference model shared by the FAST FMA family:
+
+  * `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (latency 8);
+  * `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (latency 4).
+
+Both modules implement the same frozen contract, so their expected values are
+bit-identical; only the pipeline latency differs.  The target is selected with
+`--variant {lat8,lat4}` (default: lat8).
 
   * BF16 operands: [15] sign | [14:7] exp (bias 127) | [6:0] frac;
   * FP32 addend:   [31] sign | [30:23] exp (bias 127) | [22:0] frac;
@@ -41,9 +47,10 @@ Output format (one 96-bit hexadecimal word per line):
 
 Usage:
     ./scripts/gen_fst_fma_vectors.py --self-check
-    ./scripts/gen_fst_fma_vectors.py --emit-testvalues
+    ./scripts/gen_fst_fma_vectors.py --emit-testvalues --variant lat4
     ./scripts/gen_fst_fma_vectors.py --count 2048 --seed 12345 \
-        --out build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand.hex
+        --variant lat4 \
+        --out build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_rand.hex
 """
 
 import argparse
@@ -54,12 +61,28 @@ import struct
 import sys
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TESTVALUES_DIR = os.path.join(
-    BASE, "testvalues", "fma",
-    "test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8")
-TESTVALUES_JSON = os.path.join(
-    TESTVALUES_DIR,
-    "test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8.json")
+
+# Module variants sharing this reference model.  Latency is the only
+# difference, so the expected values are identical.
+VARIANTS = ("lat8", "lat4")
+
+
+def testvalues_dir(variant):
+    """@brief Testvalues directory of a FAST FMA variant (lat8 / lat4)."""
+    return os.path.join(
+        BASE, "testvalues", "fma",
+        "test_values_muladd_bf16_bf16_fp32_fp32_fst_{}".format(variant))
+
+
+def testvalues_json(variant):
+    """@brief Testvalues JSON path of a FAST FMA variant (lat8 / lat4)."""
+    return os.path.join(
+        testvalues_dir(variant),
+        "test_values_muladd_bf16_bf16_fp32_fp32_fst_{}.json".format(variant))
+
+
+TESTVALUES_DIR = testvalues_dir("lat8")
+TESTVALUES_JSON = testvalues_json("lat8")
 
 QNAN_F32 = 0x7FC00000
 INF_F32 = 0x7F800000
@@ -399,30 +422,44 @@ def f32_bitstruct(u32):
 # =============================================================================
 
 def self_check():
-    """@brief Validate the reference model against the JSON test vectors."""
-    if not os.path.exists(TESTVALUES_JSON):
-        print("FAIL: testvalues JSON not found: {}".format(TESTVALUES_JSON))
-        return 1
-
-    with open(TESTVALUES_JSON, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
+    """@brief Validate the reference model against all known testvalues JSON."""
     errors = 0
     total = 0
-    for group in ("test_vectors", "extended_vectors"):
-        for item in data.get(group, []):
-            a = int(item["input_a"]["hex"], 16)
-            b = int(item["input_b"]["hex"], 16)
-            s = int(item["input_s"]["hex"], 16)
-            exp = int(item["output_c"]["hex"], 16)
-            got = fma_fst(a, b, s)
-            total += 1
-            if got != exp:
-                errors += 1
-                print(
-                    "FAIL #{no}: a={a:04X} b={b:04X} s={s:08X} "
-                    "exp={exp:08X} got={got:08X}".format(
-                        no=item["no"], a=a, b=b, s=s, exp=exp, got=got))
+    found = 0
+
+    for variant in VARIANTS:
+        path = testvalues_json(variant)
+        if not os.path.exists(path):
+            print("skip: testvalues JSON not found: {}".format(path))
+            continue
+        found += 1
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        variant_total = 0
+        for group in ("test_vectors", "extended_vectors"):
+            for item in data.get(group, []):
+                a = int(item["input_a"]["hex"], 16)
+                b = int(item["input_b"]["hex"], 16)
+                s = int(item["input_s"]["hex"], 16)
+                exp = int(item["output_c"]["hex"], 16)
+                got = fma_fst(a, b, s)
+                variant_total += 1
+                total += 1
+                if got != exp:
+                    errors += 1
+                    print(
+                        "FAIL [{}] #{no}: a={a:04X} b={b:04X} s={s:08X} "
+                        "exp={exp:08X} got={got:08X}".format(
+                            variant, no=item["no"], a=a, b=b, s=s,
+                            exp=exp, got=got))
+        print("{}: checked {} vectors".format(variant, variant_total))
+
+    if found == 0:
+        print("FAIL: no testvalues JSON found")
+        return 1
+
     print("checked {} vectors, errors {}".format(total, errors))
     return 0 if errors == 0 else 1
 
@@ -431,9 +468,10 @@ def self_check():
 # Testvalues emission
 # =============================================================================
 
-def emit_testvalues(outdir):
+def emit_testvalues(outdir, variant="lat8"):
     """@brief Emit testvalues JSON + Markdown from the verified model."""
     cases = directed_cases()
+    title_suffix = "fst_{}".format(variant)
 
     test_vectors = []
     for idx, (a, b, s, exp, label) in enumerate(cases, start=1):
@@ -490,11 +528,12 @@ def emit_testvalues(outdir):
         "test_vectors": test_vectors,
         "metadata": {
             "title": (
-                "BF16 x BF16 + FP32 -> FP32 (fst_lat8, RTZ/FTZ) test vectors"),
+                "BF16 x BF16 + FP32 -> FP32 (fst_{}, RTZ/FTZ) test vectors"
+                .format(variant)),
             "source": (
                 "rules/fma/"
-                "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.md "
-                "(frozen contract)"),
+                "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_{}.md "
+                "(frozen contract)".format(variant)),
             "generator": "scripts/gen_fst_fma_vectors.py",
             "vector_count": len(test_vectors),
             "special_values": {
@@ -508,17 +547,21 @@ def emit_testvalues(outdir):
 
     os.makedirs(outdir, exist_ok=True)
     json_path = os.path.join(
-        outdir, "test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8.json")
+        outdir,
+        "test_values_muladd_bf16_bf16_fp32_fp32_fst_{}.json".format(variant))
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.write("\n")
 
     md_lines = [
         "# Тестовые векторы для "
-        "`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`",
+        "`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_{}`".format(variant),
         "",
         "Операция: `RESULT = SUMM + (VALA_BF16 × VALB_BF16)`, "
         "FP32 output, **RTZ** rounding, **FTZ** on inputs and output.",
+        "",
+        "Контракт общий для `fst_lat8` и `fst_lat4`: значения `EXPECTED` "
+        "совпадают побитово, различается только latency.",
         "",
         "## Формат",
         "",
@@ -551,7 +594,8 @@ def emit_testvalues(outdir):
                 idx, a, b, s, exp, label))
 
     md_path = os.path.join(
-        outdir, "test_values_muladd_bf16_bf16_fp32_fp32_fst_lat8.md")
+        outdir,
+        "test_values_muladd_bf16_bf16_fp32_fp32_fst_{}.md".format(variant))
     with open(md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(md_lines) + "\n")
 
@@ -573,12 +617,16 @@ def main():
     parser.add_argument("--seed", type=int, default=12345,
                         help="random seed (default: 12345)")
     parser.add_argument(
+        "--variant", choices=VARIANTS, default="lat8",
+        help="target FAST FMA variant: lat8 (default) or lat4")
+    parser.add_argument(
         "--out",
-        default=(
-            "build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand.hex"),
-        help="output hex file")
+        default=None,
+        help=("output hex file "
+              "(default: build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_"
+              "fst_<variant>_rand.hex)"))
     parser.add_argument("--self-check", action="store_true",
-                        help="validate the model against docs JSON")
+                        help="validate the model against all testvalues JSON")
     parser.add_argument("--emit-testvalues", action="store_true",
                         help="write testvalues JSON/MD from the verified model")
     args = parser.parse_args()
@@ -587,7 +635,7 @@ def main():
         return self_check()
 
     if args.emit_testvalues:
-        return emit_testvalues(TESTVALUES_DIR)
+        return emit_testvalues(testvalues_dir(args.variant), args.variant)
 
     if args.count < 1:
         print("ERROR: --count must be positive", file=sys.stderr)
@@ -606,6 +654,10 @@ def main():
         cases.append((a, b, s, fma_fst(a, b, s), "random"))
 
     out_path = args.out
+    if out_path is None:
+        out_path = (
+            "build/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_{}_rand.hex"
+            .format(args.variant))
     if not os.path.isabs(out_path):
         out_path = os.path.join(BASE, out_path)
 
