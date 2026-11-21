@@ -11,6 +11,10 @@ Each module entry defines:
 - category: multiplication, addition, fma
 - fmax: hand-calibrated typical Fmax (MHz) per FPGA family
   (manual estimation, see docs/stat/stat_top_spartan6.md etc.)
+- measured_post_pare (optional): real post-PAR Fmax measured with Xilinx ISE,
+  per FPGA family. Each entry: mhz, min_period_ns, constraint_ns, device, board,
+  tool, log (path to docs/benchmarks/...), note. Present only for modules that
+  have an actual place-and-route run; do not fabricate values.
 """
 
 MODULES = [
@@ -162,6 +166,42 @@ MODULES = [
         "subnormal_handling": "preserve",
         "category": "fma",
         "fmax": {"xc6s": 170, "xc7s": 200, "xc7a": 220},
+        "measured_post_pare": {
+            "xc6s": {
+                "mhz": 134.9,
+                "min_period_ns": 7.414,
+                "constraint_ns": 8,
+                "device": "xc6slx9-2tqg144",
+                "board": "CMB32F407HDMIR3",
+                "tool": "Xilinx ISE 14.7",
+                "log": "docs/benchmarks/log_fma_rne_lat8/",
+                "note": "whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors",
+            },
+        },
+    },
+    {
+        "name": "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4",
+        "sources": [
+            "src/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4.v",
+            "src/aux/vhfastmulb16_mul4x4_comb.v",
+        ],
+        "latency": 4,
+        "rounding": "RTZ",
+        "subnormal_handling": "FTZ",
+        "category": "fma",
+        "fmax": {"xc6s": 170, "xc7s": 200, "xc7a": 220},
+        "measured_post_pare": {
+            "xc6s": {
+                "mhz": 125.2,
+                "min_period_ns": 7.987,
+                "constraint_ns": 10,
+                "device": "xc6slx9-2tqg144",
+                "board": "CMB32F407HDMIR3",
+                "tool": "Xilinx ISE 14.7",
+                "log": "docs/benchmarks/log_fma_fst_lat4/",
+                "note": "whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors; internal grp_mul path 9.357 ns (~106.9 MHz, 8 logic levels)",
+            },
+        },
     },
     {
         "name": "vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8",
@@ -174,6 +214,18 @@ MODULES = [
         "subnormal_handling": "FTZ",
         "category": "fma",
         "fmax": {"xc6s": 200, "xc7s": 230, "xc7a": 250},
+        "measured_post_pare": {
+            "xc6s": {
+                "mhz": 190.7,
+                "min_period_ns": 5.243,
+                "constraint_ns": 6,
+                "device": "xc6slx9-2tqg144",
+                "board": "CMB32F407HDMIR3",
+                "tool": "Xilinx ISE 14.7",
+                "log": "docs/benchmarks/log_fma_fst_lat8/",
+                "note": "whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors; internal grp_mul path 5.440 ns (~183.8 MHz)",
+            },
+        },
     },
     {
         "name": "vhfma001",

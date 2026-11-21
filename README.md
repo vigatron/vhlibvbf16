@@ -3,14 +3,14 @@
 ![Verilog-2005](https://img.shields.io/badge/DUT_Verilog--2005_(IEEE_1364--2005)-1364FF)
 ![SystemVerilog-2012](https://img.shields.io/badge/TB_SystemVerilog--2012_(IEEE_1800--2012)-CC3300)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-![Rev](https://img.shields.io/badge/Rev-0.0.13-informational)
-![Date](https://img.shields.io/badge/date-2026--11--16-informational)
+![Rev](https://img.shields.io/badge/Rev-0.0.14-informational)
+![Date](https://img.shields.io/badge/date-2026--11--21-informational)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
-![Tests](https://img.shields.io/badge/tests-run__all.sh%20PASSED%2038%2F38-brightgreen)
+![Tests](https://img.shields.io/badge/tests-run__all.sh%20PASSED%2042%2F42-brightgreen)
 
 
 Author: V01G04A81  
-Rev: 0.0.13  
+Rev: 0.0.14  
 
 
 ## Description
@@ -52,6 +52,7 @@ The following top-level modules are the primary entry points of the library:
 |---------|----------|---------------|---------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | BF16 × BF16 + FP32 fused multiply-add | F32 | 4 clk | RNE (IEEE-754) |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax) | F32 | 8 clk | RNE (IEEE-754) |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | BF16 × BF16 + FP32 fused multiply-add (**FAST / max-Fmax**, 4-stage) | F32 | 4 clk | RTZ (truncation), FTZ |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | BF16 × BF16 + FP32 fused multiply-add (**FAST / max-Fmax**) | F32 | 8 clk | RTZ (truncation), FTZ |
 | `vhfma001` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax, pure LUT/FF; speed-optimized clone of lat8) | F32 | 8 clk | RNE (IEEE-754) |
 | `vhfma002` | BF16 × BF16 + FP32 fused multiply-add (8-stage, max Fmax; 8x8 BF16 mantissa multiply mapped to one DSP48 — allowed exception) | F32 | 8 clk | RNE (IEEE-754) |
@@ -164,15 +165,23 @@ NaN and a smaller register footprint.
 | **Zero sign** | `-0 + -0 = -0`; `-0 + +0 = +0`; exact cancellation `x + (-x) = +0`; underflow to zero preserves the exact-result sign |
 | **Pipeline** | 4 clock cycles latency, fully pipelined, HOLD on `en=0` |
 
-### FAST FMA module (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`)
+### FAST FMA modules (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, `..._fst_lat8`)
 
-Speed-optimized (max-Fmax) variant of the BF16 × BF16 + FP32 FMA with RTZ
+Speed-optimized (max-Fmax) variants of the BF16 × BF16 + FP32 FMA with RTZ
 rounding and FTZ on BF16/FP32 subnormals. The BF16 × BF16 product is exact;
 the single final rounding is RTZ (truncation). No F32 subnormal results are
 produced; every zero result is `+0`. The alignment path has no sticky and the
 carry fix-up drops the shifted-out bit, so rare 1-ulp deviations from exact
 RTZ are possible — a deliberate FAST trade-off (bit-exact IEEE RNE is not a
-requirement for this module).
+requirement for these modules).
+
+Both modules share one frozen RTZ/FTZ contract and are **bit-exact**: the
+expected values of `..._fst_lat4` and `..._fst_lat8` are identical, only the
+pipeline latency differs. `..._fst_lat4` rebalances the datapath into 4
+stages: S1 decode+FTZ+4×`mul4x4_comb`, S2 CSA+CPA+1-bit norm+exp diff+
+large/small+alignment, S3 28-bit add+LZD+normalize+exp_f32, S4 RTZ pack.
+At the cost of a lower Fmax it uses roughly half the flip-flops of
+`..._fst_lat8` (~234 FF vs ~528 FF, ~667 LUT both).
 
 | Feature | Behavior |
 |---------|----------|
@@ -211,7 +220,7 @@ testbenches, random regressions, full `run_all.sh` regression) are listed in
 
 ## Source Files
 
-The `src/` directory contains **26** Verilog source files:
+The `src/` directory contains **27** Verilog source files:
 
 ### Multiplication Modules
 
@@ -245,6 +254,7 @@ The `src/` directory contains **26** Verilog source files:
 |------|--------|-------------|---------|
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding | 4 clk |
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
+| `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (4-stage, FTZ; bit-exact with `..._fst_lat8`) | 4 clk |
 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (8-stage, max Fmax; FTZ) | 8 clk |
 | `fma/vhfma001.v` | `vhfma001` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; speed-optimized clone of lat8, pure LUT/FF) | 8 clk |
 | `fma/vhfma002.v` | `vhfma002` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; single DSP48-mapped 8x8 mantissa multiply — allowed exception) | 8 clk |
@@ -283,6 +293,9 @@ vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8
@@ -348,7 +361,7 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 | Top-level (FP32 add) | `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4`, `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4`, `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` |
 | Top-level (BF16 add) | `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4`, `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` |
-| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4`, `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` |
 
 #### Latency 8
 
@@ -406,6 +419,8 @@ The testbenches are located in the [tests/](tests/) directory, and the run scrip
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` (random regression, LAT=4) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (random regression, LAT=8) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (directed + hold/reset, LAT=4) |
+| `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (random regression, LAT=4) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (directed + hold/reset, LAT=8) |
 | `tests/fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8_rand_tb.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (random regression, LAT=8) |
 | `tests/fma/vhfma001_tb.v` | `vhfma001` (directed + hold/reset, LAT=8) |
@@ -465,17 +480,22 @@ not directly comparable to the Yosys estimates.
 Detailed logs:
 - [`log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — FAST (RTZ, FTZ, lat=8)
 - [`log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — RNE (lat=8)
+- [`log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log), [`test_xc6slx9_fma8.twr`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr), [`test_xc6slx9_fma8_summary.html`](docs/benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — FAST (RTZ, FTZ, lat=4).  
+Note: the build uses the same ISE project name `test_xc6slx9_fma8` as the lat=8 runs; only the DUT source inside `u_mul` differs.
 
 | Module | Constraint | Min period | Equivalent Fmax | Timing errors |
 |--------|------------|------------|-----------------|---------------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8) | 6 ns | 5.243 ns | ≈190.7 MHz | 0 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, lat=8) | 8 ns | 7.414 ns | ≈134.9 MHz | 0 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (FAST, RTZ, FTZ, lat=4) | 10 ns | 7.987 ns | ≈125.2 MHz | 0 |
 
-Trial run (2026-11-15, not a sign-off; more devices/trials pending).
+The lat=4 run reports **493 slice registers** (vs 890 for lat=8), **759 slice LUTs**, **359 occupied slices**, **0 DSP48A1** — confirming the ~2× flip-flop reduction of the 4-stage rebalance. The worst internal DUT path (`grp_mul`, `u_mul/Mmux_b_man11_FRB → u_mul/Madd_exp_p_calc_lut<0>1_FRB`) has a data-path delay of 9.283 ns (8 logic levels, ≈106.9 MHz), so the internal DUT limit is lower than the whole-top 125.2 MHz figure.
+
+Trial runs (2026-11-15 for lat=8, 2026-11-21 for lat=4; not sign-offs; more devices/trials pending).
 
 ## Revision History
 
-The full revision history (Rev 0.0.1 … 0.0.13) is maintained in [docs/rev_history.md](docs/rev_history.md).
+The full revision history (Rev 0.0.1 … 0.0.14) is maintained in [docs/rev_history.md](docs/rev_history.md).
 
 ## Author
 

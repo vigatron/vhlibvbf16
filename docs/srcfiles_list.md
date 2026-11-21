@@ -1,6 +1,6 @@
 # DUT Source Files List (src/)
 
-Total modules: **26**
+Total modules: **27**
 
 | # | File | Module | Description | Latency |
 |---|------|--------|-------------|---------|
@@ -29,7 +29,8 @@ Total modules: **26**
 | 23 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax) | 8 clk |
 | 24 | `fma/vhfma001.v` | `vhfma001` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; speed-optimized clone of lat8, pure LUT/FF) | 8 clk |
 | 25 | `fma/vhfma002.v` | `vhfma002` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RNE** rounding (8-stage, max Fmax; single DSP48-mapped 8x8 BF16 mantissa multiply — allowed exception) | 8 clk |
-| 26 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (8-stage, max Fmax; FTZ) | 8 clk |
+| 26 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (4-stage; FTZ; bit-exact with `..._fst_lat8`) | 4 clk |
+| 27 | `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v` | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | Fused multiply-add BF16 × BF16 + FP32 -> **FP32** with **RTZ** rounding (8-stage, max Fmax; FTZ) | 8 clk |
 
 ---
 
@@ -57,6 +58,9 @@ vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8
+└── vhfastmulb16_mul4x4_comb (x4)
+
+vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4
 └── vhfastmulb16_mul4x4_comb (x4)
 
 vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8
@@ -124,7 +128,7 @@ vhfastmulb16_add_bf16_bf16_bf16_rne_lat4
 | Top-level (FP32 add) | `add_fp32_fp32_fp32_rtz_lat4`, `add_fp32_fp32_fp32_rne_lat4` |
 | Top-level (FP16 add) | `add_fp16_fp16_fp16_rtz_lat4`, `add_fp16_fp16_fp16_rne_lat4` |
 | Top-level (BF16 add) | `add_bf16_bf16_bf16_rtz_lat4`, `add_bf16_bf16_bf16_rne_lat4` |
-| Top-level (BF16 × BF16 + FP32 FMA) | `muladd_bf16_bf16_fp32_fp32_rne_lat4` |
+| Top-level (BF16 × BF16 + FP32 FMA) | `muladd_bf16_bf16_fp32_fp32_rne_lat4`, `muladd_bf16_bf16_fp32_fp32_fst_lat4` |
 
 ### Latency 8
 
@@ -138,7 +142,7 @@ Note: `vhfastmulb16_mul4x4_comb` is the purely combinational variant (latency 0)
 
 ## Current Source Directory Contents
 
-The `src/` directory contains the following 26 Verilog source files:
+The `src/` directory contains the following 27 Verilog source files:
 
 - `aux/vhfastmulb16_add8x8_lat2.v`
 - `add/vhfastmulb16_add_bf16_bf16_bf16_rne_lat4.v`
@@ -149,6 +153,7 @@ The `src/` directory contains the following 26 Verilog source files:
 - `add/vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8.v`
+- `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4.v`
 - `fma/vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8.v`
 - `fma/vhfma001.v`
 - `fma/vhfma002.v`

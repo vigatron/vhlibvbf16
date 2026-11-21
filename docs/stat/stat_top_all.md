@@ -2,9 +2,10 @@
 
 Источник данных: `docs/stat/stat_top_spartan6.md`, `docs/stat/stat_top_spartan7.md`, `docs/stat/stat_top_artix7.md` (генерируются `scripts/generate_stat_docs.py` из `build/stat/*.json`).
 LUT — оценка по числу вентилей до ABC9 (YoWASP WASM не выполняет yosys-abc), погрешность ±20–25%. Fmax — ручная калибровка типовых значений, не измерение post-PAR.
-Есть два пробных post-PAR измерения FMA lat8 на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`:
-- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns.
-- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns.
+Есть пробные post-PAR измерения трёх FMA (lat8 rne/fst и lat4 fst) на Spartan-6 (плата CMB32F407HDMIR3, XC6SLX9-2TQG144, ISE 14.7) — см. `stat_top_spartan6.md` и папку `docs/benchmarks/`. Измеренные значения приведены в колонке «Fmax post-PAR, MHz»; Fmax typ — ручная калибровка, не измерение.
+- `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns (typ manual 200 MHz).
+- `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns (typ manual 170 MHz).
+- `log_fma_fst_lat4` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, FAST/RTZ/FTZ, lat=4): min period **7.987 ns (≈125.2 MHz)**, 0 ошибок тайминга, констрейнт 10 ns; внутренний путь DUT `grp_mul` 9.357 ns (≈106.9 MHz) (typ manual 170 MHz).
 Папка `log9_fma_lat8` удалена (переименована — это сборка `..._rne_lat8`, см. `log_fma_rne_lat8`).
 
 ---
@@ -71,6 +72,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | ~1011 | ~1011 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | ~1013 | ~1013 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | ~667 | ~667 | ~667 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | ~667 | ~667 |
 | `vhfma001` | ~1148 | ~1148 | ~1148 |
 | `vhfma002` | ~1016 | ~1016 | ~1016 |
@@ -83,6 +85,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 246 | 246 | 246 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 562 | 562 | 562 |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | 234 | 234 | 234 |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | 528 | 528 | 528 |
 | `vhfma001` | 570 | 570 | 570 |
 | `vhfma002` | 510 | 510 | 510 |
@@ -95,6 +98,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **~17.7%** | **~12.6%** | **~9.7%** |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **~17.7%** | **~12.7%** | **~9.7%** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | **~11.7%** | **~8.3%** | **~6.4%** |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | **~11.7%** | **~8.3%** | **~6.4%** |
 | `vhfma001` | **~20.1%** | **~14.3%** | **~11.0%** |
 | `vhfma002` | **~17.8%** | **~12.7%** | **~9.8%** |
@@ -107,6 +111,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|---------|---------------------|---------------------|---------------------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | 4 | 100 MHz | 125 MHz | 145 MHz | IEEE 754 RNE; subnormals preserved; fused BF16×BF16+FP32; single RNE |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | 8 | 170 MHz | 200 MHz | 220 MHz | IEEE 754 RNE; subnormals preserved; fused BF16×BF16+FP32; single RNE |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | 4 | 170 MHz | 200 MHz | 220 MHz | truncation (RTZ); FTZ; fused BF16×BF16+FP32; single RTZ |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | 8 | 200 MHz | 230 MHz | 250 MHz | truncation (RTZ); FTZ; fused BF16×BF16+FP32; single RTZ |
 | `vhfma001` | 8 | 180 MHz | 210 MHz | 230 MHz | IEEE 754 RNE; subnormals preserved |
 | `vhfma002` | 8 | 180 MHz | 210 MHz | 230 MHz | IEEE 754 RNE; subnormals preserved |
@@ -180,6 +185,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 |--------|----------|----------|----------|
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | **100** | **125** | **145** |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | **170** | **200** | **220** |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | **170** | **200** | **220** |
 | `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | **200** | **230** | **250** |
 | `vhfma001` | **180** | **210** | **230** |
 | `vhfma002` | **180** | **210** | **230** |
@@ -220,5 +226,5 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 
 ---
 
-*Последнее обновление: 2026-11-17T13:39:24.224315Z*
+*Последнее обновление: 2026-11-21T14:40:20.864559Z*
 *Инструменты: Yosys/YoWASP, wasmtime*

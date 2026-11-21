@@ -2,6 +2,8 @@
 
 Операция: `RESULT = SUMM + (VALA_BF16 × VALB_BF16)`, FP32 output, **RTZ** rounding, **FTZ** on inputs and output.
 
+Контракт общий для `fst_lat8` и `fst_lat4`: значения `EXPECTED` совпадают побитово, различается только latency.
+
 ## Формат
 
 Каждая строка: `VALA_BF16 VALB_BF16 SUMM_FP32 RESULT_FP32 # комментарий`

@@ -24,33 +24,34 @@
 
 ### Модули умножения (Multiplication)
 
-| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz |
-|--------|------|-----|---------|----------|---------------------------|---------------|
-| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~252 | 106 | 3 | truncation (RTZ); FTZ | **~3.1%** | 205 |
-| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~259 | 117 | 3 | IEEE 754 RNE; FTZ | **~3.2%** | 180 |
-| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | ~230 | 61 | 3 | truncation (RTZ); FTZ | **~2.9%** | 230 |
-| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~485 | 170 | 4 | exact; subnormals preserved | **~6.1%** | 165 |
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz | Fmax post-PAR, MHz |
+|--------|------|-----|---------|----------|---------------------------|---------------|--------------------|
+| `vhfastmulb16_mul_bf16_bf16_bf16_rtz_lat3` | ~252 | 106 | 3 | truncation (RTZ); FTZ | **~3.1%** | 205 | — |
+| `vhfastmulb16_mul_bf16_bf16_bf16_rne_lat3` | ~259 | 117 | 3 | IEEE 754 RNE; FTZ | **~3.2%** | 180 | — |
+| `vhfastmulb16_mul_bf16_bf16_bf16_fst_lat3` | ~230 | 61 | 3 | truncation (RTZ); FTZ | **~2.9%** | 230 | — |
+| `vhfastmulb16_mul_bf16_bf16_fp32_lat4` | ~485 | 170 | 4 | exact; subnormals preserved | **~6.1%** | 165 | — |
 
 ### Комбинированные модули (Combined / FMA)
 
-| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz |
-|--------|------|-----|---------|----------|---------------------------|---------------|
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~12.6%** | 125 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 200 |
-| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | 528 | 8 | truncation (RTZ); FTZ | **~8.3%** | 230 |
-| `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~14.3%** | 210 |
-| `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 210 |
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz | Fmax post-PAR, MHz |
+|--------|------|-----|---------|----------|---------------------------|---------------|--------------------|
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat4` | ~1011 | 246 | 4 | IEEE 754 RNE; subnormals preserved | **~12.6%** | 125 | — |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` | ~1013 | 562 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 200 | — |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` | ~667 | 234 | 4 | truncation (RTZ); FTZ | **~8.3%** | 200 | — |
+| `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` | ~667 | 528 | 8 | truncation (RTZ); FTZ | **~8.3%** | 230 | — |
+| `vhfma001` | ~1148 | 570 | 8 | IEEE 754 RNE; subnormals preserved | **~14.3%** | 210 | — |
+| `vhfma002` | ~1016 | 510 | 8 | IEEE 754 RNE; subnormals preserved | **~12.7%** | 210 | — |
 
 ### Модули сложения (Addition)
 
-| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz |
-|--------|------|-----|---------|----------|---------------------------|---------------|
-| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~746 | 261 | 4 | truncation (RTZ); subnormals preserved | **~9.3%** | 140 |
-| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~774 | 261 | 4 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 130 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~329 | 145 | 4 | truncation (RTZ); subnormals preserved | **~4.1%** | 170 |
-| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~348 | 145 | 4 | IEEE 754 RNE; subnormals preserved | **~4.3%** | 155 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~355 | 118 | 4 | truncation (RTZ); subnormals preserved | **~4.4%** | 165 |
-| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~395 | 118 | 4 | IEEE 754 RNE; subnormals preserved | **~4.9%** | 150 |
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz | Fmax post-PAR, MHz |
+|--------|------|-----|---------|----------|---------------------------|---------------|--------------------|
+| `vhfastmulb16_add_fp32_fp32_fp32_rtz_lat4` | ~746 | 261 | 4 | truncation (RTZ); subnormals preserved | **~9.3%** | 140 | — |
+| `vhfastmulb16_add_fp32_fp32_fp32_rne_lat4` | ~774 | 261 | 4 | IEEE 754 RNE; subnormals preserved | **~9.7%** | 130 | — |
+| `vhfastmulb16_add_fp16_fp16_fp16_rtz_lat4` | ~329 | 145 | 4 | truncation (RTZ); subnormals preserved | **~4.1%** | 170 | — |
+| `vhfastmulb16_add_fp16_fp16_fp16_rne_lat4` | ~348 | 145 | 4 | IEEE 754 RNE; subnormals preserved | **~4.3%** | 155 | — |
+| `vhfastmulb16_add_bf16_bf16_bf16_rtz_lat4` | ~355 | 118 | 4 | truncation (RTZ); subnormals preserved | **~4.4%** | 165 | — |
+| `vhfastmulb16_add_bf16_bf16_bf16_rne_lat4` | ~395 | 118 | 4 | IEEE 754 RNE; subnormals preserved | **~4.9%** | 150 | — |
 
 ---
 
@@ -72,6 +73,7 @@
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 205 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | FTZ | — |
@@ -114,6 +116,7 @@ mul4x4 (CSA) → mul_u8_u8_u16_lat2 CPA → exp_sum + man_msb → c_next mux →
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 180 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | FTZ | — |
@@ -156,6 +159,7 @@ mul4x4 (CSA) → CPA → man_shifted/G/R/S → RNE increment → exp_inc → exp
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 230 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | FTZ | — |
@@ -198,6 +202,7 @@ unknown
 | **IO (IBUF+OBUF)** | 67 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 165 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | preserve | — |
@@ -240,6 +245,7 @@ mul4x4_comb (CSA) → CPA → leading-one → mant_norm shifter → exp_unb → 
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 140 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | preserve | — |
@@ -282,6 +288,7 @@ barrel shifter alignment (S1) → 28-bit add/sub (S2) → LZD 27-bit (S3) → ca
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 130 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -324,6 +331,7 @@ barrel shifter (S1) → 28-bit add/sub (S2) → LZD 27-bit (S3) → normalizatio
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 170 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | preserve | — |
@@ -366,6 +374,7 @@ barrel shifter alignment (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → ca
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 155 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -408,6 +417,7 @@ barrel shifter (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → normalizatio
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 165 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | preserve | — |
@@ -450,6 +460,7 @@ barrel shifter alignment (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → ca
 | **IO (IBUF+OBUF)** | 51 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 150 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -492,6 +503,7 @@ barrel shifter (S1) → 15-bit add/sub (S2) → LZD 15-bit (S3) → normalizatio
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 125 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -535,6 +547,7 @@ p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare →
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 200 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -562,6 +575,50 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 
 ---
 
+### `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`
+
+| Ресурс | Значение | % от доступных |
+|--------|----------|----------------|
+| **LUTs (est.)** | ~667 | **~8.3%** |
+| **FF** | 234 | **~1.5%** |
+| **CARRY4** | 44 | — |
+| **CARRY8** | 0 | — |
+| **LUT6_2** | 0 | — |
+| **MUXF7** | 0 | — |
+| **MUXF8** | 0 | — |
+| **Gates (pre-ABC9)** | ~1667 | — |
+| **Logic Cells (total)** | 2044 | — |
+| **IO (IBUF+OBUF)** | 99 | — |
+| **DSP48** | 0 | 0% (запрещено, проверено) |
+| **Fmax (typ, manual)** | 200 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
+| **Latency** | 4 cycles | — |
+| **Rounding** | RTZ | — |
+| **Subnormals** | FTZ | — |
+
+**Критический путь (оценка):**
+```
+p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare → shift_diff → large/small mux → 27-bit alignment shifter → reg S3
+```
+
+**Распределение ячеек:**
+
+| Тип ячейки | Количество |
+|------------|------------|
+| $_AND_ | 290 |
+| $_MUX_ | 625 |
+| $_NOT_ | 159 |
+| $_OR_ | 382 |
+| $_SDFFE_PP0P_ | 231 |
+| $_SDFF_PP0_ | 3 |
+| $_XNOR_ | 16 |
+| $_XOR_ | 195 |
+| CARRY4 | 44 |
+| IBUF | 67 |
+| OBUF | 32 |
+
+---
+
 ### `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`
 
 | Ресурс | Значение | % от доступных |
@@ -578,6 +635,7 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 230 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RTZ | — |
 | **Subnormals** | FTZ | — |
@@ -621,6 +679,7 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 210 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -664,6 +723,7 @@ unknown
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 1 | **~5.0%** (разрешено исключением — см. README.md, «DSP Block Exception (`vhfma002`)») |
 | **Fmax (typ, manual)** | 210 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RNE | — |
 | **Subnormals** | preserve | — |
@@ -692,5 +752,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-17T13:39:24.223432Z*
+*Сгенерировано автоматически: 2026-11-21T14:40:20.863356Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
