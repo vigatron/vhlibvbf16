@@ -6,6 +6,7 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 - `log_fma_fst_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8`, FAST/RTZ/FTZ): min period **5.243 ns (≈190.7 MHz)**, 0 ошибок тайминга, констрейнт 6 ns (typ manual 200 MHz).
 - `log_fma_rne_lat8` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, RNE): min period **7.414 ns (≈134.9 MHz)**, 0 ошибок тайминга (237 196 paths / 4 753 endpoints), констрейнт 8 ns (typ manual 170 MHz).
 - `log_fma_fst_lat4` (`vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4`, FAST/RTZ/FTZ, lat=4): min period **7.987 ns (≈125.2 MHz)**, 0 ошибок тайминга, констрейнт 10 ns; внутренний путь DUT `grp_mul` 9.357 ns (≈106.9 MHz) (typ manual 170 MHz).
+Папка `log9_fma_lat8` удалена (переименована — это сборка `..._rne_lat8`, см. `log_fma_rne_lat8`).
 
 ---
 
@@ -225,5 +226,5 @@ LUT — оценка по числу вентилей до ABC9 (YoWASP WASM н�
 
 ---
 
-*Последнее обновление: 2026-11-21T14:24:36.033260Z*
+*Последнее обновление: 2026-11-21T14:40:20.864559Z*
 *Инструменты: Yosys/YoWASP, wasmtime*

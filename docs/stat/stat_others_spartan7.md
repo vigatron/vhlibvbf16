@@ -24,19 +24,19 @@
 
 ### Подмодули (Bottom-up)
 
-| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz |
-|--------|------|-----|---------|----------|---------------------------|---------------|
-| `vhfastmulb16_mul4x4` | ~24 | 8 | 1 | exact | **~0.3%** | 320 |
-| `vhfastmulb16_mul4x4_lat2` | ~24 | 24 | 2 | exact | **~0.3%** | 400 |
-| `vhfastmulb16_mul4x4_comb` | ~24 | 0 | 0 | exact | **~0.3%** | 360 |
-| `vhfastmulb16_mul_u8_u8_u16_lat2` | ~129 | 48 | 2 | exact | **~1.6%** | 270 |
-| `vhfastmulb16_mul_u8_u8_u16_lat3` | ~130 | 101 | 3 | exact | **~1.6%** | 330 |
-| `vhfastmulb16_add8x8_lat2` | ~4 | 19 | 2 | exact | **~0.1%** | 450 |
-| `vhfastmulb16_sign` | ~0 | 3 | 3 | exact | **~0.0%** | 600 |
-| `vhfastmulb16_flags_lat1` | ~16 | 5 | 1 | exact | **~0.2%** | 450 |
-| `vhfastmulb16_flags_lat2` | ~16 | 11 | 2 | exact | **~0.2%** | 500 |
-| `vhfastmulb16_except_lat2` | ~40 | 32 | 2 | exact | **~0.5%** | 360 |
-| `vhfastmulb16_except_lat3` | ~40 | 57 | 3 | exact | **~0.5%** | 400 |
+| Модуль | LUTs | FF | Latency | Точность | % LUTs (от 8,000) | Fmax typ, MHz | Fmax post-PAR, MHz |
+|--------|------|-----|---------|----------|---------------------------|---------------|--------------------|
+| `vhfastmulb16_mul4x4` | ~24 | 8 | 1 | exact | **~0.3%** | 320 | — |
+| `vhfastmulb16_mul4x4_lat2` | ~24 | 24 | 2 | exact | **~0.3%** | 400 | — |
+| `vhfastmulb16_mul4x4_comb` | ~24 | 0 | 0 | exact | **~0.3%** | 360 | — |
+| `vhfastmulb16_mul_u8_u8_u16_lat2` | ~129 | 48 | 2 | exact | **~1.6%** | 270 | — |
+| `vhfastmulb16_mul_u8_u8_u16_lat3` | ~130 | 101 | 3 | exact | **~1.6%** | 330 | — |
+| `vhfastmulb16_add8x8_lat2` | ~4 | 19 | 2 | exact | **~0.1%** | 450 | — |
+| `vhfastmulb16_sign` | ~0 | 3 | 3 | exact | **~0.0%** | 600 | — |
+| `vhfastmulb16_flags_lat1` | ~16 | 5 | 1 | exact | **~0.2%** | 450 | — |
+| `vhfastmulb16_flags_lat2` | ~16 | 11 | 2 | exact | **~0.2%** | 500 | — |
+| `vhfastmulb16_except_lat2` | ~40 | 32 | 2 | exact | **~0.5%** | 360 | — |
+| `vhfastmulb16_except_lat3` | ~40 | 57 | 3 | exact | **~0.5%** | 400 | — |
 
 ---
 
@@ -58,6 +58,7 @@
 | **IO (IBUF+OBUF)** | 19 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 320 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 1 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -97,6 +98,7 @@
 | **IO (IBUF+OBUF)** | 19 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 400 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 2 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -137,6 +139,7 @@ CSA tree → 8-битный CPA (CARRY4) → выходной регистр (с
 | **IO (IBUF+OBUF)** | 16 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 360 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 0 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -175,6 +178,7 @@ CSA tree → 8-битный CPA (CARRY4) → выходной регистр (с
 | **IO (IBUF+OBUF)** | 35 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 270 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 2 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -214,6 +218,7 @@ CSA tree → 8-битный CPA (CARRY4) → выходной регистр (с
 | **IO (IBUF+OBUF)** | 35 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 330 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -254,6 +259,7 @@ CSA tree → 8-битный CPA (CARRY4) → выходной регистр (с
 | **IO (IBUF+OBUF)** | 28 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 450 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 2 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -293,6 +299,7 @@ CSA tree → 8-битный CPA (CARRY4) → выходной регистр (с
 | **IO (IBUF+OBUF)** | 8 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 600 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -329,6 +336,7 @@ XOR (sign) → signc_lat1 → signc_lat2 → signc_lat3 (en, синхронны�
 | **IO (IBUF+OBUF)** | 24 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 450 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 1 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -367,6 +375,7 @@ NaN/Inf/Zero классификация → регистр (латентност
 | **IO (IBUF+OBUF)** | 24 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 500 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 2 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -405,6 +414,7 @@ flags_lat1 → регистр (латентность 2)
 | **IO (IBUF+OBUF)** | 55 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 360 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 2 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -445,6 +455,7 @@ flags_lat1 ×2 → классификация NaN/Inf/Zero → выбор NaN pa
 | **IO (IBUF+OBUF)** | 55 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 400 MHz | источник: manual |
+| **Fmax (post-PAR, measured)** | — | измерений нет |
 | **Latency** | 3 cycles | — |
 | **Rounding** | exact | — |
 | **Subnormals** | n/a | — |
@@ -469,5 +480,5 @@ flags_lat2 ×2 → классификация NaN/Inf/Zero → выбор NaN pa
 
 ---
 
-*Сгенерировано автоматически: 2026-11-16T06:23:53.526647Z*
+*Сгенерировано автоматически: 2026-11-21T14:41:08.772621Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*

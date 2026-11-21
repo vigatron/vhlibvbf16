@@ -16,19 +16,19 @@
 > Счёт FF/CARRY4/IO — точный (по дампу RTLIL). **Fmax — ручная калибровка типовых значений** (`scripts/modules_config.py`), не измерение post-PAR.
 > **Реальные post-PAR измерения (Xilinx ISE 14.7, плата CMB32F407HDMIR3, XC6SLX9-2TQG144) — папка `docs/benchmarks/`:**
 > **`log_fma_fst_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat8` (FAST, RTZ, FTZ, lat=8), минимальная обвязка с шиной загрузки данных:
-> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
-> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
-> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
+> - [`test_xc6slx9_fma8.cmd_log`](../benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
+> - [`test_xc6slx9_fma8.twr`](../benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
+> - [`test_xc6slx9_fma8_summary.html`](../benchmarks/log_fma_fst_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
 > - Констрейнт: **6 ns (≈166.7 MHz)**; **0 ошибок тайминга**; **min period 5.243 ns (≈190.7 MHz)**; slack 0.757 ns; Data Path Delay 5.227 ns (1 уровень логики).
 > **`log_fma_rne_lat8`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8` (RNE, subnormals preserved, lat=8), минимальная обвязка с шиной загрузки данных:
-> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
-> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
-> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
+> - [`test_xc6slx9_fma8.cmd_log`](../benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
+> - [`test_xc6slx9_fma8.twr`](../benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8.twr) — отчёт тайминга.
+> - [`test_xc6slx9_fma8_summary.html`](../benchmarks/log_fma_rne_lat8/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
 > - Констрейнт: **8 ns (125 MHz)**; **0 ошибок тайминга** (237 196 paths / 4 753 endpoints); **min period 7.414 ns (≈134.9 MHz)**; slack 0.586 ns; Data Path Delay 6.784 ns (3 уровня логики: 2.664 ns логика + 4.120 ns route); **887 slice FF (7%)**, **1 117 slice LUT (19%)**, **514 занятых слайсов (35%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB.
 > **`log_fma_fst_lat4`** — тест `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_fst_lat4` (FAST, RTZ, FTZ, lat=4), минимальная обвязка с шиной загрузки данных (сборка использует то же имя проекта `test_xc6slx9_fma8`, что и lat=8 — отличается только DUT внутри `u_mul`):
-> - [`test_xc6slx9_fma8.cmd_log`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
-> - [`test_xc6slx9_fma8.twr`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr) — отчёт тайминга.
-> - [`test_xc6slx9_fma8_summary.html`](benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
+> - [`test_xc6slx9_fma8.cmd_log`](../benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.cmd_log) — лог запуска ISE.
+> - [`test_xc6slx9_fma8.twr`](../benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8.twr) — отчёт тайминга.
+> - [`test_xc6slx9_fma8_summary.html`](../benchmarks/log_fma_fst_lat4/test_xc6slx9_fma8_summary.html) — сводный отчёт по ресурсам и таймингу.
 > - Констрейнт: **10 ns (100 MHz)**; **0 ошибок тайминга**; **min period 7.987 ns (≈125.2 MHz)**; худший внутренний путь DUT `grp_mul` (`u_mul/Mmux_b_man11_FRB → u_mul/Madd_exp_p_calc_lut<0>1_FRB`): **9.357 ns (≈106.9 MHz)**, Data Path Delay 9.283 ns (8 уровней логики), slack 0.643 ns; **493 slice FF (4%)**, **759 slice LUT (13%)**, **359 занятых слайсов (25%)**, **0 DSP48A1 / 0 BRAM**, 37 LOCed IOB. Сравнение с `..._fst_lat8` (890 slice FF / 802 slice LUT / 467 слайсов): 4-стадийная перебалансировка подтверждает ~2× сокращение FF при более низком Fmax; внутренний предел DUT ≈107 MHz ниже Yosys-оценки 170 MHz (нижняя граница допуска ±20–25%).
 > Папка `log9_fma_lat8` удалена (переименована — это сборка `vhfastmulb16_muladd_bf16_bf16_fp32_fp32_rne_lat8`, см. `log_fma_rne_lat8`).
 > Измерялся полный top: DUT (`u_mul`) **+ минимальный параллельный интерфейс загрузки данных** (`u_regs` + тонкая MCU-шина `u_iface`, IOB-регистры), не «голый» DUT — напрямую с Yosys-оценками (~1 013 LUT) не сопоставимо. Пробные тесты (lat=8 — 2026-11-15, lat=4 — 2026-11-21), не sign-off.
@@ -564,7 +564,7 @@ p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare →
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 170 MHz | источник: manual |
-| **Fmax (post-PAR, measured)** | 134.9 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 8 ns; лог: [`log_fma_rne_lat8`](docs/benchmarks/log_fma_rne_lat8/) |
+| **Fmax (post-PAR, measured)** | 134.9 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 8 ns; лог: [`log_fma_rne_lat8`](../benchmarks/log_fma_rne_lat8) |
 | ↳ примечание | whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors | — |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RNE | — |
@@ -609,7 +609,7 @@ P1-P4 balanced pipeline: all stages 7-11 LUT levels (S4 worst: 10-11). CARRY4 su
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 170 MHz | источник: manual |
-| **Fmax (post-PAR, measured)** | 125.2 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 10 ns; лог: [`log_fma_fst_lat4`](docs/benchmarks/log_fma_fst_lat4/) |
+| **Fmax (post-PAR, measured)** | 125.2 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 10 ns; лог: [`log_fma_fst_lat4`](../benchmarks/log_fma_fst_lat4) |
 | ↳ примечание | whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors; internal grp_mul path 9.357 ns (~106.9 MHz, 8 logic levels) | — |
 | **Latency** | 4 cycles | — |
 | **Rounding** | RTZ | — |
@@ -654,7 +654,7 @@ p_*_d1 → CSA tree → 16-bit CPA → k_calc → exp_p_calc → exp compare →
 | **IO (IBUF+OBUF)** | 99 | — |
 | **DSP48** | 0 | 0% (запрещено, проверено) |
 | **Fmax (typ, manual)** | 200 MHz | источник: manual |
-| **Fmax (post-PAR, measured)** | 190.7 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 6 ns; лог: [`log_fma_fst_lat8`](docs/benchmarks/log_fma_fst_lat8/) |
+| **Fmax (post-PAR, measured)** | 190.7 MHz | xc6slx9-2tqg144 / CMB32F407HDMIR3, Xilinx ISE 14.7; констрейнт 6 ns; лог: [`log_fma_fst_lat8`](../benchmarks/log_fma_fst_lat8) |
 | ↳ примечание | whole top (DUT u_mul + u_regs + u_iface IOB wrapper); 0 timing errors; internal grp_mul path 5.440 ns (~183.8 MHz) | — |
 | **Latency** | 8 cycles | — |
 | **Rounding** | RTZ | — |
@@ -772,5 +772,5 @@ unknown
 
 ---
 
-*Сгенерировано автоматически: 2026-11-21T14:24:36.031191Z*
+*Сгенерировано автоматически: 2026-11-21T14:40:20.862637Z*
 *Инструменты: Yosys 0.70 (git sha1 28ba3cb92), YoWASP 0.70.0.0.post1259, wasmtime 47.0.1*
